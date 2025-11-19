@@ -2,56 +2,30 @@
   <div class="max-w-md mx-auto px-4 py-12">
     <div class="bg-white rounded-2xl shadow p-6">
       <h2 class="text-2xl font-bold text-slate-900 mb-4">{{ $t('auth.login') }}</h2>
-      <form class="space-y-4" @submit.prevent="handleSubmit">
+      <form class="space-y-4" @submit.prevent="submit">
         <div>
-          <label for="email" class="text-sm text-slate-500 block mb-1">
-            {{ $t('auth.email') }}
-          </label>
-          <input
-            id="email"
-            v-model="email"
-            type="email"
-            required
-            class="input"
-            :placeholder="$t('auth.email')"
-            autocomplete="email"
-          />
+          <label class="text-sm text-slate-500 block mb-1">{{ $t('auth.email') }}</label>
+          <input v-model="email" type="email" required class="input" />
         </div>
         <div>
-          <label for="password" class="text-sm text-slate-500 block mb-1">
-            {{ $t('auth.password') }}
-          </label>
-          <input
-            id="password"
-            v-model="password"
-            type="password"
-            required
-            class="input"
-            :placeholder="$t('auth.password')"
-            autocomplete="current-password"
-          />
+          <label class="text-sm text-slate-500 block mb-1">{{ $t('auth.password') }}</label>
+          <input v-model="password" type="password" required class="input" />
         </div>
         <button
-          type="submit"
-          class="w-full py-3 bg-primary text-white rounded-md font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-          :disabled="authStore.loading"
+          class="w-full py-3 bg-primary text-white rounded-md font-semibold"
+          :disabled="auth.state.loading"
         >
-          {{ authStore.loading ? $t('common.loading') : $t('auth.login') }}
+          {{ auth.state.loading ? $t('auth.loggingIn') : $t('auth.loginButton') }}
         </button>
-        <p v-if="authStore.error" class="text-center text-red-500 text-sm">
-          {{ authStore.error }}
+        <p v-if="auth.state.error" class="text-center text-red-500 text-sm">
+          {{ auth.state.error }}
         </p>
       </form>
       <p class="text-center text-sm text-slate-500 mt-4">
-        {{ $t('auth.noAccount') }}
-        <RouterLink to="/register" class="text-primary hover:underline">
-          {{ $t('auth.register') }}
-        </RouterLink>
+        {{ $t('auth.noAccount') }} <RouterLink to="/register" class="text-primary">{{ $t('auth.registerNow') }}</RouterLink>
       </p>
       <p class="text-center text-xs text-slate-400 mt-2">
-        <RouterLink to="/" class="text-primary underline hover:no-underline">
-          {{ $t('nav.home') }}
-        </RouterLink>
+        <RouterLink to="/" class="text-primary underline">{{ $t('auth.backToHome') }}</RouterLink>
       </p>
     </div>
   </div>
@@ -60,28 +34,19 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter, RouterLink } from 'vue-router';
-import { useAuthStore } from '../../stores/auth';
-import { useToast } from '../../composables/useToast';
-import { useI18n } from 'vue-i18n';
+import { useAuth } from '../../composables/useAuth';
 
-const authStore = useAuthStore();
+const auth = useAuth();
 const router = useRouter();
-const toast = useToast();
-const { t } = useI18n();
-
 const email = ref('');
 const password = ref('');
 
-async function handleSubmit() {
+async function submit() {
   try {
-    const user = await authStore.login({
-      email: email.value,
-      password: password.value,
-    });
-    toast.success(t('auth.loginSuccess'));
+    const user = await auth.login({ email: email.value, password: password.value });
     router.push(`/dashboard/${user.role_name || user.role?.name}`);
   } catch (error) {
-    // Error is handled in store and displayed
+    // handled in auth
   }
 }
 </script>
@@ -94,7 +59,6 @@ async function handleSubmit() {
   padding: 0.75rem 1rem;
   font-size: 0.95rem;
   outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .input:focus {
@@ -102,3 +66,4 @@ async function handleSubmit() {
   box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.15);
 }
 </style>
+
