@@ -2,73 +2,41 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Role;
-use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
+use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\LogoutRequest;
+use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Resources\UserResource;
+use App\Services\AuthService;
 
 class AuthController extends Controller
 {
-    public function register(Request $request)
+    public function __construct(private AuthService $authService)
     {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:6'],
-            'phone' => ['nullable', 'string', 'max:30'],
-            'address' => ['nullable', 'string', 'max:255'],
-        ]);
+    }
 
-        $user = User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => Hash::make($data['password']),
-            'phone' => $data['phone'] ?? null,
-            'address' => $data['address'] ?? null,
-            'role_id' => Role::where('name', 'student')->first()->id,
-        ]);
-
-        $token = $user->createToken('api-token', ['access-public'])->plainTextToken;
+    public function register(RegisterRequest $request)
+    {
+        $result = $this->authService->register($request->validated());
 
         return response()->json([
-            'user' => $user->fresh('role'),
-            'token' => $token,
+            'user' => UserResource::make($result['user']),
+            'token' => $result['token'],
         ]);
     }
 
-    public function login(Request $request)
+    public function login(LoginRequest $request)
     {
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required', 'string'],
-        ]);
-
-        $user = User::where('email', $credentials['email'])->with('role')->first();
-
-        if (! $user || ! Hash::check($credentials['password'], $user->password)) {
-            return response()->json(['message' => 'Invalid credentials'], 401);
-        }
-
-        if (! $user->is_active) {
-            return response()->json(['message' => 'Account disabled'], 403);
-        }
-
-        $scopes = $user->isAdmin() || $user->isInstructor()
-            ? ['access-dashboard', 'access-public']
-            : ['access-public'];
-
-        $token = $user->createToken('api-token', $scopes)->plainTextToken;
+        $result = $this->authService->login($request->validated());
 
         return response()->json([
-            'user' => $user,
-            'token' => $token,
+            'user' => UserResource::make($result['user']),
+            'token' => $result['token'],
         ]);
     }
 
-    public function logout(Request $request)
+    public function logout(LogoutRequest $request)
     {
-        $token = $request->user()->token();
-        $token?->revoke();
+        $this->authService->logout($request->user());
 
         return response()->json(['message' => 'Logged out']);
     }

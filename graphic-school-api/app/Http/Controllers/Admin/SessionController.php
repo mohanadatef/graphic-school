@@ -3,52 +3,43 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\Session\ListSessionRequest;
+use App\Http\Requests\Admin\Session\UpdateSessionRequest;
+use App\Http\Resources\SessionResource;
 use App\Models\Session;
-use Illuminate\Http\Request;
+use App\Services\SessionService;
 
 class SessionController extends Controller
 {
-    public function index(Request $request)
+    public function __construct(private SessionService $sessionService)
     {
-        $query = Session::with('course:id,title');
+    }
 
-        if ($request->filled('course_id')) {
-            $query->where('course_id', $request->integer('course_id'));
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->get('status'));
-        }
-
-        return response()->json(
-            $query->orderBy('session_date')->paginate($request->integer('per_page', 10))
+    public function index(ListSessionRequest $request)
+    {
+        $sessions = $this->sessionService->paginate(
+            $request->validated(),
+            $request->integer('per_page', 10)
         );
+
+        return SessionResource::collection($sessions);
     }
 
     public function show(Session $session)
     {
-        return response()->json($session->load('course'));
+        return SessionResource::make($this->sessionService->show($session));
     }
 
-    public function update(Request $request, Session $session)
+    public function update(UpdateSessionRequest $request, Session $session)
     {
-        $data = $request->validate([
-            'title' => ['sometimes', 'required', 'string', 'max:255'],
-            'session_date' => ['sometimes', 'required', 'date'],
-            'start_time' => ['nullable'],
-            'end_time' => ['nullable'],
-            'status' => ['nullable', 'in:scheduled,completed,cancelled'],
-            'note' => ['nullable', 'string'],
-        ]);
+        $session = $this->sessionService->update($session, $request->validated());
 
-        $session->update($data);
-
-        return response()->json($session);
+        return SessionResource::make($session);
     }
 
     public function destroy(Session $session)
     {
-        $session->delete();
+        $this->sessionService->delete($session);
 
         return response()->json(['message' => 'Deleted']);
     }

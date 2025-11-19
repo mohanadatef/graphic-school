@@ -2,183 +2,95 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Attendance;
+use App\Http\Requests\Student\CourseAttendanceRequest;
+use App\Http\Requests\Student\CourseSessionsRequest;
+use App\Http\Requests\Student\EnrollCourseRequest;
+use App\Http\Requests\Student\ListMyCoursesRequest;
+use App\Http\Requests\Student\ListSessionsRequest;
+use App\Http\Requests\Student\ProfileRequest;
+use App\Http\Requests\Student\ReviewCourseRequest;
+use App\Http\Requests\Student\UpdateProfileRequest;
+use App\Http\Resources\AttendanceResource;
+use App\Http\Resources\CourseReviewResource;
+use App\Http\Resources\EnrollmentResource;
+use App\Http\Resources\SessionResource;
+use App\Http\Resources\UserResource;
 use App\Models\Course;
-use App\Models\CourseReview;
-use App\Models\Enrollment;
 use App\Models\Session;
 use App\Models\User;
-use Illuminate\Http\Request;
+use App\Services\StudentService;
 
 class StudentController extends Controller
 {
-    public function myCourses(Request $request)
+    public function __construct(private StudentService $studentService)
     {
-        $student = $request->user();
-
-        $courses = Enrollment::with(['course.category', 'course.instructors'])
-            ->where('student_id', $student->id)
-            ->where('status', 'approved')
-            ->get();
-
-        return response()->json($courses);
     }
 
-    public function courseSessions(Request $request, Course $course)
+    public function myCourses(ListMyCoursesRequest $request)
     {
-        $this->ensureEnrollment($request->user(), $course->id);
-
-        $sessions = $course->sessions()->orderBy('session_order')->get();
-
-        return response()->json($sessions);
+        return EnrollmentResource::collection(
+            $this->studentService->myCourses($request->user())
+        );
     }
 
-    public function sessions(Request $request)
+    public function courseSessions(CourseSessionsRequest $request, Course $course)
     {
-        $student = $request->user();
+        $sessions = $this->studentService->courseSessions($request->user(), $course);
 
-        $query = Session::with(['course:id,title'])
-            ->with(['attendance' => fn ($q) => $q->where('student_id', $student->id)])
-            ->whereHas('course.enrollments', function ($q) use ($student) {
-                $q->where('student_id', $student->id)
-                    ->where('status', 'approved');
-            });
-
-        if ($request->filled('course_id')) {
-            $query->where('course_id', $request->integer('course_id'));
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->get('status'));
-        }
-
-        if ($request->filled('attendance_status')) {
-            $status = $request->get('attendance_status');
-
-            if ($status === 'present') {
-                $query->whereHas('attendance', fn ($q) => $q->where('student_id', $student->id)->where('status', 'present'));
-            } elseif ($status === 'absent') {
-                $query->where(function ($outer) use ($student) {
-                    $outer->whereHas('attendance', fn ($q) => $q->where('student_id', $student->id)->where('status', 'absent'))
-                        ->orWhereDoesntHave('attendance', fn ($q) => $q->where('student_id', $student->id));
-                });
-            }
-        }
-
-        $sessions = $query
-            ->orderBy('session_date')
-            ->orderBy('start_time')
-            ->paginate($request->integer('per_page', 10));
-
-        return response()->json($sessions);
+        return SessionResource::collection($sessions);
     }
 
-    public function courseAttendance(Request $request, Course $course)
+    public function sessions(ListSessionsRequest $request)
     {
-        $this->ensureEnrollment($request->user(), $course->id);
-
-        $attendance = Attendance::where('student_id', $request->user()->id)
-            ->whereHas('session', fn ($q) => $q->where('course_id', $course->id))
-            ->with('session:id,course_id,title,session_date')
-            ->orderByDesc('created_at')
-            ->get();
-
-        return response()->json($attendance);
-    }
-
-    public function profile(Request $request)
-    {
-        return response()->json($request->user());
-    }
-
-    public function updateProfile(Request $request)
-    {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:30'],
-            'address' => ['nullable', 'string', 'max:255'],
-            'bio' => ['nullable', 'string'],
-            'avatar' => ['nullable', 'file', 'image', 'max:2048'],
-        ]);
-
-        $user = $request->user();
-
-        if ($request->hasFile('avatar')) {
-            $path = $request->file('avatar')->store('avatars', 'public');
-            $data['avatar_path'] = $path;
-        }
-
-        unset($data['avatar']);
-
-        $user->update($data);
-
-        return response()->json($user->fresh());
-    }
-
-    public function enroll(Request $request, Course $course)
-    {
-        $student = $request->user();
-
-        if ($course->is_hidden || ! $course->is_published) {
-            return response()->json(['message' => 'Course not available'], 422);
-        }
-
-        $existing = Enrollment::where('student_id', $student->id)
-            ->where('course_id', $course->id)
-            ->first();
-
-        if ($existing) {
-            return response()->json(['message' => 'Already enrolled'], 409);
-        }
-
-        $enrollment = Enrollment::create([
-            'student_id' => $student->id,
-            'course_id' => $course->id,
-            'payment_status' => 'not_paid',
-            'status' => 'pending',
-            'can_attend' => false,
-        ]);
-
-        return response()->json($enrollment, 201);
-    }
-
-    public function reviewCourse(Request $request, Course $course)
-    {
-        $student = $request->user();
-        $this->ensureEnrollment($student, $course->id);
-
-        abort_if($course->status !== 'completed', 422, 'Course not completed yet');
-
-        $data = $request->validate([
-            'instructor_id' => ['nullable', 'exists:users,id'],
-            'rating_course' => ['required', 'integer', 'min:1', 'max:5'],
-            'rating_instructor' => ['required', 'integer', 'min:1', 'max:5'],
-            'comment' => ['nullable', 'string'],
-        ]);
-
-        $review = CourseReview::updateOrCreate(
-            [
-                'student_id' => $student->id,
-                'course_id' => $course->id,
-            ],
-            [
-                'instructor_id' => $data['instructor_id'] ?? null,
-                'rating_course' => $data['rating_course'],
-                'rating_instructor' => $data['rating_instructor'],
-                'comment' => $data['comment'] ?? null,
-            ]
+        $sessions = $this->studentService->sessions(
+            $request->user(),
+            $request->validated(),
+            $request->integer('per_page', 10)
         );
 
-        return response()->json($review);
+        return SessionResource::collection($sessions);
     }
 
-    protected function ensureEnrollment(User $student, int $courseId): void
+    public function courseAttendance(CourseAttendanceRequest $request, Course $course)
     {
-        $hasEnrollment = Enrollment::where('student_id', $student->id)
-            ->where('course_id', $courseId)
-            ->whereIn('status', ['approved', 'pending'])
-            ->exists();
+        return AttendanceResource::collection(
+            $this->studentService->courseAttendance($request->user(), $course)
+        );
+    }
 
-        abort_unless($hasEnrollment, 403, 'غير مشترك في هذا الكورس');
+    public function profile(ProfileRequest $request)
+    {
+        return UserResource::make($this->studentService->profile($request->user()));
+    }
+
+    public function updateProfile(UpdateProfileRequest $request)
+    {
+        $user = $this->studentService->updateProfile(
+            $request->user(),
+            $request->validated(),
+            $request->file('avatar')
+        );
+
+        return UserResource::make($user);
+    }
+
+    public function enroll(EnrollCourseRequest $request, Course $course)
+    {
+        $enrollment = $this->studentService->enroll($request->user(), $course);
+
+        return EnrollmentResource::make($enrollment)
+            ->response()
+            ->setStatusCode(201);
+    }
+
+    public function reviewCourse(ReviewCourseRequest $request, Course $course)
+    {
+        $review = $this->studentService->reviewCourse(
+            $request->user(),
+            $course,
+            $request->validated()
+        );
+
+        return CourseReviewResource::make($review);
     }
 }

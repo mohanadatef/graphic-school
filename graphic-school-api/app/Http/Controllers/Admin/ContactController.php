@@ -3,21 +3,27 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\ContactMessageResource;
 use App\Models\ContactMessage;
+use App\Services\ContactMessageService;
 
 class ContactController extends Controller
 {
+    public function __construct(private ContactMessageService $contactMessageService)
+    {
+    }
+
     public function index()
     {
-        return response()->json(
-            ContactMessage::orderByDesc('created_at')->paginate(30)
+        return ContactMessageResource::collection(
+            $this->contactMessageService->paginate()
         );
     }
 
     public function resolve(ContactMessage $contactMessage)
     {
-        $contactMessage->update(['is_resolved' => true]);
+        $message = $this->contactMessageService->resolve($contactMessage);
 
-        return response()->json($contactMessage);
+        return ContactMessageResource::make($message);
     }
 }

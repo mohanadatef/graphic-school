@@ -3,74 +3,42 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Permission;
+use App\Http\Requests\Admin\Role\StoreRoleRequest;
+use App\Http\Requests\Admin\Role\UpdateRoleRequest;
+use App\Http\Resources\RoleResource;
 use App\Models\Role;
-use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
+use App\Services\RoleService;
 
 class RoleController extends Controller
 {
+    public function __construct(private RoleService $roleService)
+    {
+    }
+
     public function index()
     {
-        return response()->json(
-            Role::with('permissions')->orderBy('name')->get()
-        );
+        return RoleResource::collection($this->roleService->list());
     }
 
-    public function store(Request $request)
+    public function store(StoreRoleRequest $request)
     {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:roles,name'],
-            'description' => ['nullable', 'string'],
-            'permissions' => ['array'],
-            'permissions.*' => ['exists:permissions,slug'],
-        ]);
+        $role = $this->roleService->create($request->validated());
 
-        $role = Role::create([
-            'name' => $data['name'],
-            'description' => $data['description'] ?? null,
-            'is_system' => false,
-        ]);
-
-        $role->permissions()->sync(
-            Permission::whereIn('slug', $data['permissions'] ?? [])->pluck('id')
-        );
-
-        return response()->json($role->load('permissions'), 201);
+        return RoleResource::make($role->load('permissions'))
+            ->response()
+            ->setStatusCode(201);
     }
 
-    public function update(Request $request, Role $role)
+    public function update(UpdateRoleRequest $request, Role $role)
     {
-        if ($role->is_system) {
-            return response()->json(['message' => 'لا يمكن تعديل هذا الدور'], 422);
-        }
+        $role = $this->roleService->update($role, $request->validated());
 
-        $data = $request->validate([
-            'name' => ['sometimes', 'required', 'string', 'max:255', Rule::unique('roles')->ignore($role->id)],
-            'description' => ['nullable', 'string'],
-            'permissions' => ['array'],
-            'permissions.*' => ['exists:permissions,slug'],
-            'is_active' => ['nullable', 'boolean'],
-        ]);
-
-        $role->update($data);
-
-        if (array_key_exists('permissions', $data)) {
-            $role->permissions()->sync(
-                Permission::whereIn('slug', $data['permissions'])->pluck('id')
-            );
-        }
-
-        return response()->json($role->load('permissions'));
+        return RoleResource::make($role);
     }
 
     public function destroy(Role $role)
     {
-        if ($role->is_system) {
-            return response()->json(['message' => 'لا يمكن حذف دور أساسي'], 422);
-        }
-
-        $role->delete();
+        $this->roleService->delete($role);
 
         return response()->json(['message' => 'Deleted']);
     }

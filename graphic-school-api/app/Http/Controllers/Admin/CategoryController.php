@@ -3,46 +3,45 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Category;
-use Illuminate\Http\Request;
+use App\Http\Requests\Admin\Category\StoreCategoryRequest;
+use App\Http\Requests\Admin\Category\UpdateCategoryRequest;
+use App\Http\Resources\CategoryResource;
+use App\Services\CategoryService;
 
 class CategoryController extends Controller
 {
+    public function __construct(private CategoryService $categoryService)
+    {
+    }
+
     public function index()
     {
-        return response()->json(Category::orderBy('name')->get());
+        return CategoryResource::collection($this->categoryService->list());
     }
 
-    public function store(Request $request)
+    public function store(StoreCategoryRequest $request)
     {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:categories,name'],
-            'is_active' => ['nullable', 'boolean'],
-        ]);
+        $data = $request->validated();
 
-        $category = Category::create([
-            'name' => $data['name'],
-            'is_active' => $data['is_active'] ?? true,
-        ]);
+        $category = $this->categoryService->create($data);
 
-        return response()->json($category, 201);
+        return CategoryResource::make($category)
+            ->response()
+            ->setStatusCode(201);
     }
 
-    public function update(Request $request, Category $category)
+    public function update(UpdateCategoryRequest $request, Category $category)
     {
-        $data = $request->validate([
-            'name' => ['sometimes', 'required', 'string', 'max:255', 'unique:categories,name,' . $category->id],
-            'is_active' => ['nullable', 'boolean'],
-        ]);
+        $data = $request->validated();
 
-        $category->update($data);
+        $category = $this->categoryService->update($category, $data);
 
-        return response()->json($category);
+        return CategoryResource::make($category);
     }
 
     public function destroy(Category $category)
     {
-        $category->delete();
+        $this->categoryService->delete($category);
 
         return response()->json(['message' => 'Deleted']);
     }

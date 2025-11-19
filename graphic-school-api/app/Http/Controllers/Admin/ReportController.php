@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\EnrollmentPaymentStatus;
+use App\Enums\EnrollmentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\CourseReview;
@@ -16,12 +18,14 @@ class ReportController extends Controller
             ->withSum('enrollments as paid_total', 'paid_amount')
             ->withCount([
                 'enrollments as students_count' => function ($q) {
-                    $q->where('status', 'approved');
+                    $q->where('status', EnrollmentStatus::APPROVED->value);
                 },
             ])
             ->get()
             ->map(function ($course) {
-                $rejected = Enrollment::where('course_id', $course->id)->where('status', 'rejected')->count();
+                $rejected = Enrollment::where('course_id', $course->id)
+                    ->where('status', EnrollmentStatus::REJECTED->value)
+                    ->count();
 
                 return [
                     'id' => $course->id,
@@ -29,7 +33,9 @@ class ReportController extends Controller
                     'students' => $course->students_count,
                     'sessions' => $course->sessions_count,
                     'paid_total' => $course->paid_total ?? 0,
-                    'not_paid' => Enrollment::where('course_id', $course->id)->where('payment_status', 'not_paid')->count(),
+                    'not_paid' => Enrollment::where('course_id', $course->id)
+                        ->where('payment_status', EnrollmentPaymentStatus::NOT_PAID->value)
+                        ->count(),
                     'rejected' => $rejected,
                 ];
             });

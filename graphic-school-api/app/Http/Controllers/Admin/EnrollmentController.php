@@ -3,78 +3,46 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\Enrollment\ListEnrollmentRequest;
+use App\Http\Requests\Admin\Enrollment\StoreEnrollmentRequest;
+use App\Http\Requests\Admin\Enrollment\UpdateEnrollmentRequest;
+use App\Http\Resources\EnrollmentResource;
 use App\Models\Enrollment;
-use Illuminate\Http\Request;
+use App\Services\EnrollmentService;
 
 class EnrollmentController extends Controller
 {
-    public function index(Request $request)
+    public function __construct(private EnrollmentService $enrollmentService)
     {
-        $query = Enrollment::with(['student', 'course']);
+    }
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->get('status'));
-        }
-
-        if ($request->filled('payment_status')) {
-            $query->where('payment_status', $request->get('payment_status'));
-        }
-
-        if ($request->filled('course_id')) {
-            $query->where('course_id', $request->integer('course_id'));
-        }
-
-        if ($request->filled('student_id')) {
-            $query->where('student_id', $request->integer('student_id'));
-        }
-
-        return response()->json(
-            $query->orderByDesc('created_at')->paginate($request->integer('per_page', 10))
+    public function index(ListEnrollmentRequest $request)
+    {
+        $enrollments = $this->enrollmentService->paginate(
+            $request->validated(),
+            $request->integer('per_page', 10)
         );
+
+        return EnrollmentResource::collection($enrollments);
     }
 
-    public function store(Request $request)
+    public function store(StoreEnrollmentRequest $request)
     {
-        $data = $request->validate([
-            'student_id' => ['required', 'exists:users,id'],
-            'course_id' => ['required', 'exists:courses,id'],
-            'payment_status' => ['required', 'in:not_paid,partial,paid'],
-            'paid_amount' => ['nullable', 'numeric', 'min:0'],
-            'status' => ['required', 'in:pending,approved,rejected'],
-            'can_attend' => ['nullable', 'boolean'],
-        ]);
+        $enrollment = $this->enrollmentService->create($request->validated());
 
-        $exists = Enrollment::where('student_id', $data['student_id'])
-            ->where('course_id', $data['course_id'])
-            ->exists();
-
-        if ($exists) {
-            return response()->json(['message' => 'Student already enrolled'], 422);
-        }
-
-        $enrollment = Enrollment::create($data);
-
-        return response()->json($enrollment->load('student', 'course'), 201);
+        return EnrollmentResource::make($enrollment)
+            ->response()
+            ->setStatusCode(201);
     }
 
-    public function update(Request $request, Enrollment $enrollment)
+    public function update(UpdateEnrollmentRequest $request, Enrollment $enrollment)
     {
-        $data = $request->validate([
-            'payment_status' => ['nullable', 'in:not_paid,partial,paid'],
-            'paid_amount' => ['nullable', 'numeric', 'min:0'],
-            'status' => ['nullable', 'in:pending,approved,rejected'],
-            'can_attend' => ['nullable', 'boolean'],
-            'note' => ['nullable', 'string'],
-        ]);
+        $enrollment = $this->enrollmentService->update(
+            $enrollment,
+            $request->validated(),
+            $request->user()->id
+        );
 
-        if (isset($data['status']) && $data['status'] === 'approved') {
-            $data['can_attend'] = true;
-            $data['approved_by'] = $request->user()->id;
-            $data['approved_at'] = now();
-        }
-
-        $enrollment->update($data);
-
-        return response()->json($enrollment->fresh()->load('student', 'course'));
+        return EnrollmentResource::make($enrollment);
     }
 }

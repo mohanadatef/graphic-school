@@ -3,30 +3,34 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\Testimonial\UpdateTestimonialRequest;
+use App\Http\Resources\TestimonialResource;
 use App\Models\Testimonial;
-use Illuminate\Http\Request;
+use App\Services\TestimonialService;
 
 class TestimonialController extends Controller
 {
-    public function index()
+    public function __construct(private TestimonialService $testimonialService)
     {
-        return response()->json(Testimonial::latest()->paginate(30));
     }
 
-    public function update(Request $request, Testimonial $testimonial)
+    public function index()
     {
-        $data = $request->validate([
-            'is_approved' => ['required', 'boolean'],
-        ]);
+        return TestimonialResource::collection(
+            $this->testimonialService->paginate()
+        );
+    }
 
-        $testimonial->update($data);
+    public function update(UpdateTestimonialRequest $request, Testimonial $testimonial)
+    {
+        $testimonial = $this->testimonialService->update($testimonial, $request->validated());
 
-        return response()->json($testimonial);
+        return TestimonialResource::make($testimonial);
     }
 
     public function destroy(Testimonial $testimonial)
     {
-        $testimonial->delete();
+        $this->testimonialService->delete($testimonial);
 
         return response()->json(['message' => 'Deleted']);
     }

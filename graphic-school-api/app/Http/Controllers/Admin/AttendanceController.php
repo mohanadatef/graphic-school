@@ -3,30 +3,23 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Attendance;
-use Illuminate\Http\Request;
+use App\Http\Requests\Admin\Attendance\ListAttendanceRequest;
+use App\Http\Resources\AttendanceResource;
+use App\Services\AttendanceService;
 
 class AttendanceController extends Controller
 {
-    public function index(Request $request)
+    public function __construct(private AttendanceService $attendanceService)
     {
-        $query = Attendance::with([
-            'session.course:id,title',
-            'student:id,name,email',
-        ]);
+    }
 
-        if ($request->filled('course_id')) {
-            $query->whereHas('session', function ($q) use ($request) {
-                $q->where('course_id', $request->query('course_id'));
-            });
-        }
-
-        if ($request->filled('session_id')) {
-            $query->where('session_id', $request->query('session_id'));
-        }
-
-        return response()->json(
-            $query->orderByDesc('created_at')->paginate(50)
+    public function index(ListAttendanceRequest $request)
+    {
+        $attendances = $this->attendanceService->paginate(
+            $request->validated(),
+            $request->integer('per_page', 50)
         );
+
+        return AttendanceResource::collection($attendances);
     }
 }

@@ -1,0 +1,23 @@
+<?php
+
+namespace App\Http\Requests\Instructor;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class SessionAttendanceRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function rules(): array
+    {
+        return [];
+    }
+}
+
+
