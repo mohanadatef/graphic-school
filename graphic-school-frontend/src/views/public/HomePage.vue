@@ -296,8 +296,9 @@
 <script setup>
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { RouterLink } from 'vue-router';
-import api from '../../api';
+import { useApi } from '../../composables/useApi';
 
+const { get, loading: apiLoading } = useApi();
 const loading = reactive({ home: true });
 const homeData = reactive({
   sliders: [],
@@ -409,22 +410,33 @@ function stopSlider() {
 async function fetchHomepageData() {
   loading.home = true;
   try {
-    const { data } = await api.get('/home');
-    homeData.sliders = data.sliders ?? [];
-    homeData.courses = data.courses ?? [];
-    homeData.testimonials = data.testimonials ?? [];
-    homeData.stats = data.stats ?? null;
-    homeData.highlightCards = data.highlight_cards ?? [];
-    homeData.learningPillars = data.learning_pillars ?? [];
-    homeData.communityFeatures = data.community_features ?? [];
-    homeData.upcomingSessions = (data.upcoming_sessions ?? []).map((session) => ({
-      ...session,
-      dateLabel: session.date_label,
-      timeLabel: session.time_label,
-      courseTitle: session.course_title,
-    }));
+    const data = await get('/home');
+    if (data) {
+      homeData.sliders = data.sliders ?? [];
+      homeData.courses = data.courses ?? [];
+      homeData.testimonials = data.testimonials ?? [];
+      homeData.stats = data.stats ?? null;
+      homeData.highlightCards = data.highlight_cards ?? [];
+      homeData.learningPillars = data.learning_pillars ?? [];
+      homeData.communityFeatures = data.community_features ?? [];
+      homeData.upcomingSessions = (data.upcoming_sessions ?? []).map((session) => ({
+        ...session,
+        dateLabel: session.date_label,
+        timeLabel: session.time_label,
+        courseTitle: session.course_title,
+      }));
+    }
   } catch (error) {
     console.error('Home data error', error);
+    // Set empty defaults on error
+    homeData.sliders = [];
+    homeData.courses = [];
+    homeData.testimonials = [];
+    homeData.stats = null;
+    homeData.highlightCards = [];
+    homeData.learningPillars = [];
+    homeData.communityFeatures = [];
+    homeData.upcomingSessions = [];
   } finally {
     loading.home = false;
     startSlider();

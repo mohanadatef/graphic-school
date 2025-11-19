@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://graphic-school-api.test/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://graphic-school.test/api',
 });
 
 api.interceptors.request.use((config) => {
@@ -9,6 +9,11 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  
+  // Add locale header
+  const locale = localStorage.getItem('locale') || 'ar';
+  config.headers['Accept-Language'] = locale;
+  
   return config;
 });
 

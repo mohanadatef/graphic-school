@@ -1,0 +1,157 @@
+import { ref, onMounted } from 'vue';
+import { useApi } from './useApi';
+import { useFilters } from './useFilters';
+import { usePagination } from './usePagination';
+
+/**
+ * Unified composable for list pages (CRUD operations)
+ * Combines API, filters, and pagination
+ */
+export function useListPage(config = {}) {
+  const {
+    endpoint, // API endpoint (e.g., '/admin/users')
+    initialFilters = {},
+    perPage = 10,
+    autoLoad = true, // Auto load on mount
+    debounceMs = 500,
+    autoApplyFilters = false, // Auto apply filters on change
+  } = config;
+
+  const items = ref([]);
+  const { loading, error, get, post, put, delete: del, clearError } = useApi();
+  const { filters, hasActiveFilters, resetFilters, clearFilter, debounceSearch, buildParams } = useFilters(
+    initialFilters,
+    {
+      debounceMs,
+      autoApply: autoApplyFilters,
+    }
+  );
+  const { pagination, updatePagination, changePage, changePerPage, resetPage } = usePagination(perPage);
+
+  /**
+   * Load items from API
+   */
+  async function loadItems(additionalParams = {}) {
+    try {
+      const params = buildParams({
+        page: pagination.current_page,
+        per_page: pagination.per_page,
+        ...additionalParams,
+      });
+
+      const data = await get(endpoint, { params });
+
+      items.value = data.data || [];
+      updatePagination(data.meta);
+
+      return data;
+    } catch (err) {
+      console.error('Error loading items:', err);
+      items.value = [];
+      throw err;
+    }
+  }
+
+  /**
+   * Load items with debounced search
+   */
+  function loadItemsDebounced() {
+    resetPage();
+    debounceSearch(() => {
+      loadItems();
+    });
+  }
+
+  /**
+   * Apply filters manually (for non-search fields)
+   */
+  function applyFilters() {
+    resetPage();
+    loadItems();
+  }
+
+  /**
+   * Create new item
+   */
+  async function createItem(data) {
+    try {
+      await post(endpoint, data);
+      await loadItems();
+      return true;
+    } catch (err) {
+      console.error('Error creating item:', err);
+      throw err;
+    }
+  }
+
+  /**
+   * Update item
+   */
+  async function updateItem(id, data) {
+    try {
+      await put(`${endpoint}/${id}`, data);
+      await loadItems();
+      return true;
+    } catch (err) {
+      console.error('Error updating item:', err);
+      throw err;
+    }
+  }
+
+  /**
+   * Delete item
+   */
+  async function deleteItem(id) {
+    try {
+      await del(`${endpoint}/${id}`);
+      await loadItems();
+      return true;
+    } catch (err) {
+      console.error('Error deleting item:', err);
+      throw err;
+    }
+  }
+
+  /**
+   * Refresh current page
+   */
+  async function refresh() {
+    await loadItems();
+  }
+
+  if (autoLoad) {
+    onMounted(() => {
+      loadItems();
+    });
+  }
+
+  return {
+    // Data
+    items,
+    loading,
+    error,
+
+    // Filters
+    filters,
+    hasActiveFilters,
+    resetFilters,
+    clearFilter,
+    applyFilters,
+
+    // Pagination
+    pagination,
+    changePage,
+    changePerPage,
+    resetPage,
+
+    // Actions
+    loadItems,
+    loadItemsDebounced,
+    createItem,
+    updateItem,
+    deleteItem,
+    refresh,
+    clearError,
+  };
+}
+

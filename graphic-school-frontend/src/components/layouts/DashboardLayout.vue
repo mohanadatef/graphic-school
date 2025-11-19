@@ -4,6 +4,7 @@
       <div class="px-6 py-5 border-b border-slate-200">
         <p class="text-xs uppercase tracking-widest text-slate-400">Graphic School</p>
         <p class="text-base font-semibold text-slate-800">{{ $t('dashboard.title') }}</p>
+        <p class="text-base font-semibold text-slate-800">{{ $t('dashboard.title') }}</p>
       </div>
       <nav class="flex-1 overflow-y-auto px-4 py-6 space-y-6 text-sm" aria-label="Main navigation">
         <div v-if="authStore.isAdmin">

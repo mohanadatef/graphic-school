@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             CourseSeeder::class,
             SessionSeeder::class,
             SettingsSeeder::class,
+            TranslationSeeder::class,
         ]);
     }
 }
