@@ -1,5 +1,5 @@
 import { reactive, computed } from 'vue';
-import api from '../api';
+import { useApi } from './useApi';
 
 const savedUser = localStorage.getItem('gs_user');
 const savedToken = localStorage.getItem('gs_token');
@@ -12,15 +12,21 @@ const state = reactive({
 });
 
 export function useAuth() {
+  const { post, error: apiError } = useApi();
+
   async function login(credentials) {
     state.loading = true;
     state.error = null;
     try {
-      const { data } = await api.post('/login', credentials);
-      setSession(data.user, data.token);
-      return data.user;
+      const data = await post('/login', credentials);
+      if (data && data.user && data.token) {
+        setSession(data.user, data.token);
+        return data.user;
+      } else {
+        throw new Error('Invalid response from server');
+      }
     } catch (error) {
-      state.error = error.response?.data?.message || 'حدث خطأ أثناء تسجيل الدخول';
+      state.error = apiError.value || error.response?.data?.message || 'حدث خطأ أثناء تسجيل الدخول';
       throw error;
     } finally {
       state.loading = false;
@@ -31,11 +37,15 @@ export function useAuth() {
     state.loading = true;
     state.error = null;
     try {
-      const { data } = await api.post('/register', payload);
-      setSession(data.user, data.token);
-      return data.user;
+      const data = await post('/register', payload);
+      if (data && data.user && data.token) {
+        setSession(data.user, data.token);
+        return data.user;
+      } else {
+        throw new Error('Invalid response from server');
+      }
     } catch (error) {
-      state.error = error.response?.data?.message || 'حدث خطأ أثناء التسجيل';
+      state.error = apiError.value || error.response?.data?.message || 'حدث خطأ أثناء التسجيل';
       throw error;
     } finally {
       state.loading = false;
@@ -51,14 +61,15 @@ export function useAuth() {
 
   async function logout() {
     try {
-      await api.post('/logout');
+      await post('/logout');
     } catch (error) {
-      // ignore
+      // ignore logout errors
+    } finally {
+      state.user = null;
+      state.token = null;
+      localStorage.removeItem('gs_user');
+      localStorage.removeItem('gs_token');
     }
-    state.user = null;
-    state.token = null;
-    localStorage.removeItem('gs_user');
-    localStorage.removeItem('gs_token');
   }
 
   const roleName = computed(() => state.user?.role_name || state.user?.role?.name);

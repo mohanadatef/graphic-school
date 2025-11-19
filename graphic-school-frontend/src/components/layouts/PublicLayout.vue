@@ -10,20 +10,21 @@
           </div>
         </div>
         <nav class="flex flex-wrap items-center gap-4 text-sm font-medium">
-          <RouterLink class="hover:text-primary" to="/">الرئيسية</RouterLink>
-          <RouterLink class="hover:text-primary" to="/courses">الكورسات</RouterLink>
-          <RouterLink class="hover:text-primary" to="/instructors">المدربين</RouterLink>
-          <RouterLink class="hover:text-primary" to="/about">عن الأكاديمية</RouterLink>
-          <RouterLink class="hover:text-primary" to="/contact">تواصل</RouterLink>
+          <RouterLink class="hover:text-primary" to="/">{{ $t('navigation.home') }}</RouterLink>
+          <RouterLink class="hover:text-primary" to="/courses">{{ $t('navigation.courses') }}</RouterLink>
+          <RouterLink class="hover:text-primary" to="/instructors">{{ $t('navigation.instructors') }}</RouterLink>
+          <RouterLink class="hover:text-primary" to="/about">{{ $t('navigation.about') }}</RouterLink>
+          <RouterLink class="hover:text-primary" to="/contact">{{ $t('navigation.contact') }}</RouterLink>
+          <LanguageSwitcher />
           <RouterLink v-if="!auth.state.token" class="px-3 py-2 bg-primary text-white rounded-md" to="/login">
-            تسجيل الدخول
+            {{ $t('auth.login') }}
           </RouterLink>
           <button
             v-else
             class="px-3 py-2 bg-slate-100 text-slate-700 rounded-md"
             @click="goToDashboard"
           >
-            لوحة التحكم
+            {{ $t('navigation.dashboard') }}
           </button>
         </nav>
       </div>
@@ -64,6 +65,7 @@ import { onMounted, reactive } from 'vue';
 import { RouterLink, RouterView, useRouter } from 'vue-router';
 import api from '../../api';
 import { useAuth } from '../../composables/useAuth';
+import LanguageSwitcher from '../common/LanguageSwitcher.vue';
 
 const settings = reactive({});
 const auth = useAuth();

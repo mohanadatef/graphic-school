@@ -8,7 +8,9 @@
       <button class="px-4 py-2 bg-primary text-white rounded-md" @click="openModal()">دور جديد</button>
     </div>
 
-    <div class="grid md:grid-cols-2 gap-4">
+    <div v-if="loading" class="text-center py-12 text-slate-400">جاري التحميل...</div>
+    <div v-else-if="error" class="text-center py-12 text-red-500">{{ error }}</div>
+    <div v-else class="grid md:grid-cols-2 gap-4">
       <div
         v-for="role in roles"
         :key="role.id"
@@ -63,8 +65,12 @@
           </div>
         </div>
         <div class="flex justify-end gap-3">
-          <button type="button" class="px-4 py-2 border rounded-md" @click="closeModal">إلغاء</button>
-          <button type="submit" class="px-4 py-2 bg-primary text-white rounded-md">حفظ</button>
+          <button type="button" class="px-4 py-2 border rounded-md" @click="closeModal" :disabled="loading">
+            إلغاء
+          </button>
+          <button type="submit" class="px-4 py-2 bg-primary text-white rounded-md" :disabled="loading || !form.name.trim()">
+            {{ loading ? 'جاري الحفظ...' : 'حفظ' }}
+          </button>
         </div>
       </form>
     </dialog>
@@ -73,7 +79,7 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue';
-import api from '../../../api';
+import { useApi } from '../../../composables/useApi';
 
 const roles = ref([]);
 const dialogRef = ref(null);
@@ -108,9 +114,16 @@ const permissions = [
   'notes.manage',
 ];
 
+const { get, post, put, delete: del, loading, error } = useApi();
+
 async function loadRoles() {
-  const { data } = await api.get('/admin/roles');
-  roles.value = data;
+  try {
+    const data = await get('/admin/roles');
+    roles.value = data || [];
+  } catch (err) {
+    console.error('Error loading roles:', err);
+    roles.value = [];
+  }
 }
 
 const currentRoleIsSystem = computed(() => {
@@ -129,29 +142,42 @@ function openModal(role) {
 
 function closeModal() {
   dialogRef.value.close();
+  form.id = null;
+  form.name = '';
+  form.description = '';
+  form.permissions = [];
+  editing.value = false;
 }
 
 async function submit() {
-  const payload = {
-    name: form.name,
-    description: form.description,
-    permissions: form.permissions,
-  };
-  if (editing.value) {
-    await api.put(`/admin/roles/${form.id}`, payload);
-  } else {
-    await api.post('/admin/roles', payload);
+  try {
+    const payload = {
+      name: form.name,
+      description: form.description,
+      permissions: form.permissions,
+    };
+    if (editing.value) {
+      await put(`/admin/roles/${form.id}`, payload);
+    } else {
+      await post('/admin/roles', payload);
+    }
+    closeModal();
+    await loadRoles();
+  } catch (err) {
+    alert(error.value || 'حدث خطأ أثناء الحفظ');
   }
-  closeModal();
-  loadRoles();
 }
 
 async function remove(role) {
   if (role.is_system || !confirm('حذف هذا الدور؟')) {
     return;
   }
-  await api.delete(`/admin/roles/${role.id}`);
-  loadRoles();
+  try {
+    await del(`/admin/roles/${role.id}`);
+    await loadRoles();
+  } catch (err) {
+    alert(error.value || 'حدث خطأ أثناء الحذف');
+  }
 }
 
 onMounted(loadRoles);

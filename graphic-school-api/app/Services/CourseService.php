@@ -9,6 +9,7 @@ use App\Repositories\Contracts\SessionRepositoryInterface;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -27,8 +28,11 @@ class CourseService
 
     public function create(array $data, ?UploadedFile $image = null): Course
     {
+        Log::info('Creating new course', ['title' => $data['title'] ?? 'N/A']);
+
         if ($image) {
             $data['image_path'] = $image->store('courses', 'public');
+            Log::debug('Course image uploaded', ['path' => $data['image_path']]);
         }
 
         unset($data['image']);
@@ -38,6 +42,12 @@ class CourseService
 
         $course = $this->courseRepository->create($data);
 
+        Log::info('Course created', [
+            'course_id' => $course->id,
+            'code' => $course->code,
+            'title' => $course->title,
+        ]);
+
         $this->courseRepository->syncInstructors(
             $course,
             $data['instructors'] ?? [],
@@ -45,6 +55,10 @@ class CourseService
         );
 
         if ($course->auto_generate_sessions && $course->start_date && $course->session_count) {
+            Log::debug('Auto-generating sessions for course', [
+                'course_id' => $course->id,
+                'session_count' => $course->session_count,
+            ]);
             $this->generateSessionsForCourse(
                 $course,
                 $course->session_count,
@@ -58,12 +72,19 @@ class CourseService
 
     public function update(Course $course, array $data, ?UploadedFile $image = null, bool $regenerateSessions = false): Course
     {
+        Log::info('Updating course', [
+            'course_id' => $course->id,
+            'title' => $course->title,
+        ]);
+
         if ($image) {
             if ($course->image_path) {
                 Storage::disk('public')->delete($course->image_path);
+                Log::debug('Deleted old course image', ['path' => $course->image_path]);
             }
 
             $data['image_path'] = $image->store('courses', 'public');
+            Log::debug('New course image uploaded', ['path' => $data['image_path']]);
         }
 
         if (isset($data['title'])) {
@@ -81,6 +102,7 @@ class CourseService
         );
 
         if ($regenerateSessions) {
+            Log::info('Regenerating sessions for course', ['course_id' => $course->id]);
             $this->sessionRepository->deleteByCourse($course);
             $this->generateSessionsForCourse(
                 $course,
@@ -90,12 +112,22 @@ class CourseService
             );
         }
 
+        Log::info('Course updated successfully', ['course_id' => $course->id]);
+
         return $this->courseRepository->loadRelations($course, ['instructors', 'sessions']);
     }
 
     public function delete(Course $course): void
     {
+        Log::warning('Deleting course', [
+            'course_id' => $course->id,
+            'title' => $course->title,
+            'code' => $course->code,
+        ]);
+
         $this->courseRepository->delete($course);
+
+        Log::info('Course deleted successfully', ['course_id' => $course->id]);
     }
 
     public function assignInstructors(Course $course, array $data): Course
@@ -132,8 +164,20 @@ class CourseService
     protected function generateSessionsForCourse(Course $course, int $sessions, array $daysOfWeek, ?string $startDate): void
     {
         if (empty($daysOfWeek) || ! $startDate) {
+            Log::warning('Cannot generate sessions: missing days or start date', [
+                'course_id' => $course->id,
+                'days_of_week' => $daysOfWeek,
+                'start_date' => $startDate,
+            ]);
             return;
         }
+
+        Log::info('Generating sessions for course', [
+            'course_id' => $course->id,
+            'session_count' => $sessions,
+            'days_of_week' => $daysOfWeek,
+            'start_date' => $startDate,
+        ]);
 
         $dayMap = [
             'mon' => Carbon::MONDAY,
@@ -184,6 +228,11 @@ class CourseService
 
             $current->addWeek();
         }
+
+        Log::info('Sessions generated successfully', [
+            'course_id' => $course->id,
+            'sessions_created' => $created,
+        ]);
     }
 }
 

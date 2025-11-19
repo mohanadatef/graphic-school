@@ -10,20 +10,29 @@
 
     <div class="bg-white border border-slate-100 rounded-2xl shadow p-4 space-y-3">
       <div class="flex flex-wrap gap-3">
-        <input v-model="filtersState.search" class="input w-48" placeholder="بحث بالعنوان" />
-        <select v-model="filtersState.status" class="input w-40">
+        <input
+          v-model="filters.search"
+          class="input w-48"
+          placeholder="بحث بالعنوان"
+          @input="handleSearch"
+        />
+        <select v-model="filters.status" class="input w-40" @change="handleFilterChange">
           <option value="">كل الحالات</option>
           <option value="draft">مسودة</option>
           <option value="upcoming">قادمة</option>
           <option value="running">قيد التنفيذ</option>
           <option value="completed">منتهية</option>
         </select>
-        <select v-model.number="filtersState.per_page" class="input w-32" @change="changePerPage(filtersState.per_page)">
+        <select
+          v-model.number="pagination.per_page"
+          class="input w-32"
+          @change="changePerPage(pagination.per_page)"
+        >
           <option :value="10">10</option>
           <option :value="20">20</option>
           <option :value="50">50</option>
         </select>
-        <button class="px-4 py-2 border rounded-md" @click="loadCourses">تحديث</button>
+        <button class="px-4 py-2 border rounded-md" @click="loadItems">تحديث</button>
       </div>
     </div>
 
@@ -65,7 +74,9 @@
           </tr>
         </tbody>
       </table>
-      <p v-if="!courses.length" class="text-center py-6 text-sm text-slate-400">لا توجد بيانات.</p>
+      <p v-if="loading" class="text-center py-6 text-sm text-slate-400">جاري التحميل...</p>
+      <p v-else-if="!courses.length" class="text-center py-6 text-sm text-slate-400">لا توجد بيانات.</p>
+      <p v-if="error" class="text-center py-6 text-sm text-red-500">{{ error }}</p>
     </div>
 
     <PaginationControls
@@ -140,27 +151,39 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref, watch } from 'vue';
-import api from '../../../api';
+import { onMounted, reactive, ref } from 'vue';
+import { useListPage } from '../../../composables/useListPage';
+import { useApi } from '../../../composables/useApi';
 import PaginationControls from '../../../components/common/PaginationControls.vue';
 
-const courses = ref([]);
 const categories = ref([]);
 const instructors = ref([]);
 const dialogRef = ref(null);
 
-const pagination = reactive({
-  current_page: 1,
-  last_page: 1,
-  per_page: 10,
-  total: 0,
-});
-
-const filtersState = reactive({
-  page: 1,
-  per_page: 10,
-  status: '',
-  search: '',
+// Use unified list page composable
+const {
+  items: courses,
+  loading,
+  error,
+  filters,
+  pagination,
+  changePage,
+  changePerPage,
+  loadItems,
+  loadItemsDebounced,
+  applyFilters,
+  createItem,
+  updateItem,
+  deleteItem,
+} = useListPage({
+  endpoint: '/admin/courses',
+  initialFilters: {
+    status: '',
+    search: '',
+  },
+  perPage: 10,
+  debounceMs: 500,
+  autoApplyFilters: false, // Manual filter application
 });
 
 const form = reactive({
@@ -187,32 +210,19 @@ const days = {
   sun: 'الأحد',
 };
 
+const { get } = useApi();
+
 async function loadOptions() {
-  const [{ data: categoryData }, { data: instructorData }] = await Promise.all([
-    api.get('/admin/categories'),
-    api.get('/instructors'),
-  ]);
-  categories.value = categoryData;
-  instructors.value = instructorData;
-}
-
-async function loadCourses() {
-  const { data } = await api.get('/admin/courses', {
-    params: {
-      page: filtersState.page,
-      per_page: filtersState.per_page,
-      status: filtersState.status || undefined,
-      search: filtersState.search || undefined,
-    },
-  });
-
-  courses.value = data.data;
-  Object.assign(pagination, {
-    current_page: data.meta.current_page,
-    last_page: data.meta.last_page,
-    per_page: data.meta.per_page,
-    total: data.meta.total,
-  });
+  try {
+    const [{ data: categoryData }, { data: instructorData }] = await Promise.all([
+      get('/admin/categories'),
+      get('/instructors'),
+    ]);
+    categories.value = categoryData;
+    instructors.value = instructorData;
+  } catch (err) {
+    console.error('Error loading options:', err);
+  }
 }
 
 function openModal(course) {
@@ -232,30 +242,47 @@ function openModal(course) {
 
 function closeModal() {
   dialogRef.value.close();
+  form.id = null;
+  form.title = '';
+  form.category_id = null;
+  form.description = '';
+  form.price = 0;
+  form.start_date = '';
+  form.default_start_time = '';
+  form.default_end_time = '';
+  form.session_count = 8;
+  form.days_of_week = [];
+  form.instructors = [];
 }
 
 async function submit() {
-  const payload = {
-    ...form,
-    start_date: form.start_date || null,
-    default_start_time: form.default_start_time || null,
-    default_end_time: form.default_end_time || null,
-    days_of_week: [...form.days_of_week],
-    instructors: [...form.instructors],
-  };
-  if (form.id) {
-    await api.put(`/admin/courses/${form.id}`, payload);
-  } else {
-    await api.post('/admin/courses', payload);
+  try {
+    const payload = {
+      ...form,
+      start_date: form.start_date || null,
+      default_start_time: form.default_start_time || null,
+      default_end_time: form.default_end_time || null,
+      days_of_week: [...form.days_of_week],
+      instructors: [...form.instructors],
+    };
+    if (form.id) {
+      await updateItem(form.id, payload);
+    } else {
+      await createItem(payload);
+    }
+    closeModal();
+  } catch (err) {
+    alert(error.value || 'حدث خطأ أثناء الحفظ');
   }
-  closeModal();
-  loadCourses();
 }
 
 async function remove(id) {
   if (!confirm('تأكيد الحذف؟')) return;
-  await api.delete(`/admin/courses/${id}`);
-  loadCourses();
+  try {
+    await deleteItem(id);
+  } catch (err) {
+    alert(error.value || 'حدث خطأ أثناء الحذف');
+  }
 }
 
 function formatDate(date) {
@@ -268,28 +295,18 @@ function formatTime(time) {
   return time.slice(0, 5);
 }
 
-function changePage(page) {
-  filtersState.page = page;
-  loadCourses();
+// Handle search with debounce
+function handleSearch() {
+  loadItemsDebounced();
 }
 
-function changePerPage(perPage) {
-  filtersState.per_page = perPage;
-  filtersState.page = 1;
-  loadCourses();
+// Handle filter change (status) - manual apply
+function handleFilterChange() {
+  applyFilters();
 }
-
-watch(
-  () => [filtersState.status, filtersState.search],
-  () => {
-    filtersState.page = 1;
-    loadCourses();
-  },
-);
 
 onMounted(async () => {
   await loadOptions();
-  loadCourses();
 });
 </script>
 

@@ -10,19 +10,28 @@
 
     <div class="bg-white rounded-2xl shadow border border-slate-100 p-4 space-y-3">
       <div class="flex flex-wrap gap-3">
-        <input v-model="filters.search" class="input w-48" placeholder="بحث بالاسم أو البريد" />
-        <select v-model="filters.role_id" class="input w-48">
+        <input
+          v-model="filters.search"
+          class="input w-48"
+          placeholder="بحث بالاسم أو البريد"
+          @input="handleSearch"
+        />
+        <select v-model="filters.role_id" class="input w-48" @change="handleFilterChange">
           <option value="">كل الأدوار</option>
           <option v-for="role in roles" :key="role.id" :value="role.id">
             {{ role.name }}
           </option>
         </select>
-        <select v-model.number="filters.per_page" class="input w-32" @change="changePerPage(filters.per_page)">
+        <select
+          v-model.number="pagination.per_page"
+          class="input w-32"
+          @change="changePerPage(pagination.per_page)"
+        >
           <option :value="10">10</option>
           <option :value="20">20</option>
           <option :value="50">50</option>
         </select>
-        <button class="px-4 py-2 border rounded-md" @click="loadUsers">تحديث</button>
+        <button class="px-4 py-2 border rounded-md" @click="loadItems">تحديث</button>
       </div>
     </div>
 
@@ -57,7 +66,9 @@
           </tr>
         </tbody>
       </table>
-      <p v-if="!users.length" class="text-center py-6 text-sm text-slate-400">لا توجد بيانات.</p>
+      <p v-if="loading" class="text-center py-6 text-sm text-slate-400">جاري التحميل...</p>
+      <p v-else-if="!users.length" class="text-center py-6 text-sm text-slate-400">لا توجد بيانات.</p>
+      <p v-if="error" class="text-center py-6 text-sm text-red-500">{{ error }}</p>
     </div>
 
     <PaginationControls
@@ -111,25 +122,39 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref, watch } from 'vue';
-import api from '../../../api';
+import { reactive, ref, onMounted } from 'vue';
+import { useListPage } from '../../../composables/useListPage';
+import { useApi } from '../../../composables/useApi';
 import PaginationControls from '../../../components/common/PaginationControls.vue';
 
-const users = ref([]);
-const roles = ref([]);
 const dialogRef = ref(null);
 const editing = ref(false);
-const pagination = reactive({
-  current_page: 1,
-  last_page: 1,
-  per_page: 10,
-  total: 0,
-});
-const filters = reactive({
-  search: '',
-  role_id: '',
-  page: 1,
-  per_page: 10,
+const roles = ref([]);
+
+// Use unified list page composable
+const {
+  items: users,
+  loading,
+  error,
+  filters,
+  pagination,
+  changePage,
+  changePerPage,
+  loadItems,
+  loadItemsDebounced,
+  applyFilters,
+  createItem,
+  updateItem,
+  deleteItem,
+} = useListPage({
+  endpoint: '/admin/users',
+  initialFilters: {
+    search: '',
+    role_id: '',
+  },
+  perPage: 10,
+  debounceMs: 500,
+  autoApplyFilters: false, // Manual filter application
 });
 
 const form = reactive({
@@ -141,29 +166,17 @@ const form = reactive({
   is_active: true,
 });
 
-async function loadUsers() {
-  const { data } = await api.get('/admin/users', {
-    params: {
-      page: filters.page,
-      per_page: filters.per_page,
-      search: filters.search || undefined,
-      role_id: filters.role_id || undefined,
-    },
-  });
-  users.value = data.data;
-  Object.assign(pagination, {
-    current_page: data.meta.current_page,
-    last_page: data.meta.last_page,
-    per_page: data.meta.per_page,
-    total: data.meta.total,
-  });
-}
+const { get, post, put, delete: del } = useApi();
 
 async function loadRoles() {
-  const { data } = await api.get('/admin/roles');
-  roles.value = data.map((role) => ({ id: role.id, name: role.name }));
-  if (!form.role_id && roles.value.length) {
-    form.role_id = roles.value[0].id;
+  try {
+    const data = await get('/admin/roles');
+    roles.value = data.map((role) => ({ id: role.id, name: role.name }));
+    if (!form.role_id && roles.value.length) {
+      form.role_id = roles.value[0].id;
+    }
+  } catch (err) {
+    console.error('Error loading roles:', err);
   }
 }
 
@@ -180,57 +193,60 @@ function openModal(user) {
 
 function closeModal() {
   dialogRef.value.close();
+  form.id = null;
+  form.name = '';
+  form.email = '';
+  form.password = '';
+  form.role_id = roles.value[0]?.id || null;
+  form.is_active = true;
+  editing.value = false;
 }
 
 async function submit() {
-  if (editing.value) {
-    await api.put(`/admin/users/${form.id}`, {
-      name: form.name,
-      email: form.email,
-      role_id: form.role_id,
-      is_active: form.is_active,
-    });
-  } else {
-    await api.post('/admin/users', {
-      name: form.name,
-      email: form.email,
-      password: form.password,
-      role_id: form.role_id || roles.value[0]?.id,
-      is_active: form.is_active,
-    });
+  try {
+    if (editing.value) {
+      await updateItem(form.id, {
+        name: form.name,
+        email: form.email,
+        role_id: form.role_id,
+        is_active: form.is_active,
+      });
+    } else {
+      await createItem({
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        role_id: form.role_id || roles.value[0]?.id,
+        is_active: form.is_active,
+      });
+    }
+    closeModal();
+  } catch (err) {
+    alert(error.value || 'حدث خطأ أثناء الحفظ');
   }
-  closeModal();
-  loadUsers();
 }
 
 async function remove(id) {
   if (!confirm('هل أنت متأكد من الحذف؟')) return;
-  await api.delete(`/admin/users/${id}`);
-  loadUsers();
+  try {
+    await deleteItem(id);
+  } catch (err) {
+    alert(error.value || 'حدث خطأ أثناء الحذف');
+  }
 }
 
-function changePage(page) {
-  filters.page = page;
-  loadUsers();
+// Handle search with debounce
+function handleSearch() {
+  loadItemsDebounced();
 }
 
-function changePerPage(perPage) {
-  filters.per_page = perPage;
-  filters.page = 1;
-  loadUsers();
+// Handle filter change (role_id) - manual apply
+function handleFilterChange() {
+  applyFilters();
 }
-
-watch(
-  () => [filters.search, filters.role_id],
-  () => {
-    filters.page = 1;
-    loadUsers();
-  },
-);
 
 onMounted(async () => {
   await loadRoles();
-  await loadUsers();
 });
 </script>
 
