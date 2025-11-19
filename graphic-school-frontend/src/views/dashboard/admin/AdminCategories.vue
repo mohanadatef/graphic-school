@@ -6,14 +6,35 @@
         <p class="text-sm text-slate-500">تنظيم الكورسات حسب التخصص.</p>
       </div>
       <div class="flex gap-3">
-        <input v-model="form.name" placeholder="اسم التصنيف" class="input" />
-        <button class="px-4 py-2 bg-primary text-white rounded-md" @click="save">
-          {{ form.id ? 'تحديث' : 'إضافة' }}
+        <input
+          v-model="form.name"
+          placeholder="اسم التصنيف"
+          class="input"
+          @keyup.enter="save"
+          :disabled="loading"
+        />
+        <button
+          class="px-4 py-2 bg-primary text-white rounded-md"
+          @click="save"
+          :disabled="loading || !form.name.trim()"
+        >
+          {{ loading ? 'جاري الحفظ...' : form.id ? 'تحديث' : 'إضافة' }}
+        </button>
+        <button
+          v-if="form.id"
+          class="px-4 py-2 border rounded-md"
+          @click="resetForm"
+          :disabled="loading"
+        >
+          إلغاء
         </button>
       </div>
     </div>
 
-    <div class="grid md:grid-cols-3 gap-4">
+    <div v-if="loading" class="text-center py-12 text-slate-400">جاري التحميل...</div>
+    <div v-else-if="error" class="text-center py-12 text-red-500">{{ error }}</div>
+    <div v-else-if="!categories.length" class="text-center py-12 text-slate-400">لا توجد تصنيفات.</div>
+    <div v-else class="grid md:grid-cols-3 gap-4">
       <div
         v-for="category in categories"
         :key="category.id"
@@ -33,14 +54,21 @@
 
 <script setup>
 import { onMounted, reactive, ref } from 'vue';
-import api from '../../../api';
+import { useApi } from '../../../composables/useApi';
 
 const categories = ref([]);
 const form = reactive({ id: null, name: '' });
 
+const { get, post, put, delete: del, loading, error } = useApi();
+
 async function loadCategories() {
-  const { data } = await api.get('/admin/categories');
-  categories.value = data;
+  try {
+    const data = await get('/admin/categories');
+    categories.value = data || [];
+  } catch (err) {
+    console.error('Error loading categories:', err);
+    categories.value = [];
+  }
 }
 
 function edit(category) {
@@ -48,22 +76,38 @@ function edit(category) {
   form.name = category.name;
 }
 
-async function save() {
-  if (!form.name) return;
-  if (form.id) {
-    await api.put(`/admin/categories/${form.id}`, { name: form.name });
-  } else {
-    await api.post('/admin/categories', { name: form.name });
-  }
+function resetForm() {
   form.id = null;
   form.name = '';
-  loadCategories();
+}
+
+async function save() {
+  if (!form.name.trim()) {
+    alert('يرجى إدخال اسم التصنيف');
+    return;
+  }
+  
+  try {
+    if (form.id) {
+      await put(`/admin/categories/${form.id}`, { name: form.name });
+    } else {
+      await post('/admin/categories', { name: form.name });
+    }
+    resetForm();
+    await loadCategories();
+  } catch (err) {
+    alert(error.value || 'حدث خطأ أثناء الحفظ');
+  }
 }
 
 async function remove(id) {
   if (!confirm('تأكيد الحذف؟')) return;
-  await api.delete(`/admin/categories/${id}`);
-  loadCategories();
+  try {
+    await del(`/admin/categories/${id}`);
+    await loadCategories();
+  } catch (err) {
+    alert(error.value || 'حدث خطأ أثناء الحذف');
+  }
 }
 
 onMounted(loadCategories);

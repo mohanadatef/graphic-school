@@ -28,6 +28,7 @@ const dashboardChildren = [
   { path: 'admin/sliders', name: 'admin-sliders', component: () => import('../views/dashboard/admin/AdminSliders.vue'), meta: { role: 'admin' } },
   { path: 'admin/settings', name: 'admin-settings', component: () => import('../views/dashboard/admin/AdminSettings.vue'), meta: { role: 'admin' } },
   { path: 'admin/contacts', name: 'admin-contacts', component: () => import('../views/dashboard/admin/AdminContacts.vue'), meta: { role: 'admin' } },
+  { path: 'admin/translations', name: 'admin-translations', component: () => import('../views/dashboard/admin/AdminTranslations.vue'), meta: { role: 'admin' } },
 
   // Instructor
   { path: 'instructor/courses', name: 'instructor-courses', component: () => import('../views/dashboard/instructor/InstructorCourses.vue'), meta: { role: 'instructor' } },

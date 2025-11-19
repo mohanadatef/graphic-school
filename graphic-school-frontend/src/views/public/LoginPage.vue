@@ -1,31 +1,31 @@
 <template>
   <div class="max-w-md mx-auto px-4 py-12">
     <div class="bg-white rounded-2xl shadow p-6">
-      <h2 class="text-2xl font-bold text-slate-900 mb-4">تسجيل الدخول</h2>
+      <h2 class="text-2xl font-bold text-slate-900 mb-4">{{ $t('auth.login') }}</h2>
       <form class="space-y-4" @submit.prevent="submit">
         <div>
-          <label class="text-sm text-slate-500 block mb-1">البريد الإلكتروني</label>
+          <label class="text-sm text-slate-500 block mb-1">{{ $t('auth.email') }}</label>
           <input v-model="email" type="email" required class="input" />
         </div>
         <div>
-          <label class="text-sm text-slate-500 block mb-1">كلمة المرور</label>
+          <label class="text-sm text-slate-500 block mb-1">{{ $t('auth.password') }}</label>
           <input v-model="password" type="password" required class="input" />
         </div>
         <button
           class="w-full py-3 bg-primary text-white rounded-md font-semibold"
           :disabled="auth.state.loading"
         >
-          {{ auth.state.loading ? 'جاري الدخول...' : 'دخول' }}
+          {{ auth.state.loading ? $t('auth.loggingIn') : $t('auth.loginButton') }}
         </button>
         <p v-if="auth.state.error" class="text-center text-red-500 text-sm">
           {{ auth.state.error }}
         </p>
       </form>
       <p class="text-center text-sm text-slate-500 mt-4">
-        لا تمتلك حساب؟ <RouterLink to="/register" class="text-primary">سجل الآن</RouterLink>
+        {{ $t('auth.noAccount') }} <RouterLink to="/register" class="text-primary">{{ $t('auth.registerNow') }}</RouterLink>
       </p>
       <p class="text-center text-xs text-slate-400 mt-2">
-        <RouterLink to="/" class="text-primary underline">العودة للرئيسية</RouterLink>
+        <RouterLink to="/" class="text-primary underline">{{ $t('auth.backToHome') }}</RouterLink>
       </p>
     </div>
   </div>

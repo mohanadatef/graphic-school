@@ -1,39 +1,39 @@
 <template>
   <div class="max-w-md mx-auto px-4 py-12">
     <div class="bg-white rounded-2xl shadow p-6">
-      <h2 class="text-2xl font-bold text-slate-900 mb-4">حساب طالب جديد</h2>
+      <h2 class="text-2xl font-bold text-slate-900 mb-4">{{ $t('auth.register') }}</h2>
       <form class="space-y-4" @submit.prevent="submit">
         <div>
-          <label class="text-sm text-slate-500 block mb-1">الاسم الكامل</label>
+          <label class="text-sm text-slate-500 block mb-1">{{ $t('auth.name') }}</label>
           <input v-model="form.name" type="text" required class="input" />
         </div>
         <div>
-          <label class="text-sm text-slate-500 block mb-1">البريد الإلكتروني</label>
+          <label class="text-sm text-slate-500 block mb-1">{{ $t('auth.email') }}</label>
           <input v-model="form.email" type="email" required class="input" />
         </div>
         <div>
-          <label class="text-sm text-slate-500 block mb-1">رقم الهاتف</label>
+          <label class="text-sm text-slate-500 block mb-1">{{ $t('auth.phone') }}</label>
           <input v-model="form.phone" type="text" class="input" />
         </div>
         <div>
-          <label class="text-sm text-slate-500 block mb-1">كلمة المرور</label>
+          <label class="text-sm text-slate-500 block mb-1">{{ $t('auth.password') }}</label>
           <input v-model="form.password" type="password" required class="input" />
         </div>
         <button
           class="w-full py-3 bg-primary text-white rounded-md font-semibold"
           :disabled="auth.state.loading"
         >
-          {{ auth.state.loading ? 'جاري إنشاء الحساب...' : 'تسجيل' }}
+          {{ auth.state.loading ? $t('auth.registering') : $t('auth.registerButton') }}
         </button>
         <p v-if="auth.state.error" class="text-center text-red-500 text-sm">
           {{ auth.state.error }}
         </p>
       </form>
       <p class="text-center text-sm text-slate-500 mt-4">
-        لديك حساب بالفعل؟ <RouterLink to="/login" class="text-primary">تسجيل الدخول</RouterLink>
+        {{ $t('auth.haveAccount') }} <RouterLink to="/login" class="text-primary">{{ $t('auth.loginNow') }}</RouterLink>
       </p>
       <p class="text-center text-xs text-slate-400 mt-2">
-        <RouterLink to="/" class="text-primary underline">العودة للرئيسية</RouterLink>
+        <RouterLink to="/" class="text-primary underline">{{ $t('auth.backToHome') }}</RouterLink>
       </p>
     </div>
   </div>
@@ -56,9 +56,14 @@ const form = reactive({
 async function submit() {
   try {
     const user = await auth.register(form);
-    router.push(`/dashboard/${user.role_name || user.role?.name}`);
+    if (user && (user.role_name || user.role?.name)) {
+      router.push(`/dashboard/${user.role_name || user.role?.name}`);
+    } else {
+      router.push('/');
+    }
   } catch (error) {
-    // handled in auth
+    // Error is handled in auth composable and displayed via auth.state.error
+    console.error('Registration error:', error);
   }
 }
 </script>

@@ -12,9 +12,11 @@ use App\Http\Controllers\Admin\SessionController as AdminSessionController;
 use App\Http\Controllers\Admin\SettingController as AdminSettingController;
 use App\Http\Controllers\Admin\SliderController as AdminSliderController;
 use App\Http\Controllers\Admin\TestimonialController as AdminTestimonialController;
+use App\Http\Controllers\Admin\TranslationController as AdminTranslationController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\InstructorController;
+use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\PublicController;
 use App\Http\Controllers\StudentController;
 use Illuminate\Support\Facades\Route;
@@ -32,6 +34,12 @@ Route::post('/contact', [PublicController::class, 'contact']);
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+
+// Language routes
+Route::get('/locale', [LanguageController::class, 'getLocale']);
+Route::post('/locale/{locale}', [LanguageController::class, 'setLocale']);
+Route::get('/translations', [LanguageController::class, 'getTranslations']);
+Route::get('/translations/{group}', [LanguageController::class, 'getTranslations']);
 
 Route::middleware('auth:api')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -85,6 +93,11 @@ Route::middleware('auth:api')->group(function () {
 
         Route::apiResource('sliders', AdminSliderController::class);
         Route::apiResource('testimonials', AdminTestimonialController::class)->only(['index', 'update', 'destroy']);
+
+        Route::apiResource('translations', AdminTranslationController::class);
+        Route::get('/translations/groups', [AdminTranslationController::class, 'groups']);
+        Route::get('/translations/locales', [AdminTranslationController::class, 'locales']);
+        Route::post('/translations/clear-cache', [AdminTranslationController::class, 'clearCache']);
 
         Route::get('/reports/courses', [ReportController::class, 'courses']);
         Route::get('/reports/instructors', [ReportController::class, 'instructors']);

@@ -5,26 +5,30 @@
         <h2 class="text-2xl font-bold">الجلسات</h2>
         <p class="text-sm text-slate-500">تعديل مواعيد المحاضرات.</p>
       </div>
-      <button class="px-4 py-2 border rounded-md" @click="loadSessions">تحديث</button>
     </div>
 
     <div class="bg-white border border-slate-100 rounded-2xl shadow p-4 space-y-3">
       <div class="flex flex-wrap gap-3">
-        <select v-model="filters.course_id" class="input w-48">
+        <select v-model="filters.course_id" class="input w-48" @change="handleFilterChange">
           <option value="">كل الكورسات</option>
           <option v-for="course in courses" :key="course.id" :value="course.id">{{ course.title }}</option>
         </select>
-        <select v-model="filters.status" class="input w-40">
+        <select v-model="filters.status" class="input w-40" @change="handleFilterChange">
           <option value="">كل الحالات</option>
           <option value="scheduled">مجدولة</option>
           <option value="completed">منتهية</option>
           <option value="cancelled">ملغاة</option>
         </select>
-        <select v-model.number="filters.per_page" class="input w-32" @change="changePerPage(filters.per_page)">
+        <select
+          v-model.number="pagination.per_page"
+          class="input w-32"
+          @change="changePerPage(pagination.per_page)"
+        >
           <option :value="10">10</option>
           <option :value="20">20</option>
           <option :value="50">50</option>
         </select>
+        <button class="px-4 py-2 border rounded-md" @click="loadItems">تحديث</button>
       </div>
     </div>
 
@@ -51,6 +55,9 @@
           </tr>
         </tbody>
       </table>
+      <p v-if="loading" class="text-center py-6 text-sm text-slate-400">جاري التحميل...</p>
+      <p v-else-if="!sessions.length" class="text-center py-6 text-sm text-slate-400">لا توجد بيانات.</p>
+      <p v-if="error" class="text-center py-6 text-sm text-red-500">{{ error }}</p>
     </div>
 
     <PaginationControls
@@ -95,26 +102,35 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref, watch } from 'vue';
-import api from '../../../api';
+import { onMounted, reactive, ref } from 'vue';
+import { useListPage } from '../../../composables/useListPage';
+import { useApi } from '../../../composables/useApi';
 import PaginationControls from '../../../components/common/PaginationControls.vue';
 
-const sessions = ref([]);
 const courses = ref([]);
 const dialogRef = ref(null);
 
-const pagination = reactive({
-  current_page: 1,
-  last_page: 1,
-  per_page: 10,
-  total: 0,
-});
-
-const filters = reactive({
-  course_id: '',
-  status: '',
-  page: 1,
-  per_page: 10,
+// Use unified list page composable
+const {
+  items: sessions,
+  loading,
+  error,
+  filters,
+  pagination,
+  changePage,
+  changePerPage,
+  loadItems,
+  applyFilters,
+  updateItem,
+} = useListPage({
+  endpoint: '/admin/sessions',
+  initialFilters: {
+    course_id: '',
+    status: '',
+  },
+  perPage: 10,
+  debounceMs: 500,
+  autoApplyFilters: false, // Manual filter application
 });
 
 const form = reactive({
@@ -125,46 +141,48 @@ const form = reactive({
   note: '',
 });
 
-async function loadCourses() {
-  const { data } = await api.get('/admin/courses', { params: { per_page: 1000 } });
-  courses.value = data.data;
-}
+const { get, put } = useApi();
 
-async function loadSessions() {
-  const { data } = await api.get('/admin/sessions', {
-    params: {
-      page: filters.page,
-      per_page: filters.per_page,
-      course_id: filters.course_id || undefined,
-      status: filters.status || undefined,
-    },
-  });
-  sessions.value = data.data;
-  Object.assign(pagination, {
-    current_page: data.meta.current_page,
-    last_page: data.meta.last_page,
-    per_page: data.meta.per_page,
-    total: data.meta.total,
-  });
+async function loadCourses() {
+  try {
+    const data = await get('/admin/courses', { params: { per_page: 1000 } });
+    courses.value = data.data || [];
+  } catch (err) {
+    console.error('Error loading courses:', err);
+    courses.value = [];
+  }
 }
 
 function openModal(session) {
   form.id = session.id;
-  form.title = session.title;
-  form.session_date = session.session_date;
-  form.status = session.status;
+  form.title = session.title || '';
+  form.session_date = session.session_date || '';
+  form.status = session.status || 'scheduled';
   form.note = session.note || '';
   dialogRef.value.showModal();
 }
 
 function closeModal() {
   dialogRef.value.close();
+  form.id = null;
+  form.title = '';
+  form.session_date = '';
+  form.status = 'scheduled';
+  form.note = '';
 }
 
 async function submit() {
-  await api.put(`/admin/sessions/${form.id}`, form);
-  closeModal();
-  loadSessions();
+  try {
+    await updateItem(form.id, {
+      title: form.title,
+      session_date: form.session_date,
+      status: form.status,
+      note: form.note,
+    });
+    closeModal();
+  } catch (err) {
+    alert(error.value || 'حدث خطأ أثناء الحفظ');
+  }
 }
 
 function formatDate(date) {
@@ -172,28 +190,13 @@ function formatDate(date) {
   return new Date(date).toLocaleDateString('ar-EG');
 }
 
-function changePage(page) {
-  filters.page = page;
-  loadSessions();
+// Handle filter change - manual apply
+function handleFilterChange() {
+  applyFilters();
 }
-
-function changePerPage(perPage) {
-  filters.per_page = perPage;
-  filters.page = 1;
-  loadSessions();
-}
-
-watch(
-  () => [filters.course_id, filters.status],
-  () => {
-    filters.page = 1;
-    loadSessions();
-  },
-);
 
 onMounted(async () => {
   await loadCourses();
-  loadSessions();
 });
 </script>
 
