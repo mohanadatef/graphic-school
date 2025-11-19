@@ -3,57 +3,81 @@
     <aside class="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col">
       <div class="px-6 py-5 border-b border-slate-200">
         <p class="text-xs uppercase tracking-widest text-slate-400">Graphic School</p>
-        <p class="text-base font-semibold text-slate-800">لوحة التحكم</p>
+        <p class="text-base font-semibold text-slate-800">{{ $t('dashboard.title') }}</p>
       </div>
-      <nav class="flex-1 overflow-y-auto px-4 py-6 space-y-6 text-sm">
-        <div v-if="auth.isAdmin.value">
-          <p class="text-xs text-slate-400 mb-2">الإدارة</p>
-          <RouterLink v-for="item in adminLinks" :key="item.to" :to="item.to" class="nav-link">
-            {{ item.label }}
+      <nav class="flex-1 overflow-y-auto px-4 py-6 space-y-6 text-sm" aria-label="Main navigation">
+        <div v-if="authStore.isAdmin">
+          <p class="text-xs text-slate-400 mb-2">{{ $t('admin.section') }}</p>
+          <RouterLink
+            v-for="item in adminLinks"
+            :key="item.to"
+            :to="item.to"
+            class="nav-link"
+          >
+            {{ $t(item.labelKey) }}
           </RouterLink>
         </div>
-        <div v-if="auth.isInstructor.value">
-          <p class="text-xs text-slate-400 mb-2">المدرب</p>
-          <RouterLink v-for="item in instructorLinks" :key="item.to" :to="item.to" class="nav-link">
-            {{ item.label }}
+        <div v-if="authStore.isInstructor">
+          <p class="text-xs text-slate-400 mb-2">{{ $t('instructor.section') }}</p>
+          <RouterLink
+            v-for="item in instructorLinks"
+            :key="item.to"
+            :to="item.to"
+            class="nav-link"
+          >
+            {{ $t(item.labelKey) }}
           </RouterLink>
         </div>
-        <div v-if="auth.isStudent.value">
-          <p class="text-xs text-slate-400 mb-2">الطالب</p>
-          <RouterLink v-for="item in studentLinks" :key="item.to" :to="item.to" class="nav-link">
-            {{ item.label }}
+        <div v-if="authStore.isStudent">
+          <p class="text-xs text-slate-400 mb-2">{{ $t('student.section') }}</p>
+          <RouterLink
+            v-for="item in studentLinks"
+            :key="item.to"
+            :to="item.to"
+            class="nav-link"
+          >
+            {{ $t(item.labelKey) }}
           </RouterLink>
         </div>
       </nav>
       <RouterLink
         to="/"
-        class="mx-4 mb-2 px-4 py-2 text-sm text-primary border border-primary/30 rounded-md text-center hover:bg-primary/5"
+        class="mx-4 mb-2 px-4 py-2 text-sm text-primary border border-primary/30 rounded-md text-center hover:bg-primary/5 transition-colors"
       >
-        الذهاب إلى الموقع
+        {{ $t('nav.goToSite') }}
       </RouterLink>
-      <button class="m-4 px-4 py-2 bg-slate-900 text-white rounded-md text-sm" @click="logoutAndGo">
-        تسجيل الخروج
+      <button
+        class="m-4 px-4 py-2 bg-slate-900 text-white rounded-md text-sm hover:bg-slate-800 transition-colors"
+        @click="handleLogout"
+      >
+        {{ $t('auth.logout') }}
       </button>
     </aside>
 
     <div class="flex-1">
-      <header class="bg-white border-b border-slate-200 px-4 py-4 flex items-center justify-between sticky top-0 z-20">
+      <header
+        class="bg-white border-b border-slate-200 px-4 py-4 flex items-center justify-between sticky top-0 z-20"
+      >
         <div>
-          <p class="text-sm text-slate-400">مرحباً</p>
-          <p class="text-lg font-semibold text-slate-800">{{ auth.state.user?.name }}</p>
+          <p class="text-sm text-slate-400">{{ $t('dashboard.welcome') }}</p>
+          <p class="text-lg font-semibold text-slate-800">{{ authStore.user?.name }}</p>
         </div>
         <div class="flex items-center gap-3">
+          <LanguagePicker />
           <span class="px-3 py-1 text-xs rounded-full bg-slate-100 text-slate-600">
-            {{ auth.roleName?.value }}
+            {{ authStore.roleName }}
           </span>
           <RouterLink
             to="/"
-            class="hidden md:inline-flex px-3 py-2 text-sm border border-slate-200 rounded-md text-slate-600 hover:text-primary"
+            class="hidden md:inline-flex px-3 py-2 text-sm border border-slate-200 rounded-md text-slate-600 hover:text-primary transition-colors"
           >
-            عرض الموقع
+            {{ $t('nav.goToSite') }}
           </RouterLink>
-          <button class="md:hidden px-3 py-2 bg-slate-900 text-white rounded-md" @click="logoutAndGo">
-            خروج
+          <button
+            class="md:hidden px-3 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800 transition-colors"
+            @click="handleLogout"
+          >
+            {{ $t('auth.logout') }}
           </button>
         </div>
       </header>
@@ -65,43 +89,54 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
-import { useAuth } from '../../composables/useAuth';
+import { useAuthStore } from '../../stores/auth';
+import { useToast } from '../../composables/useToast';
+import LanguagePicker from '../common/LanguagePicker.vue';
+import { useI18n } from 'vue-i18n';
 
-const auth = useAuth();
-
+const authStore = useAuthStore();
 const router = useRouter();
+const toast = useToast();
+const { t } = useI18n();
 
-const adminLinks = [
-  { label: 'التقارير', to: '/dashboard/admin' },
-  { label: 'المستخدمون', to: '/dashboard/admin/users' },
-  { label: 'الأدوار و الصلاحيات', to: '/dashboard/admin/roles' },
-  { label: 'التصنيفات', to: '/dashboard/admin/categories' },
-  { label: 'الكورسات', to: '/dashboard/admin/courses' },
-  { label: 'الجلسات', to: '/dashboard/admin/sessions' },
-  { label: 'التسجيلات', to: '/dashboard/admin/enrollments' },
-  { label: 'الحضور', to: '/dashboard/admin/attendance' },
-  { label: 'السلايدر', to: '/dashboard/admin/sliders' },
-  { label: 'الإعدادات', to: '/dashboard/admin/settings' },
-  { label: 'الرسائل', to: '/dashboard/admin/contacts' },
-];
+const adminLinks = computed(() => [
+  { labelKey: 'admin.dashboard', to: '/dashboard/admin' },
+  { labelKey: 'admin.users', to: '/dashboard/admin/users' },
+  { labelKey: 'admin.roles', to: '/dashboard/admin/roles' },
+  { labelKey: 'admin.categories', to: '/dashboard/admin/categories' },
+  { labelKey: 'admin.courses', to: '/dashboard/admin/courses' },
+  { labelKey: 'admin.sessions', to: '/dashboard/admin/sessions' },
+  { labelKey: 'admin.enrollments', to: '/dashboard/admin/enrollments' },
+  { labelKey: 'admin.attendance', to: '/dashboard/admin/attendance' },
+  { labelKey: 'admin.sliders', to: '/dashboard/admin/sliders' },
+  { labelKey: 'admin.settings', to: '/dashboard/admin/settings' },
+  { labelKey: 'admin.contacts', to: '/dashboard/admin/contacts' },
+]);
 
-const instructorLinks = [
-  { label: 'كورساتي', to: '/dashboard/instructor/courses' },
-  { label: 'الجلسات', to: '/dashboard/instructor/sessions' },
-  { label: 'الحضور', to: '/dashboard/instructor/attendance' },
-  { label: 'الملاحظات', to: '/dashboard/instructor/notes' },
-];
+const instructorLinks = computed(() => [
+  { labelKey: 'instructor.myCourses', to: '/dashboard/instructor/courses' },
+  { labelKey: 'instructor.sessions', to: '/dashboard/instructor/sessions' },
+  { labelKey: 'instructor.attendance', to: '/dashboard/instructor/attendance' },
+  { labelKey: 'instructor.notes', to: '/dashboard/instructor/notes' },
+]);
 
-const studentLinks = [
-  { label: 'كورساتي', to: '/dashboard/student/courses' },
-  { label: 'الجدول', to: '/dashboard/student/sessions' },
-  { label: 'الحضور', to: '/dashboard/student/attendance' },
-  { label: 'ملفي الشخصي', to: '/dashboard/student/profile' },
-];
+const studentLinks = computed(() => [
+  { labelKey: 'student.myCourses', to: '/dashboard/student/courses' },
+  { labelKey: 'student.schedule', to: '/dashboard/student/sessions' },
+  { labelKey: 'student.attendance', to: '/dashboard/student/attendance' },
+  { labelKey: 'student.profile', to: '/dashboard/student/profile' },
+]);
 
-function logoutAndGo() {
-  auth.logout().finally(() => router.push('/'));
+async function handleLogout() {
+  try {
+    await authStore.logout();
+    toast.success(t('auth.logoutSuccess'));
+    router.push('/');
+  } catch (error) {
+    // Error handled in store
+  }
 }
 </script>
 
@@ -112,7 +147,7 @@ function logoutAndGo() {
   border-radius: 0.5rem;
   color: #475569;
   text-decoration: none;
-  transition: background 0.2s;
+  transition: background 0.2s, color 0.2s;
   margin-bottom: 0.25rem;
 }
 
@@ -121,9 +156,8 @@ function logoutAndGo() {
   color: white;
 }
 
-.nav-link:hover {
+.nav-link:hover:not(.router-link-active) {
   background: #e2e8f0;
   color: #0f172a;
 }
 </style>
-

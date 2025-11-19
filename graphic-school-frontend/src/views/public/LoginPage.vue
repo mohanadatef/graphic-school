@@ -1,31 +1,57 @@
 <template>
   <div class="max-w-md mx-auto px-4 py-12">
     <div class="bg-white rounded-2xl shadow p-6">
-      <h2 class="text-2xl font-bold text-slate-900 mb-4">تسجيل الدخول</h2>
-      <form class="space-y-4" @submit.prevent="submit">
+      <h2 class="text-2xl font-bold text-slate-900 mb-4">{{ $t('auth.login') }}</h2>
+      <form class="space-y-4" @submit.prevent="handleSubmit">
         <div>
-          <label class="text-sm text-slate-500 block mb-1">البريد الإلكتروني</label>
-          <input v-model="email" type="email" required class="input" />
+          <label for="email" class="text-sm text-slate-500 block mb-1">
+            {{ $t('auth.email') }}
+          </label>
+          <input
+            id="email"
+            v-model="email"
+            type="email"
+            required
+            class="input"
+            :placeholder="$t('auth.email')"
+            autocomplete="email"
+          />
         </div>
         <div>
-          <label class="text-sm text-slate-500 block mb-1">كلمة المرور</label>
-          <input v-model="password" type="password" required class="input" />
+          <label for="password" class="text-sm text-slate-500 block mb-1">
+            {{ $t('auth.password') }}
+          </label>
+          <input
+            id="password"
+            v-model="password"
+            type="password"
+            required
+            class="input"
+            :placeholder="$t('auth.password')"
+            autocomplete="current-password"
+          />
         </div>
         <button
-          class="w-full py-3 bg-primary text-white rounded-md font-semibold"
-          :disabled="auth.state.loading"
+          type="submit"
+          class="w-full py-3 bg-primary text-white rounded-md font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="authStore.loading"
         >
-          {{ auth.state.loading ? 'جاري الدخول...' : 'دخول' }}
+          {{ authStore.loading ? $t('common.loading') : $t('auth.login') }}
         </button>
-        <p v-if="auth.state.error" class="text-center text-red-500 text-sm">
-          {{ auth.state.error }}
+        <p v-if="authStore.error" class="text-center text-red-500 text-sm">
+          {{ authStore.error }}
         </p>
       </form>
       <p class="text-center text-sm text-slate-500 mt-4">
-        لا تمتلك حساب؟ <RouterLink to="/register" class="text-primary">سجل الآن</RouterLink>
+        {{ $t('auth.noAccount') }}
+        <RouterLink to="/register" class="text-primary hover:underline">
+          {{ $t('auth.register') }}
+        </RouterLink>
       </p>
       <p class="text-center text-xs text-slate-400 mt-2">
-        <RouterLink to="/" class="text-primary underline">العودة للرئيسية</RouterLink>
+        <RouterLink to="/" class="text-primary underline hover:no-underline">
+          {{ $t('nav.home') }}
+        </RouterLink>
       </p>
     </div>
   </div>
@@ -34,19 +60,28 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter, RouterLink } from 'vue-router';
-import { useAuth } from '../../composables/useAuth';
+import { useAuthStore } from '../../stores/auth';
+import { useToast } from '../../composables/useToast';
+import { useI18n } from 'vue-i18n';
 
-const auth = useAuth();
+const authStore = useAuthStore();
 const router = useRouter();
+const toast = useToast();
+const { t } = useI18n();
+
 const email = ref('');
 const password = ref('');
 
-async function submit() {
+async function handleSubmit() {
   try {
-    const user = await auth.login({ email: email.value, password: password.value });
+    const user = await authStore.login({
+      email: email.value,
+      password: password.value,
+    });
+    toast.success(t('auth.loginSuccess'));
     router.push(`/dashboard/${user.role_name || user.role?.name}`);
   } catch (error) {
-    // handled in auth
+    // Error is handled in store and displayed
   }
 }
 </script>
@@ -59,6 +94,7 @@ async function submit() {
   padding: 0.75rem 1rem;
   font-size: 0.95rem;
   outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .input:focus {
@@ -66,4 +102,3 @@ async function submit() {
   box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.15);
 }
 </style>
-
