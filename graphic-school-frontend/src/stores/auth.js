@@ -3,6 +3,28 @@ import { ref, computed } from 'vue';
 import { authService } from '../services/api';
 import i18n from '../i18n';
 
+// Helper function to get translation in legacy mode
+const t = (key, params) => {
+  // Try i18n.global.t (composition API mode)
+  if (i18n.global && typeof i18n.global.t === 'function') {
+    return i18n.global.t(key, params);
+  }
+  // Try i18n.t (legacy mode)
+  if (typeof i18n.t === 'function') {
+    return i18n.t(key, params);
+  }
+  // Fallback: manual translation lookup
+  const locale = i18n.locale || 'ar';
+  const messages = i18n.messages?.[locale] || i18n.messages?.ar || {};
+  const keys = key.split('.');
+  let value = messages;
+  for (const k of keys) {
+    value = value?.[k];
+    if (value === undefined) break;
+  }
+  return value || key;
+};
+
 export const useAuthStore = defineStore('auth', () => {
   
   // State
@@ -50,11 +72,18 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true;
     error.value = null;
     try {
-      const data = await authService.login(credentials);
-      setSession(data.user, data.token);
-      return data.user;
+      const response = await authService.login(credentials);
+      // Backend returns unified format: { success, message, data: { user, token } }
+      // The interceptor already extracts data, so response is { user, token }
+      const data = response.data || response; // Support both formats for backward compatibility
+      if (data && data.user && data.token) {
+        setSession(data.user, data.token);
+        return data.user;
+      } else {
+        throw new Error('Invalid response format from server');
+      }
     } catch (err) {
-      error.value = err.response?.data?.message || i18n.global.t('auth.loginError');
+      error.value = err.response?.data?.message || err.message || t('auth.loginError');
       throw err;
     } finally {
       loading.value = false;
@@ -65,11 +94,18 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true;
     error.value = null;
     try {
-      const data = await authService.register(payload);
-      setSession(data.user, data.token);
-      return data.user;
+      const response = await authService.register(payload);
+      // Backend returns unified format: { success, message, data: { user, token } }
+      // The interceptor already extracts data, so response is { user, token }
+      const data = response.data || response; // Support both formats for backward compatibility
+      if (data && data.user && data.token) {
+        setSession(data.user, data.token);
+        return data.user;
+      } else {
+        throw new Error('Invalid response format from server');
+      }
     } catch (err) {
-      error.value = err.response?.data?.message || i18n.global.t('auth.registerError');
+      error.value = err.response?.data?.message || err.message || t('auth.registerError');
       throw err;
     } finally {
       loading.value = false;

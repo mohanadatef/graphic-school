@@ -60,11 +60,13 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import { useCourseStore } from '../../stores/course';
 import { useCategoryStore } from '../../stores/category';
-import { useI18n } from 'vue-i18n';
+import { useI18n } from '../../composables/useI18n';
+import { useLocale } from '../../composables/useLocale';
 
 const courseStore = useCourseStore();
 const categoryStore = useCategoryStore();
-const { t, locale } = useI18n();
+const { t } = useI18n();
+const { locale } = useLocale();
 
 const selectedCategory = ref('');
 

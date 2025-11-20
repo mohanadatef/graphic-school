@@ -11,8 +11,10 @@ export const authService = {
    * @returns {Promise<{user: Object, token: string}>}
    */
   async login(credentials) {
-    const { data } = await api.post('/login', credentials);
-    return data;
+    const response = await api.post('/login', credentials);
+    // Interceptor already extracts data from unified format
+    // Response is now { user, token } directly
+    return response.data || response;
   },
 
   /**
@@ -21,8 +23,10 @@ export const authService = {
    * @returns {Promise<{user: Object, token: string}>}
    */
   async register(payload) {
-    const { data } = await api.post('/register', payload);
-    return data;
+    const response = await api.post('/register', payload);
+    // Interceptor already extracts data from unified format
+    // Response is now { user, token } directly
+    return response.data || response;
   },
 
   /**

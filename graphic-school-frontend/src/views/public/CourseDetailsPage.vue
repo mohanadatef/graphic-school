@@ -47,7 +47,7 @@
         </div>
       </section>
 
-      <section class="bg-white rounded-xl shadow p-5">
+      <section class="bg-white rounded-xl shadow p-5 mt-8">
         <h2 class="text-xl font-semibold text-slate-900 mb-3">الاشتراك في الكورس</h2>
         <p v-if="enrollmentStatus" class="text-sm mb-4">
           حالتك الحالية: 
@@ -78,21 +78,27 @@
         </div>
       </section>
     </div>
-  <div v-else class="py-20 text-center text-slate-500">جاري تحميل بيانات الكورس ...</div>
+  <div v-else-if="loading" class="py-20 text-center text-slate-500">جاري تحميل بيانات الكورس ...</div>
+  <div v-else-if="enrollError" class="py-20 text-center">
+    <p class="text-red-500 mb-4">{{ enrollError }}</p>
+    <RouterLink to="/courses" class="text-primary underline">العودة إلى قائمة الكورسات</RouterLink>
+  </div>
 </template>
 
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { RouterLink, useRoute } from 'vue-router';
+import { RouterLink, useRoute, useRouter } from 'vue-router';
 import api from '../../api';
 import { useAuth } from '../../composables/useAuth';
 
 const route = useRoute();
+const router = useRouter();
 const course = ref(null);
 const auth = useAuth();
 const enrolling = ref(false);
 const enrollMessage = ref('');
 const enrollError = ref('');
+const loading = ref(true);
 
 const daysMap = {
   mon: 'الاثنين',
@@ -129,8 +135,36 @@ async function enroll() {
 }
 
 onMounted(async () => {
-  const { data } = await api.get(`/courses/${route.params.id}`);
-  course.value = data;
+  try {
+    loading.value = true;
+    const response = await api.get(`/courses/${route.params.id}`);
+    
+    // Handle unified API response format: { success, message, data, ... }
+    if (response.data) {
+      // Check if it's unified format
+      if (response.data.data !== undefined) {
+        course.value = response.data.data;
+      } else if (Array.isArray(response.data) || typeof response.data === 'object') {
+        course.value = response.data;
+      }
+    }
+    
+    if (!course.value) {
+      throw new Error('Course data not found');
+    }
+  } catch (error) {
+    console.error('Error loading course:', error);
+    enrollError.value = error.response?.data?.message || error.message || 'تعذر تحميل بيانات الكورس، حاول لاحقاً.';
+    
+    // Redirect to courses page if course not found
+    if (error.response?.status === 404) {
+      setTimeout(() => {
+        router.push('/courses');
+      }, 2000);
+    }
+  } finally {
+    loading.value = false;
+  }
 });
 </script>
 

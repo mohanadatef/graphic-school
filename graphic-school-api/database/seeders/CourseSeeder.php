@@ -2,9 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Models\Category;
-use App\Models\Course;
-use App\Models\User;
+use Modules\LMS\Categories\Models\Category;
+use Modules\LMS\Courses\Models\Course;
+use Modules\LMS\Courses\Enums\CourseStatus;
+use Modules\ACL\Users\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
@@ -44,7 +45,7 @@ class CourseSeeder extends Seeder
                     'days_of_week' => $courseData['days'],
                     'max_students' => 25,
                     'auto_generate_sessions' => true,
-                    'status' => 'upcoming',
+                    'status' => CourseStatus::UPCOMING->value,
                     'is_published' => true,
                     'is_hidden' => false,
                 ]

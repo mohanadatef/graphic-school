@@ -18,6 +18,12 @@ class EventServiceProvider extends ServiceProvider
         Registered::class => [
             SendEmailVerificationNotification::class,
         ],
+
+        // Domain Events will be registered here
+        // Example:
+        // \Modules\ACL\Users\Domain\Events\UserRegistered::class => [
+        //     \Modules\ACL\Users\Application\Listeners\SendWelcomeEmail::class,
+        // ],
     ];
 
     /**

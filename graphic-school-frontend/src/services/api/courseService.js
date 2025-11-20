@@ -11,8 +11,10 @@ export const courseService = {
    * @returns {Promise<Array>}
    */
   async getAll(params = {}) {
-    const { data } = await api.get('/courses', { params });
-    return data;
+    const response = await api.get('/courses', { params });
+    // Interceptor already extracts data from unified format
+    // Response is now the array directly, with meta attached if exists
+    return response.data || response;
   },
 
   /**
@@ -21,8 +23,10 @@ export const courseService = {
    * @returns {Promise<Object>}
    */
   async getById(id) {
-    const { data } = await api.get(`/courses/${id}`);
-    return data;
+    const response = await api.get(`/courses/${id}`);
+    // Interceptor already extracts data from unified format
+    // Response is now the course object directly
+    return response.data || response;
   },
 
   /**
@@ -31,8 +35,9 @@ export const courseService = {
    * @returns {Promise<Object>}
    */
   async getDashboardData(params = {}) {
-    const { data } = await api.get('/admin/dashboard', { params });
-    return data;
+    const response = await api.get('/admin/dashboard', { params });
+    // Interceptor already extracts data from unified format
+    return response.data || response;
   },
 
   /**
@@ -41,8 +46,10 @@ export const courseService = {
    * @returns {Promise<Object>}
    */
   async getAdminCourses(params = {}) {
-    const { data } = await api.get('/admin/courses', { params });
-    return data;
+    const response = await api.get('/admin/courses', { params });
+    // Interceptor already extracts data from unified format
+    // Response is now the array directly, with meta attached if exists
+    return response.data || response;
   },
 
   /**
@@ -51,8 +58,10 @@ export const courseService = {
    * @returns {Promise<Object>}
    */
   async create(payload) {
-    const { data } = await api.post('/admin/courses', payload);
-    return data;
+    const response = await api.post('/admin/courses', payload);
+    // Interceptor already extracts data from unified format
+    // Response is now the course object directly
+    return response.data || response;
   },
 
   /**
@@ -62,8 +71,10 @@ export const courseService = {
    * @returns {Promise<Object>}
    */
   async update(id, payload) {
-    const { data } = await api.put(`/admin/courses/${id}`, payload);
-    return data;
+    const response = await api.put(`/admin/courses/${id}`, payload);
+    // Interceptor already extracts data from unified format
+    // Response is now the course object directly
+    return response.data || response;
   },
 
   /**
@@ -81,8 +92,10 @@ export const courseService = {
    * @returns {Promise<Object>}
    */
   async getInstructorCourses(params = {}) {
-    const { data } = await api.get('/instructor/courses', { params });
-    return data;
+    const response = await api.get('/instructor/courses', { params });
+    // Interceptor already extracts data from unified format
+    // Response is now the array directly, with meta attached if exists
+    return response.data || response;
   },
 
   /**
@@ -91,8 +104,10 @@ export const courseService = {
    * @returns {Promise<Object>}
    */
   async getStudentCourses(params = {}) {
-    const { data } = await api.get('/student/courses', { params });
-    return data;
+    const response = await api.get('/student/courses', { params });
+    // Interceptor already extracts data from unified format
+    // Response is now the array directly, with meta attached if exists
+    return response.data || response;
   },
 };
 

@@ -21,12 +21,12 @@
         </div>
         <button
           class="w-full py-3 bg-primary text-white rounded-md font-semibold"
-          :disabled="auth.state.loading"
+          :disabled="authStore.loading"
         >
-          {{ auth.state.loading ? $t('auth.registering') : $t('auth.registerButton') }}
+          {{ authStore.loading ? $t('auth.registering') : $t('auth.registerButton') }}
         </button>
-        <p v-if="auth.state.error" class="text-center text-red-500 text-sm">
-          {{ auth.state.error }}
+        <p v-if="authStore.error" class="text-center text-red-500 text-sm">
+          {{ authStore.error }}
         </p>
       </form>
       <p class="text-center text-sm text-slate-500 mt-4">
@@ -42,10 +42,15 @@
 <script setup>
 import { reactive } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
-import { useAuth } from '../../composables/useAuth';
+import { useAuthStore } from '../../stores/auth';
+import { useToast } from '../../composables/useToast';
+import { useI18n } from '../../composables/useI18n';
 
-const auth = useAuth();
+const authStore = useAuthStore();
 const router = useRouter();
+const toast = useToast();
+const { t } = useI18n();
+
 const form = reactive({
   name: '',
   email: '',
@@ -55,14 +60,21 @@ const form = reactive({
 
 async function submit() {
   try {
-    const user = await auth.register(form);
-    if (user && (user.role_name || user.role?.name)) {
-      router.push(`/dashboard/${user.role_name || user.role?.name}`);
+    const user = await authStore.register(form);
+    
+    toast.success(t('auth.registerSuccess') || 'تم التسجيل بنجاح');
+    
+    // Get role from authStore or user
+    const role = authStore.roleName || user?.role_name || user?.role?.name;
+    
+    if (role) {
+      router.push(`/dashboard/${role}`);
     } else {
+      console.warn('No role found, redirecting to home');
       router.push('/');
     }
   } catch (error) {
-    // Error is handled in auth composable and displayed via auth.state.error
+    // Error is handled in store and displayed
     console.error('Registration error:', error);
   }
 }

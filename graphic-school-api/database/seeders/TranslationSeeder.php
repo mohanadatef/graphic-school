@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\Translation;
+use Modules\Core\Localization\Models\Translation;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 

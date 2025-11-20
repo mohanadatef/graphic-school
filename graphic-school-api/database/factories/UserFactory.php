@@ -2,44 +2,51 @@
 
 namespace Database\Factories;
 
-use App\Models\Role;
+use Modules\ACL\Users\Models\User;
+use Modules\ACL\Roles\Models\Role;
+use App\Contracts\Services\PasswordHasherInterface;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
-/**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
- */
 class UserFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
+    protected $model = User::class;
+
     public function definition(): array
     {
-        $roleId = Role::where('name', 'student')->value('id')
-            ?? Role::firstOrCreate(['name' => 'student'], ['description' => 'Student role'])->id;
-
+        $passwordHasher = app(PasswordHasherInterface::class);
+        
         return [
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
-            'password' => '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
-            'role_id' => $roleId,
+            'password' => $passwordHasher->hash('password'), // SOLID - Use interface
+            'phone' => fake()->phoneNumber(),
+            'address' => fake()->address(),
+            'role_id' => Role::factory(),
+            'is_active' => true,
             'remember_token' => Str::random(10),
         ];
     }
 
-    /**
-     * Indicate that the model's email address should be unverified.
-     *
-     * @return $this
-     */
-    public function unverified(): static
+    public function admin(): static
     {
         return $this->state(fn (array $attributes) => [
-            'email_verified_at' => null,
+            'role_id' => Role::factory()->create(['name' => 'admin'])->id,
+        ]);
+    }
+
+    public function instructor(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role_id' => Role::factory()->create(['name' => 'instructor'])->id,
+        ]);
+    }
+
+    public function student(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role_id' => Role::factory()->create(['name' => 'student'])->id,
         ]);
     }
 }

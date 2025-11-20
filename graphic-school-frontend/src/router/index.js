@@ -29,6 +29,12 @@ const publicChildren = [
     component: () => import('../views/public/InstructorsPage.vue'),
   },
   {
+    path: 'instructors/:id',
+    name: 'instructor-details',
+    component: () => import('../views/public/InstructorDetailsPage.vue'),
+    props: true,
+  },
+  {
     path: 'about',
     name: 'about',
     component: () => import('../views/public/AboutPage.vue'),

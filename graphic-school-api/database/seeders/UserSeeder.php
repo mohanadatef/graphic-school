@@ -2,15 +2,17 @@
 
 namespace Database\Seeders;
 
-use App\Models\Role;
-use App\Models\User;
+use Modules\ACL\Roles\Models\Role;
+use Modules\ACL\Users\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
+use App\Contracts\Services\PasswordHasherInterface;
 
 class UserSeeder extends Seeder
 {
     public function run(): void
     {
+        $passwordHasher = app(PasswordHasherInterface::class);
+        
         $adminRole = Role::where('name', 'admin')->first();
         $instructorRole = Role::where('name', 'instructor')->first();
         $studentRole = Role::where('name', 'student')->first();
@@ -19,7 +21,7 @@ class UserSeeder extends Seeder
             ['email' => 'admin@graphicschool.com'],
             [
                 'name' => 'Graphic School Admin',
-                'password' => Hash::make('password'),
+                'password' => $passwordHasher->hash('password'),
                 'role_id' => $adminRole?->id,
                 'is_active' => true,
             ]
@@ -30,7 +32,7 @@ class UserSeeder extends Seeder
                 ['email' => "instructor{$i}@graphicschool.com"],
                 [
                     'name' => "Instructor {$i}",
-                    'password' => Hash::make('password'),
+                    'password' => $passwordHasher->hash('password'),
                     'role_id' => $instructorRole?->id,
                     'bio' => 'Senior graphic design instructor',
                     'is_active' => true,
@@ -43,7 +45,7 @@ class UserSeeder extends Seeder
                 ['email' => "student{$i}@graphicschool.com"],
                 [
                     'name' => "Student {$i}",
-                    'password' => Hash::make('password'),
+                    'password' => $passwordHasher->hash('password'),
                     'role_id' => $studentRole?->id,
                     'is_active' => true,
                 ]

@@ -29,7 +29,8 @@ body {
 }
 
 /* RTL specific adjustments */
-[dir="rtl"] .flex {
+/* Note: Don't reverse all flex containers, only specific ones that need it */
+[dir="rtl"] .flex-row-reverse {
   flex-direction: row-reverse;
 }
 

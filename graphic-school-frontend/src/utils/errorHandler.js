@@ -6,7 +6,27 @@ import i18n from '../i18n';
  */
 export class ErrorHandler {
   static handle(error, showToast = true) {
-    const t = i18n.global.t;
+    // In legacy mode, access i18n instance directly
+    const t = (key, params) => {
+      // Try i18n.global.t (composition API mode)
+      if (i18n.global && typeof i18n.global.t === 'function') {
+        return i18n.global.t(key, params);
+      }
+      // Try i18n.t (legacy mode)
+      if (typeof i18n.t === 'function') {
+        return i18n.t(key, params);
+      }
+      // Fallback: manual translation lookup
+      const locale = i18n.locale || 'ar';
+      const messages = i18n.messages?.[locale] || i18n.messages?.ar || {};
+      const keys = key.split('.');
+      let value = messages;
+      for (const k of keys) {
+        value = value?.[k];
+        if (value === undefined) break;
+      }
+      return value || key;
+    };
     
     let message = t('errors.generic');
     
@@ -14,34 +34,40 @@ export class ErrorHandler {
       const status = error.response.status;
       const data = error.response.data;
       
+      // Handle unified error format: { success: false, message, errors, status }
+      const errorMessage = data?.message || (typeof data === 'string' ? data : null);
+      const errorErrors = data?.errors;
+      
       switch (status) {
         case 400:
-          message = data.message || t('errors.badRequest');
+          message = errorMessage || t('errors.badRequest');
           break;
         case 401:
-          message = t('errors.unauthorized');
+          message = errorMessage || t('errors.unauthorized');
           break;
         case 403:
-          message = t('errors.forbidden');
+          message = errorMessage || t('errors.forbidden');
           break;
         case 404:
-          message = t('errors.notFound');
+          message = errorMessage || t('errors.notFound');
           break;
         case 422:
-          message = data.message || t('errors.validation');
-          if (data.errors) {
-            // Handle validation errors
-            const firstError = Object.values(data.errors)[0];
+          message = errorMessage || t('errors.validation');
+          if (errorErrors) {
+            // Handle validation errors from unified format
+            const firstError = Object.values(errorErrors)[0];
             if (Array.isArray(firstError) && firstError.length > 0) {
               message = firstError[0];
+            } else if (typeof firstError === 'string') {
+              message = firstError;
             }
           }
           break;
         case 500:
-          message = t('errors.serverError');
+          message = errorMessage || t('errors.serverError');
           break;
         default:
-          message = data.message || t('errors.generic');
+          message = errorMessage || t('errors.generic');
       }
     } else if (error.request) {
       message = t('errors.networkError');

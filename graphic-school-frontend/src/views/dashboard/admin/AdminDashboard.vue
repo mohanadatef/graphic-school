@@ -108,7 +108,7 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useCourseStore } from '../../../stores/course';
 import PaginationControls from '../../../components/common/PaginationControls.vue';
-import { useI18n } from 'vue-i18n';
+import { useI18n } from '../../../composables/useI18n';
 
 const courseStore = useCourseStore();
 const { t, locale } = useI18n();

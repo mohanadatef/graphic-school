@@ -62,7 +62,7 @@ import { ref } from 'vue';
 import { useRouter, RouterLink } from 'vue-router';
 import { useAuthStore } from '../../stores/auth';
 import { useToast } from '../../composables/useToast';
-import { useI18n } from 'vue-i18n';
+import { useI18n } from '../../composables/useI18n';
 
 const authStore = useAuthStore();
 const router = useRouter();
@@ -78,8 +78,18 @@ async function handleSubmit() {
       email: email.value,
       password: password.value,
     });
+    
     toast.success(t('auth.loginSuccess'));
-    router.push(`/dashboard/${user.role_name || user.role?.name}`);
+    
+    // Get role from user or authStore
+    const role = authStore.roleName || user?.role_name || user?.role?.name;
+    
+    if (role) {
+      router.push(`/dashboard/${role}`);
+    } else {
+      console.warn('No role found, redirecting to home');
+      router.push('/');
+    }
   } catch (error) {
     // Error is handled in store and displayed
   }

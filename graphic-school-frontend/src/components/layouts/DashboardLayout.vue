@@ -1,9 +1,8 @@
 <template>
-  <div class="min-h-screen flex bg-slate-100">
+  <div class="min-h-screen flex bg-slate-100 relative overflow-hidden">
     <aside class="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col">
       <div class="px-6 py-5 border-b border-slate-200">
         <p class="text-xs uppercase tracking-widest text-slate-400">Graphic School</p>
-        <p class="text-base font-semibold text-slate-800">{{ $t('dashboard.title') }}</p>
         <p class="text-base font-semibold text-slate-800">{{ $t('dashboard.title') }}</p>
       </div>
       <nav class="flex-1 overflow-y-auto px-4 py-6 space-y-6 text-sm" aria-label="Main navigation">
@@ -57,7 +56,7 @@
 
     <div class="flex-1">
       <header
-        class="bg-white border-b border-slate-200 px-4 py-4 flex items-center justify-between sticky top-0 z-20"
+        class="bg-white border-b border-slate-200 px-4 py-4 flex items-center justify-between sticky top-0 z-20 relative"
       >
         <div>
           <p class="text-sm text-slate-400">{{ $t('dashboard.welcome') }}</p>
@@ -95,7 +94,7 @@ import { RouterLink, useRouter } from 'vue-router';
 import { useAuthStore } from '../../stores/auth';
 import { useToast } from '../../composables/useToast';
 import LanguagePicker from '../common/LanguagePicker.vue';
-import { useI18n } from 'vue-i18n';
+import { useI18n } from '../../composables/useI18n';
 
 const authStore = useAuthStore();
 const router = useRouter();
