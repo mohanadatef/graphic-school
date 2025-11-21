@@ -53,6 +53,9 @@
     "profile": "الملف الشخصي",
     "settings": "الإعدادات"
   },
+  "nav": {
+    "goToSite": "الذهاب للموقع"
+  },
   "course": {
     "title": "دورة",
     "courses": "الدورات",
@@ -81,13 +84,15 @@
   },
   "student": {
     "title": "طالب",
+    "section": "قسم الطالب",
     "myCourses": "دوراتي",
-    "mySessions": "جلساتي",
+    "schedule": "الجدول",
     "attendance": "الحضور",
     "profile": "الملف الشخصي"
   },
   "instructor": {
     "title": "مدرب",
+    "section": "قسم المدرب",
     "myCourses": "دوراتي",
     "sessions": "الجلسات",
     "attendance": "الحضور",
@@ -95,6 +100,7 @@
   },
   "admin": {
     "title": "مدير",
+    "section": "قسم المدير",
     "dashboard": "التقارير",
     "users": "المستخدمون",
     "courses": "الكورسات",

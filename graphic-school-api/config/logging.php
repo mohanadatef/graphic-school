@@ -3,6 +3,7 @@
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
+use Monolog\Processor\PsrLogMessageProcessor;
 
 return [
 
@@ -25,7 +26,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | This option controls the log channel that should be used to log warnings
-    | regarding deprecated PHP and library features. This allows you to get
+    | regarding deprecated PHP and Laravel features. This allows you to get
     | your application ready for upcoming major versions of dependencies.
     |
     */
@@ -53,7 +54,7 @@ return [
     'channels' => [
         'stack' => [
             'driver' => 'stack',
-            'channels' => ['single', 'database'],
+            'channels' => ['daily'],
             'ignore_exceptions' => false,
         ],
 
@@ -61,13 +62,15 @@ return [
             'driver' => 'single',
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
+            'replace_placeholders' => true,
         ],
 
         'daily' => [
             'driver' => 'daily',
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
-            'days' => 14,
+            'days' => 14, // Keep logs for 14 days
+            'replace_placeholders' => true,
         ],
 
         'slack' => [
@@ -102,11 +105,13 @@ return [
         'syslog' => [
             'driver' => 'syslog',
             'level' => env('LOG_LEVEL', 'debug'),
+            'facility' => LOG_USER,
         ],
 
         'errorlog' => [
             'driver' => 'errorlog',
             'level' => env('LOG_LEVEL', 'debug'),
+            'replace_placeholders' => true,
         ],
 
         'null' => [
@@ -118,10 +123,37 @@ return [
             'path' => storage_path('logs/laravel.log'),
         ],
 
-        'database' => [
-            'driver' => 'custom',
-            'via' => App\Logging\DatabaseLogHandler::class,
+        // Custom channels for different log types
+        'usecase' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/usecase.log'),
             'level' => env('LOG_LEVEL', 'debug'),
+            'days' => 14,
+            'replace_placeholders' => true,
+        ],
+
+        'job' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/job.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => 14,
+            'replace_placeholders' => true,
+        ],
+
+        'transaction' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/transaction.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => 14,
+            'replace_placeholders' => true,
+        ],
+
+        'audit' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/audit.log'),
+            'level' => env('LOG_LEVEL', 'info'),
+            'days' => 30, // Keep audit logs longer
+            'replace_placeholders' => true,
         ],
     ],
 

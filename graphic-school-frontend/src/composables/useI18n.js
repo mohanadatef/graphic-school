@@ -1,10 +1,31 @@
-import { useI18n as useVueI18n } from 'vue-i18n';
 import { computed, watch, getCurrentInstance } from 'vue';
 import api from '../api';
 import i18n from '../i18n';
 
 export function useI18n() {
-  const { locale, t, te } = useVueI18n();
+  // In legacy mode, access i18n instance directly
+  const i18nInstance = getCurrentInstance()?.appContext.config.globalProperties.$i18n || i18n;
+  
+  // In legacy mode, locale is a string, not a ref
+  const locale = computed({
+    get: () => i18nInstance.locale || 'ar',
+    set: (value) => {
+      if (i18nInstance.locale !== undefined) {
+        i18nInstance.locale = value;
+      }
+      if (i18n && i18n.locale !== undefined) {
+        i18n.locale = value;
+      }
+    }
+  });
+  
+  function t(key, params) {
+    return i18nInstance.t(key, params);
+  }
+  
+  function te(key) {
+    return i18nInstance.te(key);
+  }
 
   // Check if current locale is RTL
   const isRTL = computed(() => locale.value === 'ar');
@@ -15,13 +36,16 @@ export function useI18n() {
       return;
     }
 
-    // Update vue-i18n locale (both instance and global)
-    locale.value = newLocale;
-    if (i18n && i18n.global) {
-      i18n.global.locale.value = newLocale;
+    // Update vue-i18n locale (in legacy mode, it's a string property)
+    if (i18nInstance.locale !== undefined) {
+      i18nInstance.locale = newLocale;
+    }
+    if (i18n && i18n.locale !== undefined) {
+      i18n.locale = newLocale;
     }
     
     // Save to localStorage
+    localStorage.setItem('gs_locale', newLocale);
     localStorage.setItem('locale', newLocale);
     
     // Update API header
@@ -50,22 +74,24 @@ export function useI18n() {
 
   // Initialize locale on mount
   function initLocale() {
-    const savedLocale = localStorage.getItem('locale') || 'ar';
+    const savedLocale = localStorage.getItem('gs_locale') || localStorage.getItem('locale') || 'ar';
     const isRTLValue = savedLocale === 'ar';
     document.documentElement.dir = isRTLValue ? 'rtl' : 'ltr';
     document.documentElement.lang = savedLocale;
-    locale.value = savedLocale;
+    
+    // Set locale in i18n instance
+    if (i18nInstance.locale !== undefined) {
+      i18nInstance.locale = savedLocale;
+    }
+    if (i18n && i18n.locale !== undefined) {
+      i18n.locale = savedLocale;
+    }
+    
     api.defaults.headers.common['Accept-Language'] = savedLocale;
   }
 
-  // Watch for locale changes
-  watch(locale, (newLocale) => {
-    document.documentElement.dir = newLocale === 'ar' ? 'rtl' : 'ltr';
-    document.documentElement.lang = newLocale;
-  }, { immediate: true });
-
   return {
-    locale: computed(() => locale.value),
+    locale,
     t,
     te,
     setLocale,

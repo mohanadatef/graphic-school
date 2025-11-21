@@ -53,6 +53,9 @@
     "profile": "Profile",
     "settings": "Settings"
   },
+  "nav": {
+    "goToSite": "Go to Site"
+  },
   "course": {
     "title": "Course",
     "courses": "Courses",
@@ -81,13 +84,15 @@
   },
   "student": {
     "title": "Student",
+    "section": "Student Section",
     "myCourses": "My Courses",
-    "mySessions": "My Sessions",
+    "schedule": "Schedule",
     "attendance": "Attendance",
     "profile": "Profile"
   },
   "instructor": {
     "title": "Instructor",
+    "section": "Instructor Section",
     "myCourses": "My Courses",
     "sessions": "Sessions",
     "attendance": "Attendance",
@@ -95,6 +100,7 @@
   },
   "admin": {
     "title": "Admin",
+    "section": "Admin Section",
     "dashboard": "Dashboard",
     "users": "Users",
     "courses": "Courses",

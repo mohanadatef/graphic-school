@@ -5,34 +5,43 @@
         <h2 class="text-2xl font-bold text-slate-900">الكورسات</h2>
         <p class="text-sm text-slate-500">إنشاء كورسات جديدة وتعيين المدربين والتحكم في الجلسات.</p>
       </div>
-      <button class="px-4 py-2 bg-primary text-white rounded-md" @click="openModal()">كورس جديد</button>
+      <RouterLink
+        to="/dashboard/admin/courses/new"
+        class="px-4 py-2 bg-primary text-white rounded-md inline-block"
+      >
+        كورس جديد
+      </RouterLink>
     </div>
 
-    <div class="bg-white border border-slate-100 rounded-2xl shadow p-4 space-y-3">
-      <div class="flex flex-wrap gap-3">
+    <div class="bg-white border border-slate-100 rounded-2xl shadow p-3">
+      <div class="flex flex-wrap gap-2 items-center">
         <input
           v-model="filters.search"
-          class="input w-48"
-          placeholder="بحث بالعنوان"
+          class="text-xs px-3 py-1.5 border border-slate-200 rounded-lg w-40"
+          placeholder="بحث..."
           @input="handleSearch"
         />
-        <select v-model="filters.status" class="input w-40" @change="handleFilterChange">
-          <option value="">كل الحالات</option>
-          <option value="draft">مسودة</option>
-          <option value="upcoming">قادمة</option>
-          <option value="running">قيد التنفيذ</option>
-          <option value="completed">منتهية</option>
-        </select>
-        <select
+        <FilterDropdown
+          v-model="filters.status"
+          :options="[
+            { id: 'draft', name: 'مسودة' },
+            { id: 'upcoming', name: 'قادمة' },
+            { id: 'running', name: 'قيد التنفيذ' },
+            { id: 'completed', name: 'منتهية' }
+          ]"
+          placeholder="كل الحالات"
+          @update:modelValue="handleFilterChange"
+        />
+        <FilterDropdown
           v-model.number="pagination.per_page"
-          class="input w-32"
-          @change="changePerPage(pagination.per_page)"
-        >
-          <option :value="10">10</option>
-          <option :value="20">20</option>
-          <option :value="50">50</option>
-        </select>
-        <button class="px-4 py-2 border rounded-md" @click="loadItems">تحديث</button>
+          :options="[
+            { id: 10, name: '10' },
+            { id: 20, name: '20' },
+            { id: 50, name: '50' }
+          ]"
+          placeholder="عدد الصفحات"
+          @update:modelValue="changePerPage"
+        />
       </div>
     </div>
 
@@ -68,7 +77,12 @@
               </span>
             </td>
             <td class="px-4 py-3 text-right text-xs">
-              <button class="text-primary mr-2" @click="openModal(course)">تعديل</button>
+              <RouterLink
+                :to="`/dashboard/admin/courses/${course.id}/edit`"
+                class="text-primary mr-2 hover:underline"
+              >
+                تعديل
+              </RouterLink>
               <button class="text-red-500" @click="remove(course.id)">حذف</button>
             </td>
           </tr>
@@ -85,80 +99,16 @@
       @change-page="changePage"
       @change-per-page="changePerPage"
     />
-
-    <dialog ref="dialogRef" class="rounded-2xl p-0 w-full max-w-2xl">
-      <form class="p-6 space-y-4 max-h-[90vh] overflow-y-auto" @submit.prevent="submit">
-        <h3 class="text-xl font-semibold text-slate-900">{{ form.id ? 'تعديل كورس' : 'كورس جديد' }}</h3>
-        <div class="grid md:grid-cols-2 gap-4">
-          <div>
-            <label class="label">العنوان</label>
-            <input v-model="form.title" required class="input" />
-          </div>
-          <div>
-            <label class="label">التصنيف</label>
-            <select v-model="form.category_id" class="input" required>
-              <option v-for="category in categories" :key="category.id" :value="category.id">
-                {{ category.name }}
-              </option>
-            </select>
-          </div>
-          <div>
-            <label class="label">السعر</label>
-            <input v-model.number="form.price" type="number" class="input" />
-          </div>
-          <div>
-            <label class="label">تاريخ البداية</label>
-            <input v-model="form.start_date" type="date" class="input" />
-          </div>
-          <div>
-            <label class="label">وقت البداية</label>
-            <input v-model="form.default_start_time" type="time" class="input" />
-          </div>
-          <div>
-            <label class="label">وقت النهاية</label>
-            <input v-model="form.default_end_time" type="time" class="input" />
-          </div>
-          <div>
-            <label class="label">عدد المحاضرات</label>
-            <input v-model.number="form.session_count" type="number" min="1" class="input" />
-          </div>
-          <div>
-            <label class="label">الأيام</label>
-            <select v-model="form.days_of_week" multiple class="input h-32">
-              <option v-for="(label, key) in days" :key="key" :value="key">{{ label }}</option>
-            </select>
-          </div>
-          <div class="md:col-span-2">
-            <label class="label">الوصف</label>
-            <textarea v-model="form.description" rows="3" class="input"></textarea>
-          </div>
-          <div class="md:col-span-2">
-            <label class="label">المدربون</label>
-            <select v-model="form.instructors" multiple class="input h-32">
-              <option v-for="instructor in instructors" :key="instructor.id" :value="instructor.id">
-                {{ instructor.name }}
-              </option>
-            </select>
-          </div>
-        </div>
-        <div class="flex justify-end gap-3">
-          <button type="button" class="px-4 py-2 border rounded-md" @click="closeModal">إلغاء</button>
-          <button type="submit" class="px-4 py-2 bg-primary text-white rounded-md">حفظ</button>
-        </div>
-      </form>
-    </dialog>
   </div>
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue';
+import { onMounted, ref } from 'vue';
+import { RouterLink } from 'vue-router';
 import { useListPage } from '../../../composables/useListPage';
 import { useApi } from '../../../composables/useApi';
 import PaginationControls from '../../../components/common/PaginationControls.vue';
-
-const categories = ref([]);
-const instructors = ref([]);
-const dialogRef = ref(null);
+import FilterDropdown from '../../../components/common/FilterDropdown.vue';
 
 // Use unified list page composable
 const {
@@ -186,95 +136,6 @@ const {
   autoApplyFilters: false, // Manual filter application
 });
 
-const form = reactive({
-  id: null,
-  title: '',
-  category_id: null,
-  description: '',
-  price: 0,
-  start_date: '',
-  default_start_time: '',
-  default_end_time: '',
-  session_count: 8,
-  days_of_week: [],
-  instructors: [],
-});
-
-const days = {
-  mon: 'الاثنين',
-  tue: 'الثلاثاء',
-  wed: 'الأربعاء',
-  thu: 'الخميس',
-  fri: 'الجمعة',
-  sat: 'السبت',
-  sun: 'الأحد',
-};
-
-const { get } = useApi();
-
-async function loadOptions() {
-  try {
-    const [{ data: categoryData }, { data: instructorData }] = await Promise.all([
-      get('/admin/categories'),
-      get('/instructors'),
-    ]);
-    categories.value = categoryData;
-    instructors.value = instructorData;
-  } catch (err) {
-    console.error('Error loading options:', err);
-  }
-}
-
-function openModal(course) {
-  form.id = course?.id || null;
-  form.title = course?.title || '';
-  form.category_id = course?.category_id || categories.value[0]?.id || null;
-  form.description = course?.description || '';
-  form.price = course?.price || 0;
-  form.start_date = course?.start_date || '';
-  form.default_start_time = course?.default_start_time || '';
-  form.default_end_time = course?.default_end_time || '';
-  form.session_count = course?.session_count || 8;
-  form.days_of_week = course?.days_of_week ? [...course.days_of_week] : [];
-  form.instructors = course?.instructors?.map((inst) => inst.id) || [];
-  dialogRef.value.showModal();
-}
-
-function closeModal() {
-  dialogRef.value.close();
-  form.id = null;
-  form.title = '';
-  form.category_id = null;
-  form.description = '';
-  form.price = 0;
-  form.start_date = '';
-  form.default_start_time = '';
-  form.default_end_time = '';
-  form.session_count = 8;
-  form.days_of_week = [];
-  form.instructors = [];
-}
-
-async function submit() {
-  try {
-    const payload = {
-      ...form,
-      start_date: form.start_date || null,
-      default_start_time: form.default_start_time || null,
-      default_end_time: form.default_end_time || null,
-      days_of_week: [...form.days_of_week],
-      instructors: [...form.instructors],
-    };
-    if (form.id) {
-      await updateItem(form.id, payload);
-    } else {
-      await createItem(payload);
-    }
-    closeModal();
-  } catch (err) {
-    alert(error.value || 'حدث خطأ أثناء الحفظ');
-  }
-}
 
 async function remove(id) {
   if (!confirm('تأكيد الحذف؟')) return;

@@ -2,7 +2,7 @@ import axios from 'axios';
 import { useAuthStore } from '../../stores/auth';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://graphic-school-api.test/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://graphic-school.test/api',
 });
 
 // Request interceptor - attach token
@@ -22,11 +22,42 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor - handle errors globally
+// Response interceptor - handle unified API response format
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Backend now returns unified format: { success, message, data, errors, status, meta }
+    // Extract the actual data from the unified response
+    if (response.data && typeof response.data === 'object' && 'success' in response.data) {
+      // This is a unified API response
+      // Return the data property directly, but keep meta if exists
+      const unifiedResponse = response.data;
+      response.data = unifiedResponse.data;
+      
+      // Attach meta to response if exists
+      if (unifiedResponse.meta) {
+        response.meta = unifiedResponse.meta;
+      }
+      
+      // Attach message if needed
+      if (unifiedResponse.message) {
+        response.message = unifiedResponse.message;
+      }
+    }
+    
+    return response;
+  },
   (error) => {
     const authStore = useAuthStore();
+    
+    // Handle unified error format
+    if (error.response?.data && typeof error.response.data === 'object' && 'success' in error.response.data) {
+      // This is a unified error response
+      const errorData = error.response.data;
+      error.response.data = {
+        message: errorData.message || 'An error occurred',
+        errors: errorData.errors || null,
+      };
+    }
     
     // Handle 401 - Unauthorized
     if (error.response?.status === 401) {

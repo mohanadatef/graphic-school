@@ -46,8 +46,6 @@
 </template>
 
 <script setup>
-import { useI18n } from 'vue-i18n';
-
 const props = defineProps({
   meta: {
     type: Object,
@@ -60,8 +58,6 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['change-page', 'change-per-page']);
-
-const { t } = useI18n();
 
 function go(page) {
   if (page < 1 || page > props.meta.last_page) return;

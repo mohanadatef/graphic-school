@@ -2,15 +2,16 @@
   <Teleport to="body">
     <div
       v-if="toasts.length > 0"
-      class="fixed top-4 right-4 z-50 space-y-2 max-w-md"
+      class="fixed top-4 right-4 z-[9999] space-y-2 max-w-md pointer-events-none"
       :dir="isRTL ? 'rtl' : 'ltr'"
+      :style="{ [isRTL ? 'left' : 'right']: '1rem' }"
     >
       <TransitionGroup name="toast" tag="div">
         <div
           v-for="toast in toasts"
           :key="toast.id"
           :class="[
-            'px-4 py-3 rounded-lg shadow-lg flex items-center justify-between gap-3 min-w-[300px]',
+            'px-4 py-3 rounded-lg shadow-lg flex items-center justify-between gap-3 min-w-[300px] pointer-events-auto',
             toastClasses[toast.type],
           ]"
         >
@@ -33,12 +34,10 @@
 <script setup>
 import { computed } from 'vue';
 import { useToast } from '../../composables/useToast';
-import { useI18n } from 'vue-i18n';
+import { useLocale } from '../../composables/useLocale';
 
 const { toasts, remove } = useToast();
-const { locale } = useI18n();
-
-const isRTL = computed(() => locale.value === 'ar');
+const { locale, isRTL } = useLocale();
 
 const toastClasses = {
   success: 'bg-green-50 text-green-800 border border-green-200',

@@ -39,12 +39,24 @@ export function useListPage(config = {}) {
         ...additionalParams,
       });
 
-      const data = await get(endpoint, { params });
+      const response = await get(endpoint, { params });
+      
+      // Backend returns unified format: { success, message, data: [...], meta: { pagination: {...} } }
+      // The interceptor already extracts data, so response is the array
+      // But we need to check if it's an array or an object with data property
+      const data = Array.isArray(response) ? response : (response.data || []);
+      items.value = Array.isArray(data) ? data : [];
+      
+      // Check for pagination in meta (attached by interceptor) or in response
+      if (response.meta?.pagination) {
+        updatePagination(response.meta.pagination);
+      } else if (response.meta) {
+        updatePagination(response.meta);
+      } else if (response.pagination) {
+        updatePagination(response.pagination);
+      }
 
-      items.value = data.data || [];
-      updatePagination(data.meta);
-
-      return data;
+      return response;
     } catch (err) {
       console.error('Error loading items:', err);
       items.value = [];

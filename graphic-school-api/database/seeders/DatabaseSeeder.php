@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             SessionSeeder::class,
             SettingsSeeder::class,
             TranslationSeeder::class,
+            \Modules\Core\Localization\Database\Seeders\LanguageSeeder::class,
         ]);
     }
 }

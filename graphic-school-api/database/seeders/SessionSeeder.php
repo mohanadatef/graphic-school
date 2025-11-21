@@ -2,8 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\Course;
-use App\Models\Session;
+use Modules\LMS\Courses\Models\Course;
+use Modules\LMS\Sessions\Models\Session;
+use Modules\LMS\Sessions\Enums\SessionStatus;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 
@@ -51,7 +52,7 @@ class SessionSeeder extends Seeder
                         'session_date' => $date->toDateString(),
                         'start_time' => '18:00:00',
                         'end_time' => '20:00:00',
-                        'status' => 'scheduled',
+                        'status' => SessionStatus::SCHEDULED->value,
                     ]);
 
                     $order++;

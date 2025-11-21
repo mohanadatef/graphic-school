@@ -5,7 +5,12 @@
         <h2 class="text-2xl font-bold text-slate-900">الأدوار والصلاحيات</h2>
         <p class="text-sm text-slate-500">حدد صلاحيات لوحة التحكم لكل دور.</p>
       </div>
-      <button class="px-4 py-2 bg-primary text-white rounded-md" @click="openModal()">دور جديد</button>
+      <RouterLink
+        to="/dashboard/admin/roles/new"
+        class="px-4 py-2 bg-primary text-white rounded-md inline-block"
+      >
+        دور جديد
+      </RouterLink>
     </div>
 
     <div v-if="loading" class="text-center py-12 text-slate-400">جاري التحميل...</div>
@@ -22,7 +27,12 @@
             <p class="text-xs text-slate-400">{{ role.description }}</p>
           </div>
           <div class="flex gap-3 text-xs">
-            <button class="text-primary" @click="openModal(role)">تعديل</button>
+            <RouterLink
+              :to="`/dashboard/admin/roles/${role.id}/edit`"
+              class="text-primary hover:underline"
+            >
+              تعديل
+            </RouterLink>
             <button class="text-red-500" @click="remove(role)" :disabled="role.is_system">حذف</button>
           </div>
         </div>
@@ -38,58 +48,15 @@
         </div>
       </div>
     </div>
-
-    <dialog ref="dialogRef" class="rounded-2xl p-0 w-full max-w-lg">
-      <form class="p-6 space-y-4" @submit.prevent="submit">
-        <h3 class="text-xl font-semibold text-slate-900">{{ editing ? 'تعديل الدور' : 'دور جديد' }}</h3>
-        <div>
-          <label class="label">اسم الدور</label>
-          <input v-model="form.name" required class="input" />
-        </div>
-        <div>
-          <label class="label">الوصف</label>
-          <textarea v-model="form.description" rows="3" class="input"></textarea>
-        </div>
-        <div>
-          <label class="label">الصلاحيات</label>
-          <div class="max-h-48 overflow-y-auto border border-slate-200 rounded-xl p-3 space-y-2">
-            <label v-for="permission in permissions" :key="permission" class="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                :value="permission"
-                v-model="form.permissions"
-                :disabled="currentRoleIsSystem"
-              />
-              <span>{{ permission }}</span>
-            </label>
-          </div>
-        </div>
-        <div class="flex justify-end gap-3">
-          <button type="button" class="px-4 py-2 border rounded-md" @click="closeModal" :disabled="loading">
-            إلغاء
-          </button>
-          <button type="submit" class="px-4 py-2 bg-primary text-white rounded-md" :disabled="loading || !form.name.trim()">
-            {{ loading ? 'جاري الحفظ...' : 'حفظ' }}
-          </button>
-        </div>
-      </form>
-    </dialog>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue';
+import { onMounted, ref } from 'vue';
+import { RouterLink } from 'vue-router';
 import { useApi } from '../../../composables/useApi';
 
 const roles = ref([]);
-const dialogRef = ref(null);
-const editing = ref(false);
-const form = reactive({
-  id: null,
-  name: '',
-  description: '',
-  permissions: [],
-});
 
 const permissions = [
   'dashboard.access',
@@ -114,59 +81,28 @@ const permissions = [
   'notes.manage',
 ];
 
-const { get, post, put, delete: del, loading, error } = useApi();
+const { get, delete: del, loading, error } = useApi();
 
 async function loadRoles() {
   try {
     const data = await get('/admin/roles');
-    roles.value = data || [];
+    // Handle both unified format and direct array
+    if (Array.isArray(data)) {
+      roles.value = data;
+    } else if (data && Array.isArray(data.data)) {
+      roles.value = data.data;
+    } else if (data && data.data && Array.isArray(data.data)) {
+      roles.value = data.data;
+    } else {
+      roles.value = [];
+    }
+    console.log('Roles loaded:', roles.value);
   } catch (err) {
     console.error('Error loading roles:', err);
     roles.value = [];
   }
 }
 
-const currentRoleIsSystem = computed(() => {
-  if (!editing.value || !form.id) return false;
-  return roles.value.find((role) => role.id === form.id)?.is_system ?? false;
-});
-
-function openModal(role) {
-  editing.value = Boolean(role);
-  form.id = role?.id || null;
-  form.name = role?.name || '';
-  form.description = role?.description || '';
-  form.permissions = role?.permissions?.map((p) => p.slug) || [];
-  dialogRef.value.showModal();
-}
-
-function closeModal() {
-  dialogRef.value.close();
-  form.id = null;
-  form.name = '';
-  form.description = '';
-  form.permissions = [];
-  editing.value = false;
-}
-
-async function submit() {
-  try {
-    const payload = {
-      name: form.name,
-      description: form.description,
-      permissions: form.permissions,
-    };
-    if (editing.value) {
-      await put(`/admin/roles/${form.id}`, payload);
-    } else {
-      await post('/admin/roles', payload);
-    }
-    closeModal();
-    await loadRoles();
-  } catch (err) {
-    alert(error.value || 'حدث خطأ أثناء الحفظ');
-  }
-}
 
 async function remove(role) {
   if (role.is_system || !confirm('حذف هذا الدور؟')) {

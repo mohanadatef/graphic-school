@@ -8,7 +8,9 @@
       <button class="px-4 py-2 border rounded-md" @click="loadEnrollments">تحديث</button>
     </div>
 
-    <div class="bg-white border border-slate-100 rounded-2xl shadow overflow-x-auto">
+    <div v-if="loading" class="text-center py-12 text-slate-400">جاري التحميل...</div>
+    <div v-else-if="!enrollments.length" class="text-center py-12 text-slate-400">لا توجد تسجيلات.</div>
+    <div v-else class="bg-white border border-slate-100 rounded-2xl shadow overflow-x-auto">
       <table class="w-full text-sm">
         <thead class="bg-slate-50 text-xs uppercase">
           <tr>
@@ -22,75 +24,38 @@
         </thead>
         <tbody>
           <tr v-for="enrollment in enrollments" :key="enrollment.id" class="border-t border-slate-100">
-            <td class="px-4 py-3">{{ enrollment.student?.name }}</td>
-            <td class="px-4 py-3">{{ enrollment.course?.title }}</td>
-            <td class="px-4 py-3">{{ paymentLabels[enrollment.payment_status] }}</td>
-            <td class="px-4 py-3">{{ statusLabels[enrollment.status] }}</td>
+            <td class="px-4 py-3">{{ enrollment.student?.name || 'غير محدد' }}</td>
+            <td class="px-4 py-3">{{ enrollment.course?.title || 'غير محدد' }}</td>
+            <td class="px-4 py-3">{{ paymentLabels[enrollment.payment_status] || enrollment.payment_status }}</td>
+            <td class="px-4 py-3">{{ statusLabels[enrollment.status] || enrollment.status }}</td>
             <td class="px-4 py-3">
               <span class="px-2 py-1 rounded-full text-xs" :class="enrollment.can_attend ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">
                 {{ enrollment.can_attend ? 'مسموح' : 'موقوف' }}
               </span>
             </td>
             <td class="px-4 py-3 text-right text-xs">
-              <button class="text-primary" @click="openModal(enrollment)">تعديل</button>
+              <RouterLink
+                :to="`/dashboard/admin/enrollments/${enrollment.id}/edit`"
+                class="text-primary hover:underline"
+              >
+                تعديل
+              </RouterLink>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
-
-    <dialog ref="dialogRef" class="rounded-2xl p-0 w-full max-w-md">
-      <form class="p-6 space-y-4" @submit.prevent="submit">
-        <h3 class="text-lg font-semibold">تعديل التسجيل</h3>
-        <div>
-          <label class="label">حالة الدفع</label>
-          <select v-model="form.payment_status" class="input">
-            <option value="not_paid">لم يدفع</option>
-            <option value="partial">دفع جزئي</option>
-            <option value="paid">مدفوع بالكامل</option>
-          </select>
-        </div>
-        <div>
-          <label class="label">المبلغ المدفوع</label>
-          <input v-model.number="form.paid_amount" type="number" class="input" />
-        </div>
-        <div>
-          <label class="label">حالة الطلب</label>
-          <select v-model="form.status" class="input">
-            <option value="pending">معلق</option>
-            <option value="approved">مقبول</option>
-            <option value="rejected">مرفوض</option>
-          </select>
-        </div>
-        <div>
-          <label class="label">السماح بالحضور</label>
-          <select v-model="form.can_attend" class="input">
-            <option :value="true">نعم</option>
-            <option :value="false">لا</option>
-          </select>
-        </div>
-        <div class="flex justify-end gap-3">
-          <button type="button" class="px-4 py-2 border rounded-md" @click="closeModal">إلغاء</button>
-          <button type="submit" class="px-4 py-2 bg-primary text-white rounded-md">حفظ</button>
-        </div>
-      </form>
-    </dialog>
   </div>
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue';
-import api from '../../../api';
+import { onMounted, ref } from 'vue';
+import { RouterLink } from 'vue-router';
+import { useApi } from '../../../composables/useApi';
+import { useToast } from '../../../composables/useToast';
 
 const enrollments = ref([]);
-const dialogRef = ref(null);
-const form = reactive({
-  id: null,
-  payment_status: 'not_paid',
-  paid_amount: 0,
-  status: 'pending',
-  can_attend: false,
-});
+const loading = ref(false);
 
 const paymentLabels = {
   not_paid: 'لم يدفع',
@@ -104,29 +69,55 @@ const statusLabels = {
   rejected: 'مرفوض',
 };
 
+const { get } = useApi();
+const toast = useToast();
+
 async function loadEnrollments() {
-  const { data } = await api.get('/admin/enrollments');
-  enrollments.value = data;
+  try {
+    loading.value = true;
+    // Ensure per_page is within the allowed range (max 100)
+    const perPage = Math.min(100, 50); // Default to 50, max 100
+    const response = await get('/admin/enrollments', {
+      params: {
+        per_page: perPage,
+      },
+    });
+    
+    console.log('Raw API response:', response);
+    
+    // Handle paginated response from unified format
+    // ApiResponse::paginated returns { success, message, data: [...], meta: { pagination: {...} } }
+    // The interceptor extracts data, so response should be the array directly
+    if (Array.isArray(response)) {
+      enrollments.value = response;
+    } else if (response && typeof response === 'object') {
+      // Check if response has a data property that is an array
+      if (Array.isArray(response.data)) {
+        enrollments.value = response.data;
+      } else if (response.data && typeof response.data === 'object' && Array.isArray(response.data.data)) {
+        // Nested data structure (shouldn't happen but handle it)
+        enrollments.value = response.data.data;
+      } else {
+        // Try to extract array from response object
+        enrollments.value = [];
+      }
+    } else {
+      enrollments.value = [];
+    }
+    
+    console.log('Enrollments after processing:', enrollments.value);
+    console.log('Enrollments count:', enrollments.value.length);
+  } catch (err) {
+    console.error('Error loading enrollments:', err);
+    console.error('Error response:', err.response);
+    enrollments.value = [];
+    const errorMessage = err.response?.data?.message || err.message || 'حدث خطأ أثناء تحميل التسجيلات';
+    toast.error(errorMessage);
+  } finally {
+    loading.value = false;
+  }
 }
 
-function openModal(enrollment) {
-  form.id = enrollment.id;
-  form.payment_status = enrollment.payment_status;
-  form.paid_amount = enrollment.paid_amount;
-  form.status = enrollment.status;
-  form.can_attend = enrollment.can_attend;
-  dialogRef.value.showModal();
-}
-
-function closeModal() {
-  dialogRef.value.close();
-}
-
-async function submit() {
-  await api.put(`/admin/enrollments/${form.id}`, form);
-  closeModal();
-  loadEnrollments();
-}
 
 onMounted(loadEnrollments);
 </script>

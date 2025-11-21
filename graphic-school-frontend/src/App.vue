@@ -29,5 +29,12 @@ const keepAliveRoutes = computed(() => [
 <style>
 #app {
   min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Prevent layout shifts */
+* {
+  box-sizing: border-box;
 }
 </style>

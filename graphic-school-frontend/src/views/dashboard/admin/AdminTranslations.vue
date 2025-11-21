@@ -13,44 +13,45 @@
         >
           {{ clearingCache ? $t('common.loading') : $t('admin.clearCache') }}
         </button>
-        <button class="px-4 py-2 bg-primary text-white rounded-md" @click="openModal()">
+        <RouterLink
+          to="/dashboard/admin/translations/new"
+          class="px-4 py-2 bg-primary text-white rounded-md inline-block"
+        >
           {{ $t('common.add') }} {{ $t('admin.translation') }}
-        </button>
+        </RouterLink>
       </div>
     </div>
 
-    <div class="bg-white rounded-2xl shadow border border-slate-100 p-4 space-y-3">
-      <div class="flex flex-wrap gap-3">
+    <div class="bg-white rounded-2xl shadow border border-slate-100 p-3">
+      <div class="flex flex-wrap gap-2 items-center">
         <input
           v-model="filters.search"
-          class="input w-48"
+          class="text-xs px-3 py-1.5 border border-slate-200 rounded-lg w-40"
           :placeholder="$t('common.search')"
           @input="handleSearch"
         />
-        <select v-model="filters.locale" class="input w-32" @change="handleFilterChange">
-          <option value="">{{ $t('admin.allLocales') }}</option>
-          <option v-for="locale in locales" :key="locale" :value="locale">
-            {{ locale.toUpperCase() }}
-          </option>
-        </select>
-        <select v-model="filters.group" class="input w-48" @change="handleFilterChange">
-          <option value="">{{ $t('admin.allGroups') }}</option>
-          <option v-for="group in groups" :key="group" :value="group">
-            {{ group }}
-          </option>
-        </select>
-        <select
+        <FilterDropdown
+          v-model="filters.locale"
+          :options="locales.map(l => ({ id: l, name: l.toUpperCase() }))"
+          :placeholder="$t('admin.allLocales')"
+          @update:modelValue="handleFilterChange"
+        />
+        <FilterDropdown
+          v-model="filters.group"
+          :options="groups.map(g => ({ id: g, name: g }))"
+          :placeholder="$t('admin.allGroups')"
+          @update:modelValue="handleFilterChange"
+        />
+        <FilterDropdown
           v-model.number="pagination.per_page"
-          class="input w-32"
-          @change="changePerPage(pagination.per_page)"
-        >
-          <option :value="10">10</option>
-          <option :value="20">20</option>
-          <option :value="50">50</option>
-        </select>
-        <button class="px-4 py-2 border rounded-md" @click="loadItems">
-          {{ $t('common.filter') }}
-        </button>
+          :options="[
+            { id: 10, name: '10' },
+            { id: 20, name: '20' },
+            { id: 50, name: '50' }
+          ]"
+          placeholder="عدد الصفحات"
+          @update:modelValue="changePerPage"
+        />
       </div>
     </div>
 
@@ -78,9 +79,12 @@
             </td>
             <td class="px-4 py-3 text-xs">{{ translation.group }}</td>
             <td class="px-4 py-3 text-right space-x-2 rtl:space-x-reverse">
-              <button class="text-primary text-xs" @click="openModal(translation)">
+              <RouterLink
+                :to="`/dashboard/admin/translations/${translation.id}/edit`"
+                class="text-primary text-xs hover:underline"
+              >
                 {{ $t('common.edit') }}
-              </button>
+              </RouterLink>
               <button class="text-red-500 text-xs" @click="remove(translation.id)">
                 {{ $t('common.delete') }}
               </button>
@@ -102,62 +106,6 @@
       @change-page="changePage"
       @change-per-page="changePerPage"
     />
-
-    <dialog ref="dialogRef" class="rounded-2xl p-0 w-full max-w-2xl">
-      <form class="p-6 space-y-4" @submit.prevent="submit">
-        <h3 class="text-xl font-semibold text-slate-900">
-          {{ editing ? $t('common.edit') : $t('common.add') }} {{ $t('admin.translation') }}
-        </h3>
-        <div class="grid md:grid-cols-2 gap-4">
-          <div>
-            <label class="label">{{ $t('admin.key') }}</label>
-            <input
-              v-model="form.key"
-              type="text"
-              required
-              class="input"
-              placeholder="auth.login"
-            />
-            <p class="text-xs text-slate-400 mt-1">{{ $t('admin.keyHint') }}</p>
-          </div>
-          <div>
-            <label class="label">{{ $t('admin.locale') }}</label>
-            <select v-model="form.locale" class="input" required>
-              <option value="en">English (en)</option>
-              <option value="ar">العربية (ar)</option>
-            </select>
-          </div>
-          <div>
-            <label class="label">{{ $t('admin.group') }}</label>
-            <input
-              v-model="form.group"
-              type="text"
-              class="input"
-              placeholder="messages"
-            />
-            <p class="text-xs text-slate-400 mt-1">{{ $t('admin.groupHint') }}</p>
-          </div>
-          <div class="md:col-span-2">
-            <label class="label">{{ $t('admin.value') }}</label>
-            <textarea
-              v-model="form.value"
-              required
-              class="input"
-              rows="3"
-              :placeholder="$t('admin.valuePlaceholder')"
-            ></textarea>
-          </div>
-        </div>
-        <div class="flex justify-end gap-2 pt-4 border-t">
-          <button type="button" class="px-4 py-2 border rounded-md" @click="closeModal">
-            {{ $t('common.cancel') }}
-          </button>
-          <button type="submit" class="px-4 py-2 bg-primary text-white rounded-md" :disabled="saving">
-            {{ saving ? $t('common.loading') : $t('common.save') }}
-          </button>
-        </div>
-      </form>
-    </dialog>
   </div>
 </template>
 
@@ -166,6 +114,7 @@ import { ref, reactive, onMounted } from 'vue';
 import { useListPage } from '../../../composables/useListPage';
 import { useApi } from '../../../composables/useApi';
 import PaginationControls from '../../../components/common/PaginationControls.vue';
+import FilterDropdown from '../../../components/common/FilterDropdown.vue';
 
 const groups = ref([]);
 const locales = ref([]);
@@ -202,13 +151,6 @@ const {
   autoApplyFilters: false, // Manual filter application
 });
 
-const form = reactive({
-  key: '',
-  locale: 'en',
-  value: '',
-  group: 'messages',
-});
-
 const { get, post } = useApi();
 
 onMounted(() => {
@@ -237,56 +179,6 @@ function handleSearch() {
 // Handle filter change - manual apply
 function handleFilterChange() {
   applyFilters();
-}
-
-function openModal(translation = null) {
-  editing.value = !!translation;
-  if (translation) {
-    editingId.value = translation.id;
-    Object.assign(form, {
-      key: translation.key,
-      locale: translation.locale,
-      value: translation.value,
-      group: translation.group,
-    });
-  } else {
-    editingId.value = null;
-    Object.assign(form, {
-      key: '',
-      locale: 'en',
-      value: '',
-      group: 'messages',
-    });
-  }
-  dialogRef.value?.showModal();
-}
-
-function closeModal() {
-  dialogRef.value?.close();
-  editingId.value = null;
-  Object.assign(form, {
-    key: '',
-    locale: 'en',
-    value: '',
-    group: 'messages',
-  });
-  editing.value = false;
-}
-
-async function submit() {
-  saving.value = true;
-  try {
-    if (editing.value) {
-      await updateItem(editingId.value, form);
-    } else {
-      await createItem(form);
-    }
-    closeModal();
-  } catch (err) {
-    alert(error.value || 'حدث خطأ أثناء الحفظ');
-  } finally {
-    saving.value = false;
-  }
 }
 
 async function remove(id) {

@@ -33,14 +33,22 @@ export const useCourseStore = defineStore('course', () => {
     loading.value = true;
     error.value = null;
     try {
-      const data = await courseService.getAll(params);
-      courses.value = Array.isArray(data) ? data : data.data || [];
-      if (data.pagination) {
-        pagination.value = data.pagination;
+      const response = await courseService.getAll(params);
+      // Backend returns unified format: { success, message, data: [...], meta: { pagination: {...} } }
+      // The interceptor already extracts data, so response is the array or object
+      const data = Array.isArray(response) ? response : (response.data || response);
+      courses.value = Array.isArray(data) ? data : [];
+      
+      // Check for pagination in meta (attached by interceptor) or in response
+      if (response.meta?.pagination) {
+        pagination.value = response.meta.pagination;
+      } else if (response.pagination) {
+        pagination.value = response.pagination;
       }
+      
       return courses.value;
     } catch (err) {
-      error.value = err.response?.data?.message || 'Failed to fetch courses';
+      error.value = err.response?.data?.message || err.message || 'Failed to fetch courses';
       throw err;
     } finally {
       loading.value = false;
@@ -51,11 +59,14 @@ export const useCourseStore = defineStore('course', () => {
     loading.value = true;
     error.value = null;
     try {
-      const data = await courseService.getById(id);
+      const response = await courseService.getById(id);
+      // Backend returns unified format: { success, message, data: {...} }
+      // The interceptor already extracts data, so response is the course object
+      const data = response.data || response;
       currentCourse.value = data;
       return data;
     } catch (err) {
-      error.value = err.response?.data?.message || 'Failed to fetch course';
+      error.value = err.response?.data?.message || err.message || 'Failed to fetch course';
       throw err;
     } finally {
       loading.value = false;
@@ -80,14 +91,22 @@ export const useCourseStore = defineStore('course', () => {
     loading.value = true;
     error.value = null;
     try {
-      const data = await courseService.getAdminCourses(params);
-      courses.value = data.data || [];
-      if (data.pagination) {
-        pagination.value = data.pagination;
+      const response = await courseService.getAdminCourses(params);
+      // Backend returns unified format: { success, message, data: [...], meta: { pagination: {...} } }
+      // The interceptor already extracts data, so response is the array
+      const data = Array.isArray(response) ? response : (response.data || []);
+      courses.value = Array.isArray(data) ? data : [];
+      
+      // Check for pagination in meta (attached by interceptor) or in response
+      if (response.meta?.pagination) {
+        pagination.value = response.meta.pagination;
+      } else if (response.pagination) {
+        pagination.value = response.pagination;
       }
-      return data;
+      
+      return response;
     } catch (err) {
-      error.value = err.response?.data?.message || 'Failed to fetch courses';
+      error.value = err.response?.data?.message || err.message || 'Failed to fetch courses';
       throw err;
     } finally {
       loading.value = false;
@@ -98,11 +117,14 @@ export const useCourseStore = defineStore('course', () => {
     loading.value = true;
     error.value = null;
     try {
-      const data = await courseService.create(payload);
+      const response = await courseService.create(payload);
+      // Backend returns unified format: { success, message, data: {...} }
+      // The interceptor already extracts data, so response is the course object
+      const data = response.data || response;
       courses.value.push(data);
       return data;
     } catch (err) {
-      error.value = err.response?.data?.message || 'Failed to create course';
+      error.value = err.response?.data?.message || err.message || 'Failed to create course';
       throw err;
     } finally {
       loading.value = false;
@@ -113,7 +135,10 @@ export const useCourseStore = defineStore('course', () => {
     loading.value = true;
     error.value = null;
     try {
-      const data = await courseService.update(id, payload);
+      const response = await courseService.update(id, payload);
+      // Backend returns unified format: { success, message, data: {...} }
+      // The interceptor already extracts data, so response is the course object
+      const data = response.data || response;
       const index = courses.value.findIndex((c) => c.id === id);
       if (index !== -1) {
         courses.value[index] = data;
@@ -123,7 +148,7 @@ export const useCourseStore = defineStore('course', () => {
       }
       return data;
     } catch (err) {
-      error.value = err.response?.data?.message || 'Failed to update course';
+      error.value = err.response?.data?.message || err.message || 'Failed to update course';
       throw err;
     } finally {
       loading.value = false;
@@ -151,14 +176,22 @@ export const useCourseStore = defineStore('course', () => {
     loading.value = true;
     error.value = null;
     try {
-      const data = await courseService.getInstructorCourses(params);
-      courses.value = data.data || [];
-      if (data.pagination) {
-        pagination.value = data.pagination;
+      const response = await courseService.getInstructorCourses(params);
+      // Backend returns unified format: { success, message, data: [...], meta: { pagination: {...} } }
+      // The interceptor already extracts data, so response is the array
+      const data = Array.isArray(response) ? response : (response.data || []);
+      courses.value = Array.isArray(data) ? data : [];
+      
+      // Check for pagination in meta (attached by interceptor) or in response
+      if (response.meta?.pagination) {
+        pagination.value = response.meta.pagination;
+      } else if (response.pagination) {
+        pagination.value = response.pagination;
       }
-      return data;
+      
+      return response;
     } catch (err) {
-      error.value = err.response?.data?.message || 'Failed to fetch courses';
+      error.value = err.response?.data?.message || err.message || 'Failed to fetch courses';
       throw err;
     } finally {
       loading.value = false;
@@ -169,14 +202,22 @@ export const useCourseStore = defineStore('course', () => {
     loading.value = true;
     error.value = null;
     try {
-      const data = await courseService.getStudentCourses(params);
-      courses.value = data.data || [];
-      if (data.pagination) {
-        pagination.value = data.pagination;
+      const response = await courseService.getStudentCourses(params);
+      // Backend returns unified format: { success, message, data: [...], meta: { pagination: {...} } }
+      // The interceptor already extracts data, so response is the array
+      const data = Array.isArray(response) ? response : (response.data || []);
+      courses.value = Array.isArray(data) ? data : [];
+      
+      // Check for pagination in meta (attached by interceptor) or in response
+      if (response.meta?.pagination) {
+        pagination.value = response.meta.pagination;
+      } else if (response.pagination) {
+        pagination.value = response.pagination;
       }
-      return data;
+      
+      return response;
     } catch (err) {
-      error.value = err.response?.data?.message || 'Failed to fetch courses';
+      error.value = err.response?.data?.message || err.message || 'Failed to fetch courses';
       throw err;
     } finally {
       loading.value = false;
