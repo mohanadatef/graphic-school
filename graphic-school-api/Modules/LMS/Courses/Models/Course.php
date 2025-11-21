@@ -7,9 +7,11 @@ use Modules\ACL\Users\Models\User;
 use Modules\LMS\Sessions\Models\Session;
 use Modules\LMS\Enrollments\Models\Enrollment;
 use Modules\LMS\CourseReviews\Models\CourseReview;
+use Modules\LMS\Curriculum\Models\CourseModule;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Database\Factories\CourseFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Course extends Model
 {
@@ -85,6 +87,11 @@ class Course extends Model
     public function reviews()
     {
         return $this->hasMany(CourseReview::class);
+    }
+
+    public function modules(): HasMany
+    {
+        return $this->hasMany(CourseModule::class)->orderBy('order');
     }
 
     /**

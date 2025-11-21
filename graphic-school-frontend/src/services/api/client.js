@@ -61,9 +61,14 @@ api.interceptors.response.use(
     
     // Handle 401 - Unauthorized
     if (error.response?.status === 401) {
-      authStore.logout();
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
+      // Don't call logout API if we're already getting 401 (to avoid infinite loop)
+      // Just clear the session locally
+      if (authStore.token) {
+        authStore.clearSession();
+        // Only redirect if not already on login/register page
+        if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+          window.location.href = '/login';
+        }
       }
     }
     

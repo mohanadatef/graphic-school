@@ -163,10 +163,18 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function logout() {
     try {
-      await authService.logout();
+      // Only call logout API if we have a valid token
+      if (token.value) {
+        await authService.logout();
+      }
     } catch (err) {
-      // Ignore logout errors
+      // Ignore logout errors (especially 401 errors - token might already be invalid)
+      // This is expected when token expires or is invalid
+      if (err.response?.status !== 401) {
+        console.warn('Logout API call failed:', err);
+      }
     } finally {
+      // Always clear session, even if API call fails
       clearSession();
     }
   }
