@@ -18,6 +18,7 @@ use Modules\CMS\Contacts\Http\Controllers\ContactController;
 use Modules\CMS\Testimonials\Http\Controllers\TestimonialController;
 use Modules\Core\Localization\Http\Controllers\TranslationController;
 use Modules\Operations\Reports\Http\Controllers\ReportController;
+use Modules\Operations\Reports\Http\Controllers\StrategicReportController;
 use App\Http\Controllers\HealthController;
 use Illuminate\Support\Facades\Route;
 
@@ -86,8 +87,8 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/dashboard', DashboardController::class);
 
         Route::apiResource('users', UserController::class);
-        Route::apiResource('roles', RoleController::class)->except(['show']);
-        Route::apiResource('categories', CategoryController::class)->except(['show']);
+        Route::apiResource('roles', RoleController::class);
+        Route::apiResource('categories', CategoryController::class);
         Route::apiResource('courses', CourseController::class);
         Route::post('/courses/{course}/assign-instructors', [CourseController::class, 'assignInstructors']);
         Route::post('/courses/{course}/sessions/generate', [CourseController::class, 'generateSessions']);
@@ -116,5 +117,14 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/reports/courses', [ReportController::class, 'courses']);
         Route::get('/reports/instructors', [ReportController::class, 'instructors']);
         Route::get('/reports/financial', [ReportController::class, 'financial']);
+        
+        // Strategic Reports for Decision Making
+        Route::prefix('reports/strategic')->group(function () {
+            Route::get('/performance', [StrategicReportController::class, 'performance']);
+            Route::get('/profitability', [StrategicReportController::class, 'profitability']);
+            Route::get('/student-analytics', [StrategicReportController::class, 'studentAnalytics']);
+            Route::get('/instructor-performance', [StrategicReportController::class, 'instructorPerformance']);
+            Route::get('/forecasting', [StrategicReportController::class, 'forecasting']);
+        });
     });
 });

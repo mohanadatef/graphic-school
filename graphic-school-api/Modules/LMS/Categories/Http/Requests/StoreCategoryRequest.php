@@ -14,8 +14,18 @@ class StoreCategoryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255', 'unique:categories,name'],
+            'translations' => ['required', 'array'],
+            'translations.*' => ['required', 'string', 'max:255'],
             'is_active' => ['nullable', 'boolean'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'translations.required' => 'يجب إدخال اسم التصنيف على الأقل بلغة واحدة',
+            'translations.*.required' => 'اسم التصنيف مطلوب',
+            'translations.*.max' => 'اسم التصنيف يجب ألا يتجاوز 255 حرف',
         ];
     }
 }

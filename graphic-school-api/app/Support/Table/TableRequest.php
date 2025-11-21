@@ -77,7 +77,17 @@ abstract class TableRequest extends FormRequest
      */
     public function getFilters(): array
     {
-        return $this->array('filters', []);
+        $filters = $this->input('filters', []);
+        return is_array($filters) ? $filters : [];
+    }
+
+    /**
+     * Get array input (compatibility method for Laravel versions that don't have array() method)
+     */
+    public function array(string $key, array $default = []): array
+    {
+        $value = $this->input($key, $default);
+        return is_array($value) ? $value : $default;
     }
 
     /**

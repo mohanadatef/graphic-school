@@ -3,6 +3,7 @@
 namespace Modules\LMS\Enrollments\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Http\Responses\ApiResponse;
 use Modules\LMS\Enrollments\Http\Requests\ListEnrollmentRequest;
 use Modules\LMS\Enrollments\Http\Requests\StoreEnrollmentRequest;
 use Modules\LMS\Enrollments\Http\Requests\UpdateEnrollmentRequest;
@@ -18,21 +19,28 @@ class EnrollmentController extends Controller
 
     public function index(ListEnrollmentRequest $request)
     {
+        // Ensure per_page is within allowed range (max 100)
+        $perPage = min(100, max(5, $request->integer('per_page', 10)));
+        
         $enrollments = $this->enrollmentService->paginate(
             $request->validated(),
-            $request->integer('per_page', 10)
+            $perPage
         );
 
-        return EnrollmentResource::collection($enrollments);
+        return ApiResponse::paginated(
+            EnrollmentResource::collection($enrollments),
+            'Enrollments retrieved successfully'
+        );
     }
 
     public function store(StoreEnrollmentRequest $request)
     {
         $enrollment = $this->enrollmentService->create($request->validated());
 
-        return EnrollmentResource::make($enrollment)
-            ->response()
-            ->setStatusCode(201);
+        return ApiResponse::created(
+            EnrollmentResource::make($enrollment->load(['student', 'course']))->resolve(request()),
+            'Enrollment created successfully'
+        );
     }
 
     public function update(UpdateEnrollmentRequest $request, Enrollment $enrollment)
@@ -40,10 +48,13 @@ class EnrollmentController extends Controller
         $enrollment = $this->enrollmentService->update(
             $enrollment,
             $request->validated(),
-            $request->user()->id
+            auth('api')->id()
         );
 
-        return EnrollmentResource::make($enrollment);
+        return ApiResponse::success(
+            EnrollmentResource::make($enrollment->load(['student', 'course']))->resolve(request()),
+            'Enrollment updated successfully'
+        );
     }
 }
 

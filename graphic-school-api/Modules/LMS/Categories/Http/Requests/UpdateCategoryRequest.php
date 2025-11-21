@@ -15,8 +15,18 @@ class UpdateCategoryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['sometimes', 'required', 'string', 'max:255', Rule::unique('categories', 'name')->ignore($this->route('category'))],
+            'translations' => ['sometimes', 'required', 'array'],
+            'translations.*' => ['required', 'string', 'max:255'],
             'is_active' => ['nullable', 'boolean'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'translations.required' => 'يجب إدخال اسم التصنيف على الأقل بلغة واحدة',
+            'translations.*.required' => 'اسم التصنيف مطلوب',
+            'translations.*.max' => 'اسم التصنيف يجب ألا يتجاوز 255 حرف',
         ];
     }
 }

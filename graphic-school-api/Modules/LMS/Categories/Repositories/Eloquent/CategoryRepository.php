@@ -21,12 +21,43 @@ class CategoryRepository extends BaseRepository implements CategoryRepositoryInt
 
     public function listOrdered(): Collection
     {
-        return $this->query()->orderBy('name')->get();
+        $locale = app()->getLocale();
+        return $this->query()
+            ->with(['translations' => function ($query) use ($locale) {
+                $query->where('locale', $locale);
+            }])
+            ->orderBy('id')
+            ->get()
+            ->map(function ($category) use ($locale) {
+                // Set name attribute based on locale
+                $translation = $category->translations->first();
+                if ($translation) {
+                    $category->setAttribute('name', $translation->name);
+                    $category->setAttribute('localized_name', $translation->name);
+                }
+                return $category;
+            });
     }
 
     public function activeOrdered(): Collection
     {
-        return $this->query()->where('is_active', true)->orderBy('name')->get();
+        $locale = app()->getLocale();
+        return $this->query()
+            ->where('is_active', true)
+            ->with(['translations' => function ($query) use ($locale) {
+                $query->where('locale', $locale);
+            }])
+            ->orderBy('id')
+            ->get()
+            ->map(function ($category) use ($locale) {
+                // Set name attribute based on locale
+                $translation = $category->translations->first();
+                if ($translation) {
+                    $category->setAttribute('name', $translation->name);
+                    $category->setAttribute('localized_name', $translation->name);
+                }
+                return $category;
+            });
     }
 }
 

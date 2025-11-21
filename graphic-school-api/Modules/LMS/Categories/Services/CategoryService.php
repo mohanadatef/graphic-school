@@ -19,15 +19,46 @@ class CategoryService
 
     public function create(array $data): Category
     {
-        return $this->categoryRepository->create([
-            'name' => $data['name'],
+        $category = $this->categoryRepository->create([
             'is_active' => $data['is_active'] ?? true,
         ]);
+
+        // Save translations
+        if (isset($data['translations']) && is_array($data['translations'])) {
+            foreach ($data['translations'] as $locale => $name) {
+                if (!empty($name)) {
+                    $category->translations()->create([
+                        'locale' => $locale,
+                        'name' => $name,
+                    ]);
+                }
+            }
+        }
+
+        return $category->load('translations');
     }
 
     public function update(Category $category, array $data): Category
     {
-        return $this->categoryRepository->update($category, $data);
+        $this->categoryRepository->update($category, [
+            'is_active' => $data['is_active'] ?? $category->is_active,
+        ]);
+
+        // Update translations
+        if (isset($data['translations']) && is_array($data['translations'])) {
+            foreach ($data['translations'] as $locale => $name) {
+                if (!empty($name)) {
+                    $category->translations()->updateOrCreate(
+                        ['locale' => $locale],
+                        ['name' => $name]
+                    );
+                } else {
+                    $category->translations()->where('locale', $locale)->delete();
+                }
+            }
+        }
+
+        return $category->load('translations');
     }
 
     public function delete(Category $category): void

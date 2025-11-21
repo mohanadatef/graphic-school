@@ -54,9 +54,13 @@ class TableBuilder
             $sortBy = 'id';
         }
 
-        $sortOrder = in_array(strtolower($sortOrder ?? 'desc'), ['asc', 'desc'])
-            ? strtolower($sortOrder)
-            : 'desc';
+        // Ensure sortOrder is not empty and is valid
+        $sortOrder = trim($sortOrder ?? '');
+        if (empty($sortOrder) || !in_array(strtolower($sortOrder), ['asc', 'desc'])) {
+            $sortOrder = 'desc';
+        } else {
+            $sortOrder = strtolower($sortOrder);
+        }
 
         $this->query->orderBy($sortBy, $sortOrder);
 

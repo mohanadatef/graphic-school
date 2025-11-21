@@ -20,10 +20,10 @@ class ListCoursesUseCase extends BaseQuery
         /** @var ListCoursesDTO $dto */
         $dto = $input;
 
-        $builder = new TableBuilder($this->courseRepository->query())
-            ->sortable(['id', 'title', 'code', 'price', 'start_date', 'created_at', 'status'])
-            ->searchable(['title', 'code', 'description'])
-            ->filterable(['category_id', 'status', 'is_published', 'delivery_type']);
+        $builder = new TableBuilder($this->courseRepository->query());
+        $builder->sortable(['id', 'title', 'code', 'price', 'start_date', 'created_at', 'status']);
+        $builder->searchable(['title', 'code', 'description']);
+        $builder->filterable(['category_id', 'status', 'is_published', 'delivery_type']);
 
         $builder->applySorting($dto->sortBy, $dto->sortOrder);
         $builder->applySearch($dto->search);

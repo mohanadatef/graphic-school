@@ -27,7 +27,7 @@ class UserController extends BaseController
             'sort_by' => $request->string('sort_by'),
             'sort_order' => $request->string('sort_order'),
             'search' => $request->string('search'),
-            'filters' => $request->array('filters', []),
+            'filters' => $request->input('filters', []),
             'date_from' => $request->date('date_from'),
             'date_to' => $request->date('date_to'),
         ]);

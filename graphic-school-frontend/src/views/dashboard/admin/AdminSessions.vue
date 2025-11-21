@@ -7,28 +7,35 @@
       </div>
     </div>
 
-    <div class="bg-white border border-slate-100 rounded-2xl shadow p-4 space-y-3">
-      <div class="flex flex-wrap gap-3">
-        <select v-model="filters.course_id" class="input w-48" @change="handleFilterChange">
-          <option value="">كل الكورسات</option>
-          <option v-for="course in courses" :key="course.id" :value="course.id">{{ course.title }}</option>
-        </select>
-        <select v-model="filters.status" class="input w-40" @change="handleFilterChange">
-          <option value="">كل الحالات</option>
-          <option value="scheduled">مجدولة</option>
-          <option value="completed">منتهية</option>
-          <option value="cancelled">ملغاة</option>
-        </select>
-        <select
+    <div class="bg-white border border-slate-100 rounded-2xl shadow p-3">
+      <div class="flex flex-wrap gap-2 items-center">
+        <FilterDropdown
+          v-model="filters.course_id"
+          :options="courses"
+          placeholder="كل الكورسات"
+          label-key="title"
+          @update:modelValue="handleFilterChange"
+        />
+        <FilterDropdown
+          v-model="filters.status"
+          :options="[
+            { id: 'scheduled', name: 'مجدولة' },
+            { id: 'completed', name: 'منتهية' },
+            { id: 'cancelled', name: 'ملغاة' }
+          ]"
+          placeholder="كل الحالات"
+          @update:modelValue="handleFilterChange"
+        />
+        <FilterDropdown
           v-model.number="pagination.per_page"
-          class="input w-32"
-          @change="changePerPage(pagination.per_page)"
-        >
-          <option :value="10">10</option>
-          <option :value="20">20</option>
-          <option :value="50">50</option>
-        </select>
-        <button class="px-4 py-2 border rounded-md" @click="loadItems">تحديث</button>
+          :options="[
+            { id: 10, name: '10' },
+            { id: 20, name: '20' },
+            { id: 50, name: '50' }
+          ]"
+          placeholder="عدد الصفحات"
+          @update:modelValue="changePerPage"
+        />
       </div>
     </div>
 
@@ -50,7 +57,12 @@
             <td class="px-4 py-3">{{ formatDate(session.session_date) }}</td>
             <td class="px-4 py-3 text-xs uppercase">{{ session.status }}</td>
             <td class="px-4 py-3 text-right">
-              <button class="text-primary text-xs" @click="openModal(session)">تعديل</button>
+              <RouterLink
+                :to="`/dashboard/admin/sessions/${session.id}/edit`"
+                class="text-primary text-xs hover:underline"
+              >
+                تعديل
+              </RouterLink>
             </td>
           </tr>
         </tbody>
@@ -66,49 +78,18 @@
       @change-page="changePage"
       @change-per-page="changePerPage"
     />
-
-    <dialog ref="dialogRef" class="rounded-2xl p-0 w-full max-w-lg">
-      <form class="p-6 space-y-4" @submit.prevent="submit">
-        <h3 class="text-xl font-semibold">تعديل الجلسة</h3>
-        <div>
-          <label class="label">العنوان</label>
-          <input v-model="form.title" class="input" />
-        </div>
-        <div class="grid md:grid-cols-2 gap-4">
-          <div>
-            <label class="label">التاريخ</label>
-            <input v-model="form.session_date" type="date" class="input" />
-          </div>
-          <div>
-            <label class="label">الحالة</label>
-            <select v-model="form.status" class="input">
-              <option value="scheduled">مجدولة</option>
-              <option value="completed">منتهية</option>
-              <option value="cancelled">ملغاة</option>
-            </select>
-          </div>
-        </div>
-        <div>
-          <label class="label">ملاحظة</label>
-          <textarea v-model="form.note" rows="3" class="input"></textarea>
-        </div>
-        <div class="flex justify-end gap-3">
-          <button type="button" class="px-4 py-2 border rounded-md" @click="closeModal">إلغاء</button>
-          <button type="submit" class="px-4 py-2 bg-primary text-white rounded-md">حفظ</button>
-        </div>
-      </form>
-    </dialog>
   </div>
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue';
+import { onMounted, ref } from 'vue';
+import { RouterLink } from 'vue-router';
 import { useListPage } from '../../../composables/useListPage';
 import { useApi } from '../../../composables/useApi';
 import PaginationControls from '../../../components/common/PaginationControls.vue';
+import FilterDropdown from '../../../components/common/FilterDropdown.vue';
 
 const courses = ref([]);
-const dialogRef = ref(null);
 
 // Use unified list page composable
 const {
@@ -133,55 +114,15 @@ const {
   autoApplyFilters: false, // Manual filter application
 });
 
-const form = reactive({
-  id: null,
-  title: '',
-  session_date: '',
-  status: 'scheduled',
-  note: '',
-});
-
-const { get, put } = useApi();
+const { get } = useApi();
 
 async function loadCourses() {
   try {
     const data = await get('/admin/courses', { params: { per_page: 1000 } });
-    courses.value = data.data || [];
+    courses.value = Array.isArray(data) ? data : (data.data || []);
   } catch (err) {
     console.error('Error loading courses:', err);
     courses.value = [];
-  }
-}
-
-function openModal(session) {
-  form.id = session.id;
-  form.title = session.title || '';
-  form.session_date = session.session_date || '';
-  form.status = session.status || 'scheduled';
-  form.note = session.note || '';
-  dialogRef.value.showModal();
-}
-
-function closeModal() {
-  dialogRef.value.close();
-  form.id = null;
-  form.title = '';
-  form.session_date = '';
-  form.status = 'scheduled';
-  form.note = '';
-}
-
-async function submit() {
-  try {
-    await updateItem(form.id, {
-      title: form.title,
-      session_date: form.session_date,
-      status: form.status,
-      note: form.note,
-    });
-    closeModal();
-  } catch (err) {
-    alert(error.value || 'حدث خطأ أثناء الحفظ');
   }
 }
 

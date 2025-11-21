@@ -28,7 +28,11 @@ class UserResource extends JsonResource
             'reviews_count' => $this->when(isset($this->reviews_count), (int) $this->reviews_count),
             'courses_count' => $this->when(isset($this->courses_count), (int) $this->courses_count),
             'students_count' => $this->when(isset($this->students_count), (int) $this->students_count),
-            'role' => $this->whenLoaded('role', fn () => new RoleResource($this->role)),
+            'role' => $this->whenLoaded('role', function () {
+                return $this->role ? new RoleResource($this->role) : null;
+            }),
+            'role_name' => $this->role_name ?? ($this->role?->name ?? null),
+            'role_id' => $this->role_id,
             'instructor_courses' => $this->whenLoaded('instructorCourses', function () {
                 return $this->instructorCourses->map(function ($course) {
                     return [

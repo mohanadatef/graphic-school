@@ -3,6 +3,7 @@
 namespace Modules\LMS\Categories\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Http\Responses\ApiResponse;
 use Modules\LMS\Categories\Http\Requests\StoreCategoryRequest;
 use Modules\LMS\Categories\Http\Requests\UpdateCategoryRequest;
 use Modules\LMS\Categories\Http\Resources\CategoryResource;
@@ -17,7 +18,19 @@ class CategoryController extends Controller
 
     public function index()
     {
-        return CategoryResource::collection($this->categoryService->list());
+        $categories = $this->categoryService->list();
+        return ApiResponse::collection(
+            CategoryResource::collection($categories)->resolve(request()),
+            'Categories retrieved successfully'
+        );
+    }
+
+    public function show(Category $category)
+    {
+        return ApiResponse::success(
+            CategoryResource::make($category->load('translations'))->resolve(request()),
+            'Category retrieved successfully'
+        );
     }
 
     public function store(StoreCategoryRequest $request)
@@ -26,9 +39,10 @@ class CategoryController extends Controller
 
         $category = $this->categoryService->create($data);
 
-        return CategoryResource::make($category)
-            ->response()
-            ->setStatusCode(201);
+        return ApiResponse::created(
+            CategoryResource::make($category)->resolve(request()),
+            'Category created successfully'
+        );
     }
 
     public function update(UpdateCategoryRequest $request, Category $category)
@@ -37,14 +51,20 @@ class CategoryController extends Controller
 
         $category = $this->categoryService->update($category, $data);
 
-        return CategoryResource::make($category);
+        return ApiResponse::success(
+            CategoryResource::make($category)->resolve(request()),
+            'Category updated successfully'
+        );
     }
 
     public function destroy(Category $category)
     {
         $this->categoryService->delete($category);
 
-        return response()->json(['message' => 'Deleted']);
+        return ApiResponse::success(
+            null,
+            'Category deleted successfully'
+        );
     }
 }
 

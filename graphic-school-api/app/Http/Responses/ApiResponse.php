@@ -112,9 +112,29 @@ class ApiResponse
         LengthAwarePaginator|ResourceCollection $paginator,
         string $message = 'Success'
     ): JsonResponse {
-        $data = $paginator instanceof ResourceCollection
-            ? $paginator->response()->getData(true)
-            : $paginator->items();
+        // For ResourceCollection, get the resolved data array directly
+        if ($paginator instanceof ResourceCollection) {
+            // Get the underlying collection and resolve each resource
+            $data = $paginator->collection->map(function ($item) {
+                if (method_exists($item, 'resolve')) {
+                    return $item->resolve(request());
+                }
+                return $item instanceof \Illuminate\Http\Resources\Json\JsonResource
+                    ? $item->toArray(request())
+                    : $item;
+            })->values()->toArray();
+        } else {
+            // For LengthAwarePaginator, get items and resolve if they're resources
+            $items = $paginator->items();
+            $data = array_map(function ($item) {
+                if (method_exists($item, 'resolve')) {
+                    return $item->resolve(request());
+                }
+                return $item instanceof \Illuminate\Http\Resources\Json\JsonResource
+                    ? $item->toArray(request())
+                    : $item;
+            }, $items);
+        }
 
         $meta = [
             'pagination' => [

@@ -20,10 +20,10 @@ class ListUsersUseCase extends BaseQuery
         /** @var ListUsersDTO $dto */
         $dto = $input;
 
-        $builder = new TableBuilder($this->userRepository->query())
-            ->sortable(['id', 'name', 'email', 'created_at', 'is_active'])
-            ->searchable(['name', 'email', 'phone'])
-            ->filterable(['role_id', 'is_active']);
+        $builder = new TableBuilder($this->userRepository->query());
+        $builder->sortable(['id', 'name', 'email', 'created_at', 'is_active']);
+        $builder->searchable(['name', 'email', 'phone']);
+        $builder->filterable(['role_id', 'is_active']);
 
         $builder->applySorting($dto->sortBy, $dto->sortOrder);
         $builder->applySearch($dto->search);

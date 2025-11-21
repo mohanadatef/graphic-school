@@ -28,8 +28,12 @@ class EnrollmentResource extends JsonResource
             'approved_by' => $this->approved_by,
             'approved_at' => optional($this->approved_at)?->toDateTimeString(),
             'created_at' => optional($this->created_at)?->toDateTimeString(),
-            'student' => $this->whenLoaded('student', fn () => new UserResource($this->student)),
-            'course' => $this->whenLoaded('course', fn () => new CourseResource($this->course)),
+            'student' => $this->whenLoaded('student', function () {
+                return $this->student ? new UserResource($this->student) : null;
+            }),
+            'course' => $this->whenLoaded('course', function () {
+                return $this->course ? new CourseResource($this->course) : null;
+            }),
         ];
     }
 }

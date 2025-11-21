@@ -74,9 +74,47 @@ const dashboardChildren = [
     meta: { middleware: [authMiddleware, roleMiddleware('admin')] },
   },
   {
+    path: 'admin/users/new',
+    name: 'admin-users-new',
+    component: () => import('../views/dashboard/admin/UserForm.vue'),
+    meta: { middleware: [authMiddleware, roleMiddleware('admin')] },
+  },
+  {
+    path: 'admin/users/:id/edit',
+    name: 'admin-users-edit',
+    component: () => import('../views/dashboard/admin/UserForm.vue'),
+    props: true,
+    meta: { middleware: [authMiddleware, roleMiddleware('admin')] },
+  },
+  {
     path: 'admin/roles',
     name: 'admin-roles',
     component: () => import('../views/dashboard/admin/AdminRoles.vue'),
+    meta: { middleware: [authMiddleware, roleMiddleware('admin')] },
+  },
+  {
+    path: 'admin/roles/new',
+    name: 'admin-roles-new',
+    component: () => import('../views/dashboard/admin/RoleForm.vue'),
+    meta: { middleware: [authMiddleware, roleMiddleware('admin')] },
+  },
+  {
+    path: 'admin/roles/:id/edit',
+    name: 'admin-roles-edit',
+    component: () => import('../views/dashboard/admin/RoleForm.vue'),
+    props: true,
+    meta: { middleware: [authMiddleware, roleMiddleware('admin')] },
+  },
+  {
+    path: 'admin/reports',
+    name: 'admin-reports',
+    component: () => import('../views/dashboard/admin/ReportsPage.vue'),
+    meta: { middleware: [authMiddleware, roleMiddleware('admin')] },
+  },
+  {
+    path: 'admin/strategic-reports',
+    name: 'admin-strategic-reports',
+    component: () => import('../views/dashboard/admin/StrategicReportsPage.vue'),
     meta: { middleware: [authMiddleware, roleMiddleware('admin')] },
   },
   {
@@ -86,9 +124,35 @@ const dashboardChildren = [
     meta: { middleware: [authMiddleware, roleMiddleware('admin')] },
   },
   {
+    path: 'admin/categories/new',
+    name: 'admin-categories-new',
+    component: () => import('../views/dashboard/admin/CategoryForm.vue'),
+    meta: { middleware: [authMiddleware, roleMiddleware('admin')] },
+  },
+  {
+    path: 'admin/categories/:id/edit',
+    name: 'admin-categories-edit',
+    component: () => import('../views/dashboard/admin/CategoryForm.vue'),
+    props: true,
+    meta: { middleware: [authMiddleware, roleMiddleware('admin')] },
+  },
+  {
     path: 'admin/courses',
     name: 'admin-courses',
     component: () => import('../views/dashboard/admin/AdminCourses.vue'),
+    meta: { middleware: [authMiddleware, roleMiddleware('admin')] },
+  },
+  {
+    path: 'admin/courses/new',
+    name: 'admin-courses-new',
+    component: () => import('../views/dashboard/admin/CourseForm.vue'),
+    meta: { middleware: [authMiddleware, roleMiddleware('admin')] },
+  },
+  {
+    path: 'admin/courses/:id/edit',
+    name: 'admin-courses-edit',
+    component: () => import('../views/dashboard/admin/CourseForm.vue'),
+    props: true,
     meta: { middleware: [authMiddleware, roleMiddleware('admin')] },
   },
   {
@@ -98,9 +162,23 @@ const dashboardChildren = [
     meta: { middleware: [authMiddleware, roleMiddleware('admin')] },
   },
   {
+    path: 'admin/sessions/:id/edit',
+    name: 'admin-sessions-edit',
+    component: () => import('../views/dashboard/admin/SessionForm.vue'),
+    props: true,
+    meta: { middleware: [authMiddleware, roleMiddleware('admin')] },
+  },
+  {
     path: 'admin/enrollments',
     name: 'admin-enrollments',
     component: () => import('../views/dashboard/admin/AdminEnrollments.vue'),
+    meta: { middleware: [authMiddleware, roleMiddleware('admin')] },
+  },
+  {
+    path: 'admin/enrollments/:id/edit',
+    name: 'admin-enrollments-edit',
+    component: () => import('../views/dashboard/admin/EnrollmentForm.vue'),
+    props: true,
     meta: { middleware: [authMiddleware, roleMiddleware('admin')] },
   },
   {
@@ -116,6 +194,19 @@ const dashboardChildren = [
     meta: { middleware: [authMiddleware, roleMiddleware('admin')] },
   },
   {
+    path: 'admin/sliders/new',
+    name: 'admin-sliders-new',
+    component: () => import('../views/dashboard/admin/SliderForm.vue'),
+    meta: { middleware: [authMiddleware, roleMiddleware('admin')] },
+  },
+  {
+    path: 'admin/sliders/:id/edit',
+    name: 'admin-sliders-edit',
+    component: () => import('../views/dashboard/admin/SliderForm.vue'),
+    props: true,
+    meta: { middleware: [authMiddleware, roleMiddleware('admin')] },
+  },
+  {
     path: 'admin/settings',
     name: 'admin-settings',
     component: () => import('../views/dashboard/admin/AdminSettings.vue'),
@@ -125,6 +216,25 @@ const dashboardChildren = [
     path: 'admin/contacts',
     name: 'admin-contacts',
     component: () => import('../views/dashboard/admin/AdminContacts.vue'),
+    meta: { middleware: [authMiddleware, roleMiddleware('admin')] },
+  },
+  {
+    path: 'admin/translations',
+    name: 'admin-translations',
+    component: () => import('../views/dashboard/admin/AdminTranslations.vue'),
+    meta: { middleware: [authMiddleware, roleMiddleware('admin')] },
+  },
+  {
+    path: 'admin/translations/new',
+    name: 'admin-translations-new',
+    component: () => import('../views/dashboard/admin/TranslationForm.vue'),
+    meta: { middleware: [authMiddleware, roleMiddleware('admin')] },
+  },
+  {
+    path: 'admin/translations/:id/edit',
+    name: 'admin-translations-edit',
+    component: () => import('../views/dashboard/admin/TranslationForm.vue'),
+    props: true,
     meta: { middleware: [authMiddleware, roleMiddleware('admin')] },
   },
 
