@@ -1,11 +1,13 @@
 import axios from 'axios';
 import { useAuthStore } from '../../stores/auth';
+import { monitorApiCall, logError } from '../../utils/monitoring';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://graphic-school.test/api',
+  timeout: 30000, // 30 seconds timeout
 });
 
-// Request interceptor - attach token
+// Request interceptor - attach token and track performance
 api.interceptors.request.use(
   (config) => {
     const authStore = useAuthStore();
@@ -15,9 +17,21 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
     
+    // Add locale header
+    const locale = localStorage.getItem('locale') || 'ar';
+    config.headers['Accept-Language'] = locale;
+    
+    // Add performance tracking
+    config.metadata = {
+      startTime: performance.now(),
+      url: config.url,
+      method: config.method,
+    };
+    
     return config;
   },
   (error) => {
+    logError(error, { type: 'request_interceptor' });
     return Promise.reject(error);
   }
 );
@@ -25,6 +39,17 @@ api.interceptors.request.use(
 // Response interceptor - handle unified API response format
 api.interceptors.response.use(
   (response) => {
+    // Track API performance
+    if (response.config?.metadata) {
+      const duration = performance.now() - response.config.metadata.startTime;
+      monitorApiCall(
+        response.config.metadata.url,
+        response.config.metadata.method,
+        duration,
+        response.status
+      );
+    }
+
     // Backend now returns unified format: { success, message, data, errors, status, meta }
     // Extract the actual data from the unified response
     if (response.data && typeof response.data === 'object' && 'success' in response.data) {
@@ -48,6 +73,25 @@ api.interceptors.response.use(
   },
   (error) => {
     const authStore = useAuthStore();
+    
+    // Track API error performance
+    if (error.config?.metadata) {
+      const duration = performance.now() - error.config.metadata.startTime;
+      monitorApiCall(
+        error.config.metadata.url,
+        error.config.metadata.method,
+        duration,
+        error.response?.status || 0
+      );
+    }
+
+    // Log error for monitoring
+    logError(error, {
+      type: 'api_error',
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+    });
     
     // Handle unified error format
     if (error.response?.data && typeof error.response.data === 'object' && 'success' in error.response.data) {
@@ -86,4 +130,3 @@ api.interceptors.response.use(
 );
 
 export default api;
-

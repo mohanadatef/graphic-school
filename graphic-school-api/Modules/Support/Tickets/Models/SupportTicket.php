@@ -3,6 +3,7 @@
 namespace Modules\Support\Tickets\Models;
 
 use Modules\ACL\Users\Models\User;
+use Modules\Support\Tickets\Database\Factories\SupportTicketFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,19 +12,26 @@ class SupportTicket extends Model
 {
     use HasFactory;
 
+    protected static function newFactory()
+    {
+        return SupportTicketFactory::new();
+    }
+
     protected $fillable = [
         'user_id',
-        'type',
+        'type', // bug, change_request, new_feature
         'title',
         'description',
-        'status',
-        'priority',
+        'status', // open, in_progress, resolved, closed
+        'priority', // low, medium, high, urgent
         'assigned_to',
         'attachments',
+        'updates', // Status update history
     ];
 
     protected $casts = [
         'attachments' => 'array',
+        'updates' => 'array',
     ];
 
     /**

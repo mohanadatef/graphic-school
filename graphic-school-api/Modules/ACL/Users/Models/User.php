@@ -97,6 +97,11 @@ class User extends Authenticatable
         return $this->role?->name === 'student';
     }
 
+    public function isSuperAdmin(): bool
+    {
+        return $this->role?->name === 'super_admin';
+    }
+
     public function getRoleNameAttribute(): ?string
     {
         return $this->role?->name;

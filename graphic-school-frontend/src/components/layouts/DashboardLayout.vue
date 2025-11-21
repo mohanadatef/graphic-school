@@ -168,6 +168,7 @@ const adminLinks = computed(() => [
   { labelKey: 'admin.sessions', to: '/dashboard/admin/sessions', icon: 'sessions' },
   { labelKey: 'admin.enrollments', to: '/dashboard/admin/enrollments', icon: 'enrollments' },
   { labelKey: 'admin.attendance', to: '/dashboard/admin/attendance', icon: 'attendance' },
+  { labelKey: 'admin.pages', to: '/dashboard/admin/pages', icon: 'pages' },
   { labelKey: 'admin.sliders', to: '/dashboard/admin/sliders', icon: 'sliders' },
   { labelKey: 'admin.settings', to: '/dashboard/admin/settings', icon: 'settings' },
   { labelKey: 'admin.contacts', to: '/dashboard/admin/contacts', icon: 'contacts' },

@@ -22,17 +22,24 @@ class SessionSeeder extends Seeder
             'sun' => Carbon::SUNDAY,
         ];
 
-        Course::where('session_count', '>', 0)->get()->each(function (Course $course) use ($dayMap) {
+        $sessionCount = 0;
+
+        Course::where('session_count', '>', 0)->get()->each(function (Course $course) use ($dayMap, &$sessionCount) {
+            // حذف الجلسات القديمة إن وجدت
             $course->sessions()->delete();
 
             $days = $course->days_of_week ?? ['sat'];
             $sessionsNeeded = $course->session_count ?? 8;
-            $current = $course->start_date ? Carbon::parse($course->start_date) : Carbon::now();
+            $startDate = $course->start_date ? Carbon::parse($course->start_date) : Carbon::now();
+            $startTime = $course->default_start_time ?? '10:00';
+            $endTime = $course->default_end_time ?? '12:00';
+            
             $order = 1;
+            $current = $startDate->copy();
 
             while ($order <= $sessionsNeeded) {
                 foreach ($days as $day) {
-                    if (! isset($dayMap[$day])) {
+                    if (!isset($dayMap[$day])) {
                         continue;
                     }
 
@@ -40,26 +47,42 @@ class SessionSeeder extends Seeder
                         break;
                     }
 
-                    $date = $current->copy()->next($dayMap[$day]);
-                    if ($date->lessThan($current)) {
-                        $date = $current->copy()->next($dayMap[$day]);
+                    // العثور على أول يوم من الأيام المحددة
+                    $sessionDate = $current->copy();
+                    while ($sessionDate->dayOfWeek !== $dayMap[$day]) {
+                        $sessionDate->addDay();
+                    }
+
+                    // تحديد حالة الجلسة بناءً على التاريخ
+                    $now = Carbon::now();
+                    if ($sessionDate->isPast()) {
+                        $status = SessionStatus::COMPLETED;
+                    } elseif ($sessionDate->isToday()) {
+                        $status = SessionStatus::SCHEDULED;
+                    } else {
+                        $status = SessionStatus::SCHEDULED;
                     }
 
                     Session::create([
                         'course_id' => $course->id,
                         'title' => "{$course->title} - Session {$order}",
                         'session_order' => $order,
-                        'session_date' => $date->toDateString(),
-                        'start_time' => '18:00:00',
-                        'end_time' => '20:00:00',
-                        'status' => SessionStatus::SCHEDULED->value,
+                        'session_date' => $sessionDate->toDateString(),
+                        'start_time' => $startTime,
+                        'end_time' => $endTime,
+                        'status' => $status->value,
+                        'created_at' => $startDate->copy()->subDays(rand(1, 30)),
+                        'updated_at' => $sessionDate->copy()->subDays(rand(0, 5)),
                     ]);
 
                     $order++;
+                    $sessionCount++;
                 }
 
                 $current->addWeek();
             }
         });
+
+        $this->command->info("Sessions seeded: {$sessionCount} sessions");
     }
 }

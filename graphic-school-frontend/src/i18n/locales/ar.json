@@ -112,6 +112,7 @@
     "roles": "الأدوار و الصلاحيات",
     "contacts": "الرسائل",
     "sliders": "السلايدر",
+    "pages": "الصفحات",
     "testimonials": "الشهادات",
     "translations": "الترجمات",
     "translation": "ترجمة",
@@ -139,6 +140,99 @@
     "notFound": "المورد غير موجود",
     "unauthorized": "وصول غير مصرح به",
     "validationError": "خطأ في التحقق"
+  },
+  "notifications": {
+    "title": "الإشعارات",
+    "all": "الكل",
+    "unread": "غير مقروء",
+    "markAsRead": "تعليم كمقروء",
+    "markAllRead": "تعليم الكل كمقروء",
+    "noNotifications": "لا توجد إشعارات",
+    "justNow": "الآن",
+    "minutesAgo": "دقيقة",
+    "hoursAgo": "ساعة",
+    "daysAgo": "يوم"
+  },
+  "payments": {
+    "title": "الدفعات",
+    "timeline": "سجل الدفعات",
+    "amount": "المبلغ",
+    "remaining": "المتبقي",
+    "paymentDate": "تاريخ الدفع",
+    "paymentMethod": "طريقة الدفع",
+    "status": "الحالة",
+    "totalPaid": "إجمالي المدفوع",
+    "totalRemaining": "إجمالي المتبقي",
+    "addPayment": "إضافة دفعة",
+    "editPayment": "تعديل دفعة"
+  },
+  "messaging": {
+    "title": "الرسائل",
+    "conversations": "المحادثات",
+    "sendMessage": "إرسال رسالة",
+    "typeMessage": "اكتب رسالة...",
+    "noConversations": "لا توجد محادثات",
+    "noMessages": "لا توجد رسائل",
+    "archive": "أرشفة"
+  },
+  "cms": {
+    "pages": "الصفحات",
+    "faq": "الأسئلة الشائعة",
+    "media": "المكتبة",
+    "pageBuilder": "منشئ الصفحات",
+    "seo": "SEO",
+    "sections": "الأقسام"
+  },
+  "reports": {
+    "title": "التقارير",
+    "topStudents": "أفضل الطلاب",
+    "averageGrades": "متوسط الدرجات",
+    "attendanceRate": "نسبة الحضور",
+    "engagement": "جودة التفاعل",
+    "byCourse": "حسب الكورس",
+    "byInstructor": "حسب المدرب",
+    "byStudent": "حسب الطالب"
+  },
+  "tickets": {
+    "title": "تذاكر الدعم",
+    "create": "إنشاء تذكرة",
+    "type": "النوع",
+    "status": "الحالة",
+    "priority": "الأولوية",
+    "bug": "مشكلة",
+    "changeRequest": "طلب تغيير",
+    "newFeature": "ميزة جديدة"
+  },
+  "auditLog": {
+    "title": "سجل التدقيق",
+    "action": "الإجراء",
+    "user": "المستخدم",
+    "entity": "الكيان",
+    "timestamp": "الوقت"
+  },
+  "common": {
+    "loading": "جاري التحميل...",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "add": "إضافة",
+    "search": "بحث",
+    "filter": "تصفية",
+    "actions": "الإجراءات",
+    "back": "رجوع",
+    "next": "التالي",
+    "previous": "السابق",
+    "submit": "إرسال",
+    "close": "إغلاق",
+    "confirm": "تأكيد",
+    "yes": "نعم",
+    "no": "لا",
+    "noData": "لا توجد بيانات",
+    "justNow": "الآن",
+    "minutesAgo": "دقيقة",
+    "hoursAgo": "ساعة",
+    "daysAgo": "يوم"
   }
 }
 

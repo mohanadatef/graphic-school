@@ -3,6 +3,7 @@
 namespace Modules\Operations\Logging\Models;
 
 use Modules\ACL\Users\Models\User;
+use Modules\Operations\Logging\Database\Factories\ActivityLogFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,6 +12,11 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 class ActivityLog extends Model
 {
     use HasFactory;
+
+    protected static function newFactory()
+    {
+        return ActivityLogFactory::new();
+    }
 
     protected $fillable = [
         'user_id',

@@ -207,6 +207,25 @@ const dashboardChildren = [
     meta: { middleware: [authMiddleware, roleMiddleware('admin')] },
   },
   {
+    path: 'admin/pages',
+    name: 'admin-pages',
+    component: () => import('../views/dashboard/admin/AdminPages.vue'),
+    meta: { middleware: [authMiddleware, roleMiddleware('admin')] },
+  },
+  {
+    path: 'admin/pages/new',
+    name: 'admin-pages-new',
+    component: () => import('../views/dashboard/admin/PageForm.vue'),
+    meta: { middleware: [authMiddleware, roleMiddleware('admin')] },
+  },
+  {
+    path: 'admin/pages/:id/edit',
+    name: 'admin-pages-edit',
+    component: () => import('../views/dashboard/admin/PageForm.vue'),
+    props: true,
+    meta: { middleware: [authMiddleware, roleMiddleware('admin')] },
+  },
+  {
     path: 'admin/settings',
     name: 'admin-settings',
     component: () => import('../views/dashboard/admin/AdminSettings.vue'),

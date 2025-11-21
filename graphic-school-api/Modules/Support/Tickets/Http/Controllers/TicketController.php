@@ -2,98 +2,169 @@
 
 namespace Modules\Support\Tickets\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use Modules\Support\Tickets\Services\TicketService;
+use App\Support\Controllers\BaseController;
 use Modules\Support\Tickets\Models\SupportTicket;
+use Modules\Support\Tickets\Services\TicketService;
 use Modules\Support\Tickets\Http\Requests\StoreTicketRequest;
 use Modules\Support\Tickets\Http\Requests\UpdateTicketRequest;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Storage;
 
-class TicketController extends Controller
+/**
+ * CHANGE-006: Ticketing System (Admin ⇄ Technical Company)
+ */
+class TicketController extends BaseController
 {
-    public function __construct(private TicketService $ticketService)
-    {
-    }
+    public function __construct(
+        private TicketService $ticketService
+    ) {}
 
     /**
-     * Get tickets
+     * Get all tickets (Admin only)
      */
     public function index(Request $request): JsonResponse
     {
-        $tickets = $this->ticketService->getTickets(
-            $request->all(),
-            $request->integer('per_page', 20)
-        );
+        $query = SupportTicket::with(['user', 'assignedTo'])
+            ->orderBy('created_at', 'desc');
 
-        return response()->json($tickets);
+        // Filter by status
+        if ($request->has('status')) {
+            $query->forStatus($request->input('status'));
+        }
+
+        // Filter by type
+        if ($request->has('type')) {
+            $query->forType($request->input('type'));
+        }
+
+        // Filter by priority
+        if ($request->has('priority')) {
+            $query->forPriority($request->input('priority'));
+        }
+
+        // Filter by user
+        if ($request->has('user_id')) {
+            $query->where('user_id', $request->input('user_id'));
+        }
+
+        $tickets = $query->paginate($request->input('per_page', 15));
+
+        return $this->paginated($tickets, 'Tickets retrieved successfully');
     }
 
     /**
-     * Create ticket
+     * Get ticket details
+     */
+    public function show(int $id): JsonResponse
+    {
+        $ticket = SupportTicket::with(['user', 'assignedTo'])->findOrFail($id);
+
+        return $this->success($ticket, 'Ticket retrieved successfully');
+    }
+
+    /**
+     * Create new ticket (Admin only)
      */
     public function store(StoreTicketRequest $request): JsonResponse
     {
-        $ticket = $this->ticketService->create(
-            $request->validated(),
-            $request->user()?->id
-        );
+        $validated = $request->validated();
+        $validated['user_id'] = $request->user()->id;
 
-        return response()->json($ticket, 201);
+        $ticket = SupportTicket::create($validated);
+
+        // TODO: Send notification to technical company
+
+        return $this->created($ticket->load(['user', 'assignedTo']), 'Ticket created successfully');
     }
 
     /**
-     * Get ticket
+     * Update ticket (Admin only)
      */
-    public function show(SupportTicket $ticket): JsonResponse
+    public function update(UpdateTicketRequest $request, int $id): JsonResponse
     {
-        $ticket->load(['user', 'assignedTo']);
+        $ticket = SupportTicket::findOrFail($id);
 
-        return response()->json($ticket);
+        $validated = $request->validated();
+
+        // Track status updates
+        if (isset($validated['status']) && $validated['status'] !== $ticket->status) {
+            $updates = $ticket->updates ?? [];
+            $updates[] = [
+                'status' => $validated['status'],
+                'updated_by' => $request->user()->id,
+                'updated_at' => now()->toIso8601String(),
+            ];
+            $validated['updates'] = $updates;
+        }
+
+        $ticket->update($validated);
+
+        return $this->success($ticket->load(['user', 'assignedTo']), 'Ticket updated successfully');
     }
 
     /**
-     * Update ticket
+     * Upload attachment to ticket
      */
-    public function update(UpdateTicketRequest $request, SupportTicket $ticket): JsonResponse
+    public function uploadAttachment(Request $request, int $id): JsonResponse
     {
-        $ticket = $this->ticketService->update($ticket, $request->validated());
+        $ticket = SupportTicket::findOrFail($id);
 
-        return response()->json($ticket);
-    }
-
-    /**
-     * Assign ticket
-     */
-    public function assign(Request $request, SupportTicket $ticket): JsonResponse
-    {
         $request->validate([
-            'user_id' => ['required', 'integer', 'exists:users,id'],
+            'file' => 'required|file|max:10240', // 10MB max
         ]);
 
-        $ticket = $this->ticketService->assign($ticket, $request->integer('user_id'));
+        $file = $request->file('file');
+        $path = $file->store('tickets/' . $id, 'public');
 
-        return response()->json($ticket);
+        $attachments = $ticket->attachments ?? [];
+        $attachments[] = [
+            'name' => $file->getClientOriginalName(),
+            'path' => $path,
+            'size' => $file->getSize(),
+            'mime_type' => $file->getMimeType(),
+            'uploaded_at' => now()->toIso8601String(),
+        ];
+
+        $ticket->update(['attachments' => $attachments]);
+
+        return $this->success($ticket, 'Attachment uploaded successfully');
     }
 
     /**
-     * Resolve ticket
+     * Get ticket reports
      */
-    public function resolve(SupportTicket $ticket): JsonResponse
+    public function reports(Request $request): JsonResponse
     {
-        $ticket = $this->ticketService->resolve($ticket);
+        $query = SupportTicket::query();
 
-        return response()->json($ticket);
-    }
+        // Filter by date range
+        if ($request->has('from_date')) {
+            $query->where('created_at', '>=', $request->input('from_date'));
+        }
+        if ($request->has('to_date')) {
+            $query->where('created_at', '<=', $request->input('to_date'));
+        }
 
-    /**
-     * Close ticket
-     */
-    public function close(SupportTicket $ticket): JsonResponse
-    {
-        $ticket = $this->ticketService->close($ticket);
+        $totalTickets = $query->count();
+        $byStatus = [
+            'open' => $query->clone()->forStatus('open')->count(),
+            'in_progress' => $query->clone()->forStatus('in_progress')->count(),
+            'resolved' => $query->clone()->forStatus('resolved')->count(),
+            'closed' => $query->clone()->forStatus('closed')->count(),
+        ];
+        $byType = [
+            'bug' => $query->clone()->forType('bug')->count(),
+            'change_request' => $query->clone()->forType('change_request')->count(),
+            'new_feature' => $query->clone()->forType('new_feature')->count(),
+        ];
 
-        return response()->json($ticket);
+        return $this->success([
+            'summary' => [
+                'total_tickets' => $totalTickets,
+            ],
+            'by_status' => $byStatus,
+            'by_type' => $byType,
+        ], 'Ticket reports retrieved successfully');
     }
 }
-

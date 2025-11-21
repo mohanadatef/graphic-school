@@ -23,6 +23,10 @@ class DatabaseSeeder extends Seeder
             SettingsSeeder::class,
             TranslationSeeder::class,
             \Modules\Core\Localization\Database\Seeders\LanguageSeeder::class,
+            // Curriculum data (Modules, Lessons, Resources)
+            \Modules\LMS\Curriculum\Database\Seeders\CourseModuleSeeder::class,
+            // Comprehensive data (Attendance, Reviews, Quizzes, Projects, Progress, Certificates, etc.)
+            ComprehensiveDataSeeder::class,
         ]);
     }
 }
