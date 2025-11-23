@@ -8,8 +8,20 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: 'var(--primary-color, #1d4ed8)',
-        secondary: 'var(--secondary-color, #f97316)',
+        primary: 'var(--primary, #3b82f6)',
+        secondary: 'var(--secondary, #0ea5e9)',
+        background: 'var(--background, #ffffff)',
+        'text-color': 'var(--text-color, #111111)',
+      },
+      fontFamily: {
+        main: 'var(--font-main, "Inter", sans-serif)',
+        headings: 'var(--font-headings, "Inter", sans-serif)',
+      },
+      borderRadius: {
+        DEFAULT: 'var(--radius, 0.5rem)',
+      },
+      boxShadow: {
+        DEFAULT: 'var(--shadow-level, 0)',
       },
     },
   },

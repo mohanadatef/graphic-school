@@ -29,6 +29,7 @@ class SliderController extends Controller
     public function store(StoreSliderRequest $request)
     {
         $slider = $this->sliderService->create($request->validated(), $request->file('image'));
+        $slider->load('translations');
 
         return SliderResource::make($slider)
             ->response()
@@ -43,6 +44,7 @@ class SliderController extends Controller
     public function update(UpdateSliderRequest $request, Slider $slider)
     {
         $slider = $this->sliderService->update($slider, $request->validated(), $request->file('image'));
+        $slider->load('translations');
 
         return SliderResource::make($slider);
     }

@@ -8,13 +8,14 @@
           </div>
           <div>
             <h1 class="text-xl font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors duration-200">
-              {{ settings.site_name || 'Graphic School' }}
+              {{ brandingStore.displayName }}
             </h1>
             <p class="text-xs text-slate-500 dark:text-slate-400">{{ settings.address }}</p>
           </div>
         </RouterLink>
         <nav class="flex flex-wrap items-center gap-2 sm:gap-4 text-sm font-medium relative z-40" style="pointer-events: auto;">
           <RouterLink
+            v-if="enabledPages.home !== false"
             class="px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-primary transition-all duration-200 relative group text-slate-700 dark:text-slate-300"
             active-class="text-primary bg-primary/10 dark:bg-primary/20"
             to="/"
@@ -23,35 +24,48 @@
             <span class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform duration-200"></span>
           </RouterLink>
           <RouterLink
-            class="px-3 py-2 rounded-lg hover:bg-slate-100 hover:text-primary transition-all duration-200 relative group"
-            active-class="text-primary bg-primary/10"
-            to="/courses"
+            v-if="enabledPages.programs !== false"
+            class="px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-primary transition-all duration-200 relative group text-slate-700 dark:text-slate-300"
+            active-class="text-primary bg-primary/10 dark:bg-primary/20"
+            to="/programs"
           >
-            {{ $t('navigation.courses') }}
+            {{ $t('navigation.programs') || 'Programs' }}
             <span class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform duration-200"></span>
           </RouterLink>
           <RouterLink
-            class="px-3 py-2 rounded-lg hover:bg-slate-100 hover:text-primary transition-all duration-200 relative group"
-            active-class="text-primary bg-primary/10"
-            to="/instructors"
-          >
-            {{ $t('navigation.instructors') }}
-            <span class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform duration-200"></span>
-          </RouterLink>
-          <RouterLink
-            class="px-3 py-2 rounded-lg hover:bg-slate-100 hover:text-primary transition-all duration-200 relative group"
-            active-class="text-primary bg-primary/10"
+            v-if="enabledPages.about !== false"
+            class="px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-primary transition-all duration-200 relative group text-slate-700 dark:text-slate-300"
+            active-class="text-primary bg-primary/10 dark:bg-primary/20"
             to="/about"
           >
             {{ $t('navigation.about') }}
             <span class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform duration-200"></span>
           </RouterLink>
           <RouterLink
-            class="px-3 py-2 rounded-lg hover:bg-slate-100 hover:text-primary transition-all duration-200 relative group"
-            active-class="text-primary bg-primary/10"
+            v-if="enabledPages.contact !== false"
+            class="px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-primary transition-all duration-200 relative group text-slate-700 dark:text-slate-300"
+            active-class="text-primary bg-primary/10 dark:bg-primary/20"
             to="/contact"
           >
             {{ $t('navigation.contact') }}
+            <span class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform duration-200"></span>
+          </RouterLink>
+          <RouterLink
+            v-if="enabledPages.community !== false"
+            class="px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-primary transition-all duration-200 relative group text-slate-700 dark:text-slate-300"
+            active-class="text-primary bg-primary/10 dark:bg-primary/20"
+            to="/community"
+          >
+            {{ $t('navigation.community') || 'Community' }}
+            <span class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform duration-200"></span>
+          </RouterLink>
+          <RouterLink
+            v-if="enabledPages.faq === true"
+            class="px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-primary transition-all duration-200 relative group text-slate-700 dark:text-slate-300"
+            active-class="text-primary bg-primary/10 dark:bg-primary/20"
+            to="/faq"
+          >
+            {{ $t('navigation.faq') || 'FAQ' }}
             <span class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform duration-200"></span>
           </RouterLink>
           <div class="relative z-50" style="pointer-events: auto;">
@@ -101,7 +115,7 @@
             <div v-if="settings.logo" class="h-12 w-12 rounded-xl overflow-hidden">
               <img :src="settings.logo" alt="logo" class="h-full w-full object-cover" />
             </div>
-            <h3 class="text-xl font-bold">{{ settings.site_name || 'Graphic School' }}</h3>
+            <h3 class="text-xl font-bold">{{ brandingStore.displayName }}</h3>
           </div>
           <p class="text-slate-300 leading-relaxed max-w-md">
             {{ settings.about_us || 'أكاديمية متخصصة في تصميم الجرافيك والبراندنج. نقدم تجربة تعليمية شاملة تجمع بين الإبداع والتكنولوجيا.' }}
@@ -120,7 +134,7 @@
               <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
-              {{ settings.email || 'info@graphicschool.com' }}
+              {{ settings.email || `info@${brandingStore.displayName.toLowerCase().replace(/\s/g, '')}.com` }}
             </li>
             <li class="flex items-center gap-2">
               <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -159,7 +173,7 @@
       </div>
       <div class="border-t border-slate-800">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <p>جميع الحقوق محفوظة © {{ new Date().getFullYear() }} Graphic School</p>
+          <p>جميع الحقوق محفوظة © {{ new Date().getFullYear() }} {{ brandingStore.displayName }}</p>
           <div class="flex items-center gap-4">
             <a href="#" class="hover:text-primary transition-colors duration-200">سياسة الخصوصية</a>
             <a href="#" class="hover:text-primary transition-colors duration-200">شروط الاستخدام</a>
@@ -171,16 +185,21 @@
 </template>
 
 <script setup>
-import { onMounted, reactive } from 'vue';
+import { onMounted, reactive, computed } from 'vue';
 import { RouterLink, RouterView, useRouter } from 'vue-router';
-import api from '../../api';
 import { useAuthStore } from '../../stores/auth';
+import { useBrandingStore } from '../../stores/branding';
+import { useWebsiteSettingsStore } from '../../stores/websiteSettings';
 import LanguageSwitcher from '../common/LanguageSwitcher.vue';
 import ThemeToggle from '../common/ThemeToggle.vue';
 
-const settings = reactive({});
 const authStore = useAuthStore();
+const brandingStore = useBrandingStore();
+const websiteStore = useWebsiteSettingsStore();
 const router = useRouter();
+
+const settings = computed(() => websiteStore.settings?.general_info || {});
+const enabledPages = computed(() => websiteStore.settings?.enabled_pages || {});
 
 function goToDashboard(event) {
   // Prevent any default behavior
@@ -234,18 +253,11 @@ function goToDashboard(event) {
 }
 
 onMounted(async () => {
-  try {
-    const { data } = await api.get('/settings');
-    Object.assign(settings, data);
-    if (data.primary_color) {
-      document.documentElement.style.setProperty('--primary-color', data.primary_color);
-    }
-    if (data.secondary_color) {
-      document.documentElement.style.setProperty('--secondary-color', data.secondary_color);
-    }
-  } catch (error) {
-    console.error(error);
-  }
+  // Load website settings
+  await websiteStore.loadSettings();
+  
+  // Load branding
+  await brandingStore.fetchBranding();
   
   // Add direct event listener as fallback
   const dashboardButton = document.getElementById('dashboard-button');

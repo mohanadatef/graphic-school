@@ -21,13 +21,10 @@ class PageFactory extends Factory
             'slug' => Str::slug($title),
             'title' => $title,
             'content' => fake()->paragraphs(3, true),
+            'template' => fake()->randomElement(['default', 'home', 'about', 'contact']),
             'sections' => null,
-            'seo' => [
-                'title' => $title,
-                'description' => fake()->sentence(),
-                'keywords' => fake()->words(5, true),
-            ],
-            'settings' => null,
+            'meta_title' => $title,
+            'meta_description' => fake()->sentence(),
             'is_active' => true,
             'sort_order' => fake()->numberBetween(0, 100),
         ];

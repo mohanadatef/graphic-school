@@ -1,77 +1,72 @@
 <template>
   <div class="space-y-6">
-    <div class="flex items-center gap-4">
-      <h2 class="text-2xl font-bold">نسبة الحضور</h2>
-      <select v-model="selectedCourse" class="input">
-        <option value="">اختر كورس</option>
-        <option v-for="course in courses" :key="course.course_id" :value="course.course_id">
-          {{ course.course?.title }}
-        </option>
-      </select>
+    <div>
+      <h2 class="text-2xl font-bold text-slate-900 dark:text-white">{{ $t('student.attendance.title') || 'My Attendance' }}</h2>
+      <p class="text-sm text-slate-500 dark:text-slate-400">{{ $t('student.attendance.subtitle') || 'View your attendance records' }}</p>
     </div>
 
-    <div class="bg-white rounded-2xl border border-slate-100 shadow overflow-hidden">
-      <ul>
-        <li
-          v-for="record in attendance"
-          :key="record.id"
-          class="border-b border-slate-100 p-4 flex items-center justify-between"
-        >
-          <div>
-            <p class="font-semibold text-slate-900">{{ record.session.title }}</p>
-            <p class="text-xs text-slate-400">{{ formatDate(record.session.session_date) }}</p>
+    <div v-if="loading" class="text-center py-20">
+      <div class="spinner-lg mx-auto mb-4"></div>
+      <p class="text-slate-500 dark:text-slate-400">{{ $t('common.loading') || 'Loading...' }}</p>
+    </div>
+
+    <div v-else-if="attendance.length === 0" class="text-center py-20">
+      <p class="text-slate-500 dark:text-slate-400 text-lg">{{ $t('student.attendance.noRecords') || 'No attendance records found' }}</p>
+    </div>
+
+    <div v-else class="space-y-4">
+      <div v-for="record in attendance" :key="record.id" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+        <div class="flex items-start justify-between">
+          <div class="flex-1">
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">{{ record.session?.title || record.session?.name || 'Session' }}</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-400 mb-2">{{ formatDate(record.session?.scheduled_at) }}</p>
+            <p class="text-sm text-slate-600 dark:text-slate-400">{{ record.session?.group?.code || record.session?.group?.name }}</p>
           </div>
           <span
-            class="px-3 py-1 rounded-full text-xs"
-            :class="record.status === 'present' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
+            :class="{
+              'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400': record.status === 'present',
+              'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400': record.status === 'absent',
+              'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400': record.status === 'late',
+              'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400': record.status === 'excused',
+            }"
+            class="px-3 py-1 text-sm font-semibold rounded-full"
           >
-            {{ record.status === 'present' ? 'حاضر' : 'غائب' }}
+            {{ $t(`student.attendance.${record.status}`) || record.status }}
           </span>
-        </li>
-      </ul>
-      <p v-if="!attendance.length" class="text-center py-6 text-sm text-slate-400">
-        لا توجد سجلات بعد.
-      </p>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref, watch } from 'vue';
-import api from '../../../api';
+import { ref, onMounted } from 'vue';
+import api from '../../../services/api/client';
+import { useToast } from '../../../composables/useToast';
 
-const courses = ref([]);
+const toast = useToast();
+const loading = ref(false);
 const attendance = ref([]);
-const selectedCourse = ref('');
-
-function formatDate(date) {
-  if (!date) return '';
-  return new Date(date).toLocaleDateString('ar-EG');
-}
-
-async function loadCourses() {
-  const { data } = await api.get('/student/courses');
-  courses.value = data;
-}
 
 async function loadAttendance() {
-  if (!selectedCourse.value) {
-    attendance.value = [];
-    return;
+  loading.value = true;
+  try {
+    const response = await api.get('/student/attendance');
+    attendance.value = response.data || [];
+  } catch (error) {
+    console.error('Error loading attendance:', error);
+    toast.error('Failed to load attendance');
+  } finally {
+    loading.value = false;
   }
-  const { data } = await api.get(`/student/courses/${selectedCourse.value}/attendance`);
-  attendance.value = data;
 }
 
-watch(selectedCourse, loadAttendance);
-onMounted(loadCourses);
+function formatDate(date) {
+  if (!date) return '-';
+  return new Date(date).toLocaleDateString();
+}
+
+onMounted(() => {
+  loadAttendance();
+});
 </script>
-
-<style scoped>
-.input {
-  border: 1px solid #e2e8f0;
-  border-radius: 0.75rem;
-  padding: 0.5rem 0.75rem;
-}
-</style>
-

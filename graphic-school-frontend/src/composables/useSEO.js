@@ -1,5 +1,6 @@
 import { onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
+import { useBrandingStore } from '../stores/branding';
 import { setMetaTags, setStructuredData, setCourseStructuredData } from '../utils/seo';
 
 /**
@@ -8,10 +9,12 @@ import { setMetaTags, setStructuredData, setCourseStructuredData } from '../util
  */
 export function useSEO() {
   const route = useRoute();
+  const brandingStore = useBrandingStore();
 
   function updateSEO(meta) {
     setMetaTags({
       ...meta,
+      siteName: brandingStore.displayName,
       url: window.location.href,
     });
   }
@@ -33,7 +36,7 @@ export function useSEO() {
     () => {
       // Default SEO
       updateSEO({
-        title: 'Graphic School - منصة تعليم التصميم الجرافيكي',
+        title: `${brandingStore.displayName} - منصة تعليم التصميم الجرافيكي`,
         description: 'منصة تفاعلية لتعلم التصميم الجرافيكي مع أفضل المدربين',
         keywords: ['تصميم جرافيكي', 'تعليم', 'كورسات', 'Graphic Design'],
       });

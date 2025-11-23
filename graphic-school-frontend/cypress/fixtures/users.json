@@ -1,0 +1,15 @@
+{
+  "admin": {
+    "email": "admin@graphicschool.com",
+    "password": "password"
+  },
+  "student": {
+    "email": "student1@graphicschool.com",
+    "password": "password"
+  },
+  "instructor": {
+    "email": "instructor1@graphicschool.com",
+    "password": "password"
+  }
+}
+

@@ -5,6 +5,7 @@ namespace Modules\LMS\Sessions\Services;
 use Modules\LMS\Sessions\Models\Session;
 use Modules\LMS\Sessions\Repositories\Interfaces\SessionRepositoryInterface;
 use Modules\ACL\Users\Models\User;
+use App\Services\EntityTranslationService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -27,13 +28,26 @@ class SessionService
 
     public function update(Session $session, array $data): Session
     {
+        $translations = $data['translations'] ?? [];
+        unset($data['translations']);
+
         $session = $this->sessionRepository->update($session, $data);
+
+        // Save translations if provided
+        if (!empty($translations)) {
+            $translationService = app(EntityTranslationService::class);
+            $translationService->saveTranslations($session, $translations);
+        }
 
         return $this->sessionRepository->loadWithCourse($session);
     }
 
     public function delete(Session $session): void
     {
+        // Delete translations
+        $translationService = app(EntityTranslationService::class);
+        $translationService->deleteTranslations($session);
+
         $this->sessionRepository->delete($session);
     }
 

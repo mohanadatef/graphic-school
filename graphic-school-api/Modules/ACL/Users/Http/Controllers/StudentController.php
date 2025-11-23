@@ -2,7 +2,8 @@
 
 namespace Modules\ACL\Users\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+use App\Support\Controllers\BaseController;
+use App\Http\Responses\ApiResponse;
 use Modules\ACL\Users\Http\Requests\CourseAttendanceRequest;
 use Modules\ACL\Users\Http\Requests\CourseSessionsRequest;
 use Modules\ACL\Users\Http\Requests\EnrollCourseRequest;
@@ -20,7 +21,7 @@ use Modules\LMS\Courses\Models\Course;
 use Modules\LMS\Sessions\Models\Session;
 use Modules\ACL\Users\Services\StudentService;
 
-class StudentController extends Controller
+class StudentController extends BaseController
 {
     public function __construct(private StudentService $studentService)
     {
@@ -28,16 +29,24 @@ class StudentController extends Controller
 
     public function myCourses(ListMyCoursesRequest $request)
     {
-        return EnrollmentResource::collection(
-            $this->studentService->myCourses($request->user())
+        $enrollments = $this->studentService->myCourses($request->user());
+        $collection = EnrollmentResource::collection($enrollments);
+        
+        return $this->success(
+            $collection->resolve(request()),
+            'My courses retrieved successfully'
         );
     }
 
     public function courseSessions(CourseSessionsRequest $request, Course $course)
     {
         $sessions = $this->studentService->courseSessions($request->user(), $course);
+        $collection = SessionResource::collection($sessions);
 
-        return SessionResource::collection($sessions);
+        return $this->success(
+            $collection->resolve(request()),
+            'Course sessions retrieved successfully'
+        );
     }
 
     public function sessions(ListSessionsRequest $request)
@@ -48,19 +57,38 @@ class StudentController extends Controller
             $request->integer('per_page', 10)
         );
 
-        return SessionResource::collection($sessions);
+        // If paginated, use paginated response
+        if (method_exists($sessions, 'currentPage')) {
+            return $this->paginated($sessions, 'Sessions retrieved successfully');
+        }
+
+        $collection = SessionResource::collection($sessions);
+        return $this->success(
+            $collection->resolve(request()),
+            'Sessions retrieved successfully'
+        );
     }
 
     public function courseAttendance(CourseAttendanceRequest $request, Course $course)
     {
-        return AttendanceResource::collection(
-            $this->studentService->courseAttendance($request->user(), $course)
+        $attendance = $this->studentService->courseAttendance($request->user(), $course);
+        $collection = AttendanceResource::collection($attendance);
+        
+        return $this->success(
+            $collection->resolve(request()),
+            'Course attendance retrieved successfully'
         );
     }
 
     public function profile(ProfileRequest $request)
     {
-        return UserResource::make($this->studentService->profile($request->user()));
+        $user = $this->studentService->profile($request->user());
+        $resource = UserResource::make($user);
+        
+        return $this->success(
+            $resource->resolve(request()),
+            'Profile retrieved successfully'
+        );
     }
 
     public function updateProfile(UpdateProfileRequest $request)
@@ -71,16 +99,23 @@ class StudentController extends Controller
             $request->file('avatar')
         );
 
-        return UserResource::make($user);
+        $resource = UserResource::make($user);
+        
+        return $this->success(
+            $resource->resolve(request()),
+            'Profile updated successfully'
+        );
     }
 
     public function enroll(EnrollCourseRequest $request, Course $course)
     {
         $enrollment = $this->studentService->enroll($request->user(), $course);
+        $resource = EnrollmentResource::make($enrollment);
 
-        return EnrollmentResource::make($enrollment)
-            ->response()
-            ->setStatusCode(201);
+        return $this->created(
+            $resource->resolve(request()),
+            'Enrolled successfully'
+        );
     }
 
     public function reviewCourse(ReviewCourseRequest $request, Course $course)
@@ -91,7 +126,12 @@ class StudentController extends Controller
             $request->validated()
         );
 
-        return CourseReviewResource::make($review);
+        $resource = CourseReviewResource::make($review);
+        
+        return $this->created(
+            $resource->resolve(request()),
+            'Review submitted successfully'
+        );
     }
 }
 

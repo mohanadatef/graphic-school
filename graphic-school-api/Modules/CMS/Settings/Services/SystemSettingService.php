@@ -126,6 +126,10 @@ class SystemSettingService
             return 'languages';
         }
 
+        if (in_array($key, ['default_currency', 'currency_symbol', 'currency_position'])) {
+            return 'currency';
+        }
+
         return 'general';
     }
 
@@ -160,6 +164,9 @@ class SystemSettingService
             'colors',
             'sections',
             'default_language',
+            'default_currency',
+            'currency_symbol',
+            'currency_position',
         ];
 
         return in_array($key, $publicKeys);

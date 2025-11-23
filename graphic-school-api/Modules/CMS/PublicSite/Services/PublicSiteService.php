@@ -130,11 +130,21 @@ class PublicSiteService
      */
     public function homeSummary(): array
     {
-        $sliders = $this->sliders();
+        // Get home page settings
+        $homePage = \App\Models\Page::where('slug', 'home')->where('is_active', true)->first();
+        $sections = $homePage?->sections ?? [
+            'slider' => true,
+            'testimonials' => true,
+            'featured_courses' => true,
+            'statistics' => true,
+            'faq' => true,
+        ];
 
-        $courses = $this->courseRepository->homeListing(6);
+        $sliders = ($sections['slider'] ?? true) ? $this->sliders() : collect();
 
-        $testimonials = $this->testimonials(6);
+        $courses = ($sections['featured_courses'] ?? true) ? $this->courseRepository->homeListing(6) : collect();
+
+        $testimonials = ($sections['testimonials'] ?? true) ? $this->testimonials(6) : collect();
 
         $stats = [
             'learners' => $this->userRepository->query()
@@ -220,11 +230,12 @@ class PublicSiteService
             ->values();
 
         return [
+            'sections' => $sections, // Include sections config
             'sliders' => $sliders,
             'courses' => $courses,
             'testimonials' => $testimonials,
-            'stats' => $stats,
-            'highlight_cards' => $highlightCards,
+            'stats' => ($sections['statistics'] ?? true) ? $stats : null,
+            'highlight_cards' => ($sections['statistics'] ?? true) ? $highlightCards : [],
             'learning_pillars' => $learningPillars,
             'community_features' => $communityFeatures,
             'upcoming_sessions' => $upcomingSessions,

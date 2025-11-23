@@ -1,0 +1,869 @@
+openapi: 3.1.0
+info:
+  title: Graphic School LMS API
+  version: 1.0.0
+  description: Complete API documentation for Graphic School Learning Management System
+  contact:
+    name: API Support
+    email: support@graphicschool.com
+servers:
+  -
+    url: "http://localhost/api"
+    description: Production Server
+  -
+    url: "http://graphic-school.test/api"
+    description: Local Development Server
+tags:
+  -
+    name: Auth
+    description: Authentication endpoints
+  -
+    name: Users
+    description: User management
+  -
+    name: Roles & Permissions
+    description: Role and permission management
+  -
+    name: Categories
+    description: Course category management
+  -
+    name: Courses
+    description: Course management
+  -
+    name: Curriculum
+    description: Course curriculum (modules, lessons, resources)
+  -
+    name: Sessions
+    description: Course session management
+  -
+    name: Attendance
+    description: Attendance tracking
+  -
+    name: Enrollments
+    description: Student enrollment management
+  -
+    name: Certificates
+    description: Certificate generation and management
+  -
+    name: Quizzes
+    description: Quiz and assessment management
+  -
+    name: Projects
+    description: Student project management
+  -
+    name: Media
+    description: Media library management
+  -
+    name: Payments
+    description: Payment processing and tracking
+  -
+    name: Reports
+    description: Analytics and reporting
+  -
+    name: Settings
+    description: System settings management
+  -
+    name: Notifications
+    description: In-app notifications
+  -
+    name: Messaging
+    description: Student-Instructor messaging
+  -
+    name: CMS
+    description: Content Management (Pages, Sliders, Testimonials, FAQ, Contacts)
+  -
+    name: Localization
+    description: Translation and locale management
+  -
+    name: File Storage
+    description: File upload and storage
+  -
+    name: Support
+    description: Support tickets and system health
+  -
+    name: Public
+    description: Public-facing endpoints
+paths:
+  /health:
+    get:
+      tags:
+        - Public
+      summary: Health check
+      description: Check API health status
+      responses:
+        200:
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+  /register:
+    post:
+      tags:
+        - Auth
+      summary: Register new user
+      description: Register a new user account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        201:
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        422:
+          $ref: "#/components/responses/ValidationError"
+  /login:
+    post:
+      tags:
+        - Auth
+      summary: Login user
+      description: Authenticate user and return access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        200:
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+  /logout:
+    post:
+      tags:
+        - Auth
+      summary: Logout user
+      description: Invalidate current access token
+      security:
+        -
+          bearerAuth:
+      responses:
+        200:
+          description: Logged out successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+  /home:
+  /courses:
+  /courses/{course}:
+  /categories:
+  /instructors:
+  /instructors/{instructor}:
+  /pages/{slug}:
+  /faqs:
+  /contact:
+  /locale:
+  /locales:
+  /locale/{locale}:
+  /translations:
+  /translations/{group}:
+  /student/courses:
+  /student/courses/{course}/sessions:
+  /student/courses/{course}/attendance:
+  /student/sessions:
+  /student/courses/{course}/enroll:
+  /student/courses/{course}/review:
+  /student/profile:
+  /student/payments:
+  /instructor/courses:
+  /instructor/courses/{course}/sessions:
+  /instructor/sessions:
+  /instructor/attendance:
+  /instructor/attendance/{session}:
+  /instructor/sessions/{session}/note:
+  /instructor/reports/performance:
+  /messaging/conversations:
+    post:
+  /messaging/conversations/{id}/messages:
+  /messaging/messages:
+  /messaging/conversations/{id}/archive:
+  /notifications:
+  /notifications/unread-count:
+  /notifications/{id}/read:
+  /notifications/read-all:
+  /notifications/{id}:
+  /files/upload:
+  /files/delete:
+  /admin/dashboard:
+  /admin/users:
+  /admin/users/{id}:
+  /admin/roles:
+  /admin/roles/{id}:
+  /admin/categories:
+  /admin/categories/{id}:
+  /admin/courses:
+  /admin/courses/{course}:
+  /admin/courses/{course}/assign-instructors:
+  /admin/courses/{course}/sessions/generate:
+  /admin/sessions:
+  /admin/sessions/{id}:
+  /admin/enrollments:
+  /admin/enrollments/{enrollment}:
+  /admin/attendance:
+  /admin/payments:
+  /admin/payments/{id}:
+  /admin/payments/reports:
+  /admin/pages:
+  /admin/pages/{id}:
+  /admin/faqs:
+  /admin/faqs/{id}:
+  /admin/media:
+  /admin/media/{id}:
+  /admin/tickets:
+  /admin/tickets/{id}:
+  /admin/tickets/{id}/attachments:
+  /admin/tickets/reports:
+  /admin/audit-logs:
+  /admin/audit-logs/{id}:
+  /admin/audit-logs/entity/{modelType}/{modelId}:
+  /admin/settings:
+  /admin/contacts:
+  /admin/contacts/{contactMessage}/resolve:
+  /admin/testimonials:
+  /admin/testimonials/{id}:
+  /admin/translations:
+  /admin/translations/{id}:
+  /admin/translations/groups:
+  /admin/translations/locales:
+  /admin/translations/clear-cache:
+  /admin/reports/courses:
+  /admin/reports/instructors:
+  /admin/reports/financial:
+  /admin/reports/strategic/performance:
+  /admin/reports/strategic/profitability:
+  /admin/reports/strategic/student-analytics:
+  /admin/reports/strategic/instructor-performance:
+  /admin/reports/strategic/forecasting:
+  /admin/reports/advanced/top-students/grades:
+  /admin/reports/advanced/top-students/attendance:
+  /admin/reports/advanced/top-students/engagement:
+  /admin/reports/advanced/average-grades/course:
+  /admin/reports/advanced/average-grades/batch:
+  /admin/reports/advanced/average-grades/instructor:
+  /admin/reports/advanced/attendance-rate/course:
+  /admin/reports/advanced/attendance-rate/student:
+  /admin/reports/advanced/engagement-quality:
+  /admin/reports/advanced/instructor-performance/{instructorId}:
+  /admin/courses/{courseId}/curriculum:
+  /admin/modules:
+  /admin/modules/{moduleId}:
+  /admin/lessons:
+  /admin/lessons/{lessonId}:
+  /admin/resources:
+  /admin/resources/{resourceId}:
+  /student/courses/{courseId}/curriculum:
+  /admin/quizzes:
+  /admin/quizzes/{quizId}:
+  /student/quizzes:
+  /student/quizzes/{quizId}:
+  /student/quizzes/{quizId}/submit:
+  /student/quizzes/{quizId}/attempts:
+  /student/projects:
+  /student/projects/{projectId}:
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Laravel Sanctum Bearer Token Authentication
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+        errors:
+          type: object
+          nullable: true
+        status:
+          type: integer
+        meta:
+          type: object
+          nullable: true
+    PaginationMeta:
+      type: object
+      properties:
+        pagination:
+          type: object
+          properties:
+            current_page:
+              type: integer
+            per_page:
+              type: integer
+            total:
+              type: integer
+            last_page:
+              type: integer
+            from:
+              type: integer
+              nullable: true
+            to:
+              type: integer
+              nullable: true
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+        errors:
+          type: object
+          nullable: true
+        status:
+          type: integer
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+        data:
+          type: object
+          nullable: true
+        status:
+          type: integer
+          example: 200
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+        timestamp:
+          type: string
+          format: date-time
+    RegisterRequest:
+      type: object
+      required:
+        - name
+        - email
+        - password
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        email:
+          type: string
+          format: email
+          maxLength: 255
+        password:
+          type: string
+          minLength: 6
+        phone:
+          type: string
+          maxLength: 30
+          nullable: true
+        address:
+          type: string
+          maxLength: 255
+          nullable: true
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+    AuthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+        data:
+          type: object
+          properties:
+            user:
+              $ref: "#/components/schemas/User"
+            token:
+              type: string
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+          nullable: true
+        avatar_path:
+          type: string
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+        address:
+          type: string
+          nullable: true
+        is_active:
+          type: boolean
+        role:
+          $ref: "#/components/schemas/Role"
+          nullable: true
+        role_name:
+          type: string
+          nullable: true
+        role_id:
+          type: integer
+          nullable: true
+        average_rating:
+          type: number
+          format: float
+          nullable: true
+        reviews_count:
+          type: integer
+          nullable: true
+        courses_count:
+          type: integer
+          nullable: true
+        students_count:
+          type: integer
+          nullable: true
+    Role:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        is_system:
+          type: boolean
+    Course:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        slug:
+          type: string
+        code:
+          type: string
+          nullable: true
+        category_id:
+          type: integer
+        description:
+          type: string
+          nullable: true
+        image_path:
+          type: string
+          nullable: true
+        price:
+          type: number
+          format: float
+          nullable: true
+        start_date:
+          type: string
+          format: date
+          nullable: true
+        end_date:
+          type: string
+          format: date
+          nullable: true
+        session_count:
+          type: integer
+          nullable: true
+        days_of_week:
+          type: array
+          items:
+            type: string
+        duration_weeks:
+          type: integer
+          nullable: true
+        max_students:
+          type: integer
+          nullable: true
+        auto_generate_sessions:
+          type: boolean
+        is_published:
+          type: boolean
+        is_hidden:
+          type: boolean
+        status:
+          type: string
+        delivery_type:
+          type: string
+          enum:
+            - on-site
+            - online
+            - hybrid
+        default_start_time:
+          type: string
+          format: time
+          nullable: true
+        default_end_time:
+          type: string
+          format: time
+          nullable: true
+        category:
+          $ref: "#/components/schemas/Category"
+          nullable: true
+        instructors:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        localized_name:
+          type: string
+        is_active:
+          type: boolean
+    Session:
+      type: object
+      properties:
+        id:
+          type: integer
+        course_id:
+          type: integer
+        title:
+          type: string
+        session_order:
+          type: integer
+        session_date:
+          type: string
+          format: date
+          nullable: true
+        start_time:
+          type: string
+          format: time
+          nullable: true
+        end_time:
+          type: string
+          format: time
+          nullable: true
+        status:
+          type: string
+        note:
+          type: string
+          nullable: true
+    Enrollment:
+      type: object
+      properties:
+        id:
+          type: integer
+        student_id:
+          type: integer
+        course_id:
+          type: integer
+        status:
+          type: string
+        payment_status:
+          type: string
+        paid_amount:
+          type: number
+          format: float
+        total_amount:
+          type: number
+          format: float
+        can_attend:
+          type: boolean
+        approved_by:
+          type: integer
+          nullable: true
+        approved_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        student:
+          $ref: "#/components/schemas/User"
+          nullable: true
+        course:
+          $ref: "#/components/schemas/Course"
+          nullable: true
+    Payment:
+      type: object
+      properties:
+        id:
+          type: integer
+        student_id:
+          type: integer
+        course_id:
+          type: integer
+        enrollment_id:
+          type: integer
+        amount:
+          type: number
+          format: float
+        remaining_amount:
+          type: number
+          format: float
+        payment_method:
+          type: string
+          nullable: true
+        payment_reference:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        payment_date:
+          type: string
+          format: date
+        status:
+          type: string
+          enum:
+            - pending
+            - completed
+            - failed
+            - refunded
+        created_at:
+          type: string
+          format: date-time
+        student:
+          $ref: "#/components/schemas/User"
+          nullable: true
+        course:
+          $ref: "#/components/schemas/Course"
+          nullable: true
+    Message:
+      type: object
+      properties:
+        id:
+          type: integer
+        conversation_id:
+          type: integer
+        sender_id:
+          type: integer
+        message:
+          type: string
+        attachments:
+          type: array
+          items:
+            type: string
+          nullable: true
+        read_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        sender:
+          $ref: "#/components/schemas/User"
+          nullable: true
+    Conversation:
+      type: object
+      properties:
+        id:
+          type: integer
+        student_id:
+          type: integer
+        instructor_id:
+          type: integer
+        course_id:
+          type: integer
+        session_id:
+          type: integer
+          nullable: true
+        subject:
+          type: string
+          nullable: true
+        is_archived:
+          type: boolean
+        last_message_at:
+          type: string
+          format: date-time
+          nullable: true
+        unread_count:
+          type: integer
+        student:
+          $ref: "#/components/schemas/User"
+          nullable: true
+        instructor:
+          $ref: "#/components/schemas/User"
+          nullable: true
+        course:
+          $ref: "#/components/schemas/Course"
+          nullable: true
+    Media:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        file_name:
+          type: string
+        file_path:
+          type: string
+        mime_type:
+          type: string
+        file_size:
+          type: integer
+        type:
+          type: string
+          enum:
+            - image
+            - video
+            - document
+        alt_text:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+    FAQ:
+      type: object
+      properties:
+        id:
+          type: integer
+        question:
+          type: string
+        answer:
+          type: string
+        category:
+          type: string
+          nullable: true
+        sort_order:
+          type: integer
+        is_active:
+          type: boolean
+    Ticket:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        type:
+          type: string
+          enum:
+            - bug
+            - change_request
+            - new_feature
+        priority:
+          type: string
+          enum:
+            - low
+            - medium
+            - high
+            - urgent
+        status:
+          type: string
+          enum:
+            - open
+            - in_progress
+            - resolved
+            - closed
+        description:
+          type: string
+        user_id:
+          type: integer
+        assigned_to:
+          type: integer
+          nullable: true
+        attachments:
+          type: array
+          items:
+            type: object
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        user:
+          $ref: "#/components/schemas/User"
+          nullable: true
+    AuditLog:
+      type: object
+      properties:
+        id:
+          type: integer
+        action:
+          type: string
+          enum:
+            - created
+            - updated
+            - deleted
+        model_type:
+          type: string
+        model_id:
+          type: integer
+          nullable: true
+        user_id:
+          type: integer
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        old_values:
+          type: object
+          nullable: true
+        new_values:
+          type: object
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        user:
+          $ref: "#/components/schemas/User"
+          nullable: true
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+        type:
+          type: string
+        title:
+          type: string
+        message:
+          type: string
+        data:
+          type: object
+          nullable: true
+        read_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time

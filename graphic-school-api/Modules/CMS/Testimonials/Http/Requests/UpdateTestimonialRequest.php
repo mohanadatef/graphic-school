@@ -15,6 +15,9 @@ class UpdateTestimonialRequest extends FormRequest
     {
         return [
             'is_approved' => ['required', 'boolean'],
+            'translations' => ['nullable', 'array'],
+            'translations.*.locale' => ['required', 'in:ar,en'],
+            'translations.*.comment' => ['nullable', 'string'],
         ];
     }
 }

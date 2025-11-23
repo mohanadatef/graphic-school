@@ -5,9 +5,15 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Services\EntityTranslationService;
 
 class SetLocale
 {
+    public function __construct(
+        private EntityTranslationService $translationService
+    ) {
+    }
+
     /**
      * Handle an incoming request.
      *
@@ -15,18 +21,18 @@ class SetLocale
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Get locale from header, query parameter, or default
-        $locale = $request->header('Accept-Language') 
-            ?? $request->query('locale') 
-            ?? $request->cookie('locale')
-            ?? config('app.locale', 'en');
+        // Detect locale using EntityTranslationService
+        $locale = $this->translationService->detectLocale(
+            $request->query('locale'),
+            $request->header('Accept-Language'),
+            $request->user()?->locale ?? $request->cookie('locale')
+        );
 
-        // Validate locale (only allow en or ar)
-        if (!in_array($locale, ['en', 'ar'])) {
-            $locale = config('app.locale', 'en');
-        }
-
+        // Set application locale
         app()->setLocale($locale);
+
+        // Store locale in request for later use
+        $request->attributes->set('locale', $locale);
 
         $response = $next($request);
 

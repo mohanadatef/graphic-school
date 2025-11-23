@@ -53,6 +53,9 @@ class CourseController extends BaseController
         
         $dto = CreateCourseDTO::fromArray($data);
         $course = $useCase->execute($dto);
+        
+        // Load translations for response
+        $course->load('translations');
 
         return $this->created(
             CourseResource::make($course),
@@ -63,6 +66,9 @@ class CourseController extends BaseController
     public function show(Course $course, ShowCourseUseCase $useCase)
     {
         $course = $useCase->execute($course);
+        
+        // Load translations for admin view
+        $course->load('translations');
 
         return $this->success(
             CourseResource::make($course),
@@ -78,6 +84,9 @@ class CourseController extends BaseController
         
         $dto = UpdateCourseDTO::fromArray($data);
         $course = $useCase->execute([$course, $dto]);
+        
+        // Load translations for response
+        $course->load('translations');
 
         return $this->success(
             CourseResource::make($course),

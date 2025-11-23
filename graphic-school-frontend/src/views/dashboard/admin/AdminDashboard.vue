@@ -5,13 +5,23 @@
       <h1 class="text-3xl font-black text-slate-900 dark:text-white">{{ $t('dashboard.quickStats') }}</h1>
       <div class="flex gap-2">
         <RouterLink
+          to="/setup"
+          class="btn-secondary inline-flex items-center gap-2"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          {{ $t('admin.websiteSetup') || 'Website Setup' }}
+        </RouterLink>
+        <RouterLink
           to="/dashboard/admin/reports"
           class="btn-secondary inline-flex items-center gap-2"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
-          التقارير الشاملة
+          {{ $t('admin.comprehensiveReports') || 'Comprehensive Reports' }}
         </RouterLink>
         <RouterLink
           to="/dashboard/admin/strategic-reports"
@@ -20,10 +30,13 @@
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
           </svg>
-          التقارير الاستراتيجية
+          {{ $t('admin.strategicReports') || 'Strategic Reports' }}
         </RouterLink>
       </div>
     </div>
+
+    <!-- Website Status Panel -->
+    <WebsiteStatusPanel v-if="websiteStatus" :status="websiteStatus" />
 
     <!-- Enhanced Stats Cards -->
     <div>
@@ -84,7 +97,7 @@
 
     <!-- Monthly Revenue Trend -->
     <div v-if="trends?.monthly_revenue?.length" class="card-premium p-6">
-      <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-6">اتجاه الإيرادات الشهرية</h2>
+      <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-6">{{ $t('dashboard.monthlyRevenueTrend') || 'Monthly Revenue Trend' }}</h2>
       <div class="grid md:grid-cols-6 gap-4">
         <div
           v-for="month in trends.monthly_revenue"
@@ -93,14 +106,14 @@
         >
           <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">{{ month.month_name }}</p>
           <p class="text-lg font-black text-emerald-600 dark:text-emerald-400">{{ formatCurrency(month.revenue || 0) }}</p>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ month.count || 0 }} تسجيل</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ month.count || 0 }} {{ $t('dashboard.enrollments') || 'enrollments' }}</p>
         </div>
       </div>
     </div>
 
     <!-- Top Courses -->
     <div v-if="topCourses?.length" class="card-premium p-6">
-      <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-6">أفضل الكورسات أداءً</h2>
+      <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-6">{{ $t('dashboard.topPerformingCourses') || 'Top Performing Courses' }}</h2>
       <div class="grid md:grid-cols-5 gap-4">
         <div
           v-for="(course, index) in topCourses"
@@ -111,7 +124,7 @@
             {{ index + 1 }}
           </div>
           <p class="font-bold text-slate-900 dark:text-white mb-2 text-sm line-clamp-2">{{ course.title }}</p>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mb-2">{{ course.students_count || 0 }} طالب</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mb-2">{{ course.students_count || 0 }} {{ $t('dashboard.students') || 'students' }}</p>
           <p class="text-sm font-black text-emerald-600 dark:text-emerald-400">{{ formatCurrency(course.revenue || 0) }}</p>
         </div>
       </div>
@@ -127,19 +140,19 @@
           <FilterDropdown
             v-model="filtersState.category_id"
             :options="filters.categories"
-            placeholder="كل التصنيفات"
+            :placeholder="$t('dashboard.allCategories') || 'All Categories'"
             @update:modelValue="resetAndReload"
           />
           <FilterDropdown
             v-model="filtersState.instructor_id"
             :options="filters.instructors"
-            placeholder="كل المدربين"
+            :placeholder="$t('dashboard.allInstructors') || 'All Instructors'"
             @update:modelValue="resetAndReload"
           />
           <FilterDropdown
             v-model="filtersState.status"
             :options="filters.statuses.map(s => ({ id: s, name: s }))"
-            placeholder="كل الحالات"
+            :placeholder="$t('dashboard.allStatuses') || 'All Statuses'"
             @update:modelValue="resetAndReload"
           />
         </div>
@@ -205,12 +218,17 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import { useCourseStore } from '../../../stores/course';
+import { useWebsiteSettingsStore } from '../../../stores/websiteSettings';
 import PaginationControls from '../../../components/common/PaginationControls.vue';
 import FilterDropdown from '../../../components/common/FilterDropdown.vue';
+import WebsiteStatusPanel from '../../../components/admin/WebsiteStatusPanel.vue';
 import { useI18n } from '../../../composables/useI18n';
 
 const courseStore = useCourseStore();
+const websiteStore = useWebsiteSettingsStore();
 const { t, locale } = useI18n();
+
+const websiteStatus = ref(null);
 
 const stats = ref({});
 const filters = reactive({
@@ -245,14 +263,14 @@ const cards = computed(() => [
 ]);
 
 const additionalStats = computed(() => [
-  { label: 'الجلسات المكتملة', key: 'sessions_completed', icon: 'check', gradient: 'from-green-500 to-green-600' },
-  { label: 'الجلسات القادمة', key: 'sessions_upcoming', icon: 'calendar', gradient: 'from-blue-500 to-blue-600' },
-  { label: 'إجمالي المبلغ', key: 'total_amount', icon: 'money', gradient: 'from-emerald-500 to-emerald-600', format: 'currency' },
-  { label: 'المتبقي', key: 'pending_amount', icon: 'pending', gradient: 'from-orange-500 to-orange-600', format: 'currency' },
-  { label: 'معدل التحصيل', key: 'collection_rate', icon: 'chart', gradient: 'from-purple-500 to-purple-600', suffix: '%' },
-  { label: 'تسجيلات قيد الانتظار', key: 'enrollments_pending', icon: 'clock', gradient: 'from-yellow-500 to-yellow-600' },
-  { label: 'تسجيلات معتمدة', key: 'enrollments_approved', icon: 'check-circle', gradient: 'from-green-500 to-green-600' },
-  { label: 'تسجيلات مرفوضة', key: 'enrollments_rejected', icon: 'x-circle', gradient: 'from-red-500 to-red-600' },
+  { label: t('dashboard.sessionsCompleted'), key: 'sessions_completed', icon: 'check', gradient: 'from-green-500 to-green-600' },
+  { label: t('dashboard.sessionsUpcoming'), key: 'sessions_upcoming', icon: 'calendar', gradient: 'from-blue-500 to-blue-600' },
+  { label: t('dashboard.totalAmount'), key: 'total_amount', icon: 'money', gradient: 'from-emerald-500 to-emerald-600', format: 'currency' },
+  { label: t('dashboard.pendingAmount'), key: 'pending_amount', icon: 'pending', gradient: 'from-orange-500 to-orange-600', format: 'currency' },
+  { label: t('dashboard.collectionRate'), key: 'collection_rate', icon: 'chart', gradient: 'from-purple-500 to-purple-600', suffix: '%' },
+  { label: t('dashboard.enrollmentsPending'), key: 'enrollments_pending', icon: 'clock', gradient: 'from-yellow-500 to-yellow-600' },
+  { label: t('dashboard.enrollmentsApproved'), key: 'enrollments_approved', icon: 'check-circle', gradient: 'from-green-500 to-green-600' },
+  { label: t('dashboard.enrollmentsRejected'), key: 'enrollments_rejected', icon: 'x-circle', gradient: 'from-red-500 to-red-600' },
 ]);
 
 async function loadDashboard() {
@@ -306,6 +324,18 @@ watch(
   () => resetAndReload()
 );
 
-onMounted(loadDashboard);
+async function loadWebsiteStatus() {
+  try {
+    await websiteStore.loadSettings();
+    websiteStatus.value = websiteStore.settings;
+  } catch (error) {
+    console.error('Error loading website status:', error);
+  }
+}
+
+onMounted(async () => {
+  await loadWebsiteStatus();
+  loadDashboard();
+});
 </script>
 

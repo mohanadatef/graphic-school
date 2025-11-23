@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Support\Controllers\BaseController;
 use App\Models\Page;
+use App\Services\EntityTranslationService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
@@ -43,15 +44,54 @@ class PageController extends BaseController
     /**
      * Get page by slug (Public)
      */
-    public function show(string $slug): JsonResponse
+    public function show(string $slug, Request $request): JsonResponse
     {
-        $page = Page::findBySlug($slug);
+        $page = Page::where('slug', $slug)->where('is_active', true)->first();
 
         if (! $page) {
             return $this->notFound('Page not found');
         }
 
-        return $this->success($page, 'Page retrieved successfully');
+        // Get locale from request
+        $locale = $request->attributes->get('locale') ?? app()->getLocale();
+        $translationService = app(EntityTranslationService::class);
+
+        // Get translated fields
+        $title = $translationService->getTranslatedField($page, 'title', $locale, $page->title);
+        $content = $translationService->getTranslatedField($page, 'content', $locale, $page->content);
+        $metaTitle = $translationService->getTranslatedField($page, 'meta_title', $locale);
+        $metaDescription = $translationService->getTranslatedField($page, 'meta_description', $locale);
+        $sections = $translationService->getTranslatedField($page, 'sections', $locale, $page->sections);
+
+        // Include sections in response
+        $pageData = $page->toArray();
+        $pageData['title'] = $title;
+        $pageData['content'] = $content;
+        $pageData['meta_title'] = $metaTitle;
+        $pageData['meta_description'] = $metaDescription;
+        $pageData['sections'] = $sections ?? [
+            'slider' => true,
+            'testimonials' => true,
+            'featured_courses' => true,
+            'statistics' => true,
+            'faq' => true,
+        ];
+
+        // Include translations if requested (admin)
+        if ($request->has('include_translations')) {
+            $pageData['translations'] = $page->translations()->get()->map(function ($translation) {
+                return [
+                    'locale' => $translation->locale,
+                    'title' => $translation->title,
+                    'content' => $translation->content,
+                    'meta_title' => $translation->meta_title,
+                    'meta_description' => $translation->meta_description,
+                    'sections' => $translation->sections,
+                ];
+            });
+        }
+
+        return $this->success($pageData, 'Page retrieved successfully');
     }
 
     /**
@@ -69,9 +109,28 @@ class PageController extends BaseController
             'meta_description' => 'nullable|string',
             'is_active' => 'boolean',
             'sort_order' => 'integer',
+            'translations' => 'nullable|array',
+            'translations.*.locale' => 'required|in:ar,en',
+            'translations.*.title' => 'nullable|string|max:255',
+            'translations.*.content' => 'nullable|string',
+            'translations.*.meta_title' => 'nullable|string|max:255',
+            'translations.*.meta_description' => 'nullable|string',
+            'translations.*.sections' => 'nullable|array',
         ]);
 
+        $translations = $validated['translations'] ?? [];
+        unset($validated['translations']);
+
         $page = Page::create($validated);
+
+        // Save translations if provided
+        if (!empty($translations)) {
+            $translationService = app(EntityTranslationService::class);
+            $translationService->saveTranslations($page, $translations);
+        }
+
+        // Load translations for response
+        $page->load('translations');
 
         return $this->created($page, 'Page created successfully');
     }
@@ -93,9 +152,28 @@ class PageController extends BaseController
             'meta_description' => 'nullable|string',
             'is_active' => 'boolean',
             'sort_order' => 'integer',
+            'translations' => 'nullable|array',
+            'translations.*.locale' => 'required|in:ar,en',
+            'translations.*.title' => 'nullable|string|max:255',
+            'translations.*.content' => 'nullable|string',
+            'translations.*.meta_title' => 'nullable|string|max:255',
+            'translations.*.meta_description' => 'nullable|string',
+            'translations.*.sections' => 'nullable|array',
         ]);
 
+        $translations = $validated['translations'] ?? [];
+        unset($validated['translations']);
+
         $page->update($validated);
+
+        // Update translations if provided
+        if (!empty($translations)) {
+            $translationService = app(EntityTranslationService::class);
+            $translationService->saveTranslations($page, $translations);
+        }
+
+        // Load translations for response
+        $page->load('translations');
 
         return $this->success($page, 'Page updated successfully');
     }
@@ -106,6 +184,11 @@ class PageController extends BaseController
     public function destroy(int $id): JsonResponse
     {
         $page = Page::findOrFail($id);
+        
+        // Delete translations (cascade should handle this, but explicit for clarity)
+        $translationService = app(EntityTranslationService::class);
+        $translationService->deleteTranslations($page);
+        
         $page->delete();
 
         return $this->noContent();

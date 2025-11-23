@@ -29,6 +29,7 @@ class UpdateCourseDTO extends BaseDTO
     public ?array $instructors = null;
     public ?array $supervisors = null;
     public bool $regenerateSessions = false;
+    public ?array $translations = null;
 
     public function toArray(): array
     {

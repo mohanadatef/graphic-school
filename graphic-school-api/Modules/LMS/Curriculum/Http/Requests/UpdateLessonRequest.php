@@ -24,6 +24,11 @@ class UpdateLessonRequest extends FormRequest
             'lesson_type' => ['sometimes', 'string', 'in:video,text,quiz,project,assignment'],
             'is_preview' => ['sometimes', 'boolean'],
             'is_published' => ['sometimes', 'boolean'],
+            'translations' => ['nullable', 'array'],
+            'translations.*.locale' => ['required', 'in:ar,en'],
+            'translations.*.title' => ['nullable', 'string', 'max:255'],
+            'translations.*.description' => ['nullable', 'string'],
+            'translations.*.content' => ['nullable', 'string'],
         ];
     }
 }

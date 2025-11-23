@@ -14,6 +14,9 @@ class Enrollment extends Model
     protected $fillable = [
         'student_id',
         'course_id',
+        'program_id',
+        'batch_id',
+        'group_id',
         'payment_status',
         'paid_amount',
         'status',
@@ -37,6 +40,36 @@ class Enrollment extends Model
     public function course()
     {
         return $this->belongsTo(Course::class);
+    }
+
+    public function program()
+    {
+        return $this->belongsTo(\App\Models\Program::class);
+    }
+
+    public function batch()
+    {
+        return $this->belongsTo(\App\Models\Batch::class);
+    }
+
+    public function group()
+    {
+        return $this->belongsTo(\App\Models\Group::class);
+    }
+
+    public function logs()
+    {
+        return $this->hasMany(\App\Models\EnrollmentLog::class);
+    }
+
+    public function invoices()
+    {
+        return $this->hasMany(\App\Models\Invoice::class);
+    }
+
+    public function enrollmentLogs()
+    {
+        return $this->hasMany(\App\Models\EnrollmentLog::class);
     }
 }
 

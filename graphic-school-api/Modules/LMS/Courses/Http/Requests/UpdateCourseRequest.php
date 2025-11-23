@@ -40,6 +40,12 @@ class UpdateCourseRequest extends FormRequest
             'supervisors' => ['nullable', 'array'],
             'supervisors.*' => ['exists:users,id'],
             'regenerate_sessions' => ['nullable', 'boolean'],
+            'translations' => ['nullable', 'array'],
+            'translations.*.locale' => ['required', 'in:ar,en'],
+            'translations.*.title' => ['nullable', 'string', 'max:255'],
+            'translations.*.description' => ['nullable', 'string'],
+            'translations.*.meta_title' => ['nullable', 'string', 'max:255'],
+            'translations.*.meta_description' => ['nullable', 'string'],
         ];
     }
 }

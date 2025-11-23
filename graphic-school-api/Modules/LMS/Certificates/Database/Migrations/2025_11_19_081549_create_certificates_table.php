@@ -8,6 +8,34 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('certificates')) {
+            // Table already exists, ensure it has required module columns
+            Schema::table('certificates', function (Blueprint $table) {
+                if (!Schema::hasColumn('certificates', 'certificate_number')) {
+                    $table->string('certificate_number')->unique()->after('id');
+                }
+                if (!Schema::hasColumn('certificates', 'enrollment_id')) {
+                    $table->unsignedBigInteger('enrollment_id')->after('student_id');
+                    if (Schema::hasTable('enrollments')) {
+                        $table->foreign('enrollment_id')->references('id')->on('enrollments')->onDelete('cascade');
+                    }
+                }
+                if (!Schema::hasColumn('certificates', 'template_path')) {
+                    $table->string('template_path')->nullable()->after('certificate_number');
+                }
+                if (!Schema::hasColumn('certificates', 'issued_date')) {
+                    $table->date('issued_date')->after('pdf_path');
+                }
+                if (!Schema::hasColumn('certificates', 'expiry_date')) {
+                    $table->date('expiry_date')->nullable()->after('issued_date');
+                }
+                if (!Schema::hasColumn('certificates', 'is_verified')) {
+                    $table->boolean('is_verified')->default(true)->after('expiry_date');
+                }
+            });
+            return; // Table already exists (created by extend_certificates_for_programs migration)
+        }
+
         Schema::create('certificates', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('course_id');

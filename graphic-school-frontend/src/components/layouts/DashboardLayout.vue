@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen flex bg-slate-100 dark:bg-slate-900 relative overflow-hidden">
-    <aside class="w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 hidden md:flex flex-col shadow-sm">
+    <aside data-cy="sidebar" class="w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 hidden md:flex flex-col shadow-sm">
       <div class="px-6 py-6 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-br from-slate-50 to-white dark:from-slate-800 dark:to-slate-900">
         <div class="flex items-center gap-3 mb-2">
           <div class="p-2 bg-gradient-to-br from-primary to-primary/80 rounded-lg">
@@ -9,7 +9,7 @@
             </svg>
           </div>
           <div>
-            <p class="text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400 font-semibold">Graphic School</p>
+            <p class="text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400 font-semibold">{{ brandingStore.displayName }}</p>
             <p class="text-base font-bold text-slate-900 dark:text-white">{{ $t('dashboard.title') }}</p>
           </div>
         </div>
@@ -136,18 +136,20 @@
 import { computed, onMounted } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
 import { useAuthStore } from '../../stores/auth';
+import { useBrandingStore } from '../../stores/branding';
 import { useToast } from '../../composables/useToast';
 import LanguagePicker from '../common/LanguagePicker.vue';
 import ThemeToggle from '../common/ThemeToggle.vue';
 import { useI18n } from '../../composables/useI18n';
 
 const authStore = useAuthStore();
+const brandingStore = useBrandingStore();
 const router = useRouter();
 const toast = useToast();
 const { t } = useI18n();
 
-// Debug: Log auth state on mount
-onMounted(() => {
+// Wait for branding and settings to load before rendering
+onMounted(async () => {
   console.log('DashboardLayout mounted');
   console.log('Auth store state:', {
     isAuthenticated: authStore.isAuthenticated,
@@ -157,6 +159,16 @@ onMounted(() => {
     isStudent: authStore.isStudent,
     user: authStore.user,
   });
+  
+  // Load branding if not already loaded
+  try {
+    if (!brandingStore.branding && !brandingStore.loading) {
+      await brandingStore.fetchBranding();
+    }
+  } catch (err) {
+    console.warn('Failed to load branding:', err);
+    // Continue anyway - branding is optional
+  }
 });
 
 const adminLinks = computed(() => [
@@ -168,9 +180,15 @@ const adminLinks = computed(() => [
   { labelKey: 'admin.sessions', to: '/dashboard/admin/sessions', icon: 'sessions' },
   { labelKey: 'admin.enrollments', to: '/dashboard/admin/enrollments', icon: 'enrollments' },
   { labelKey: 'admin.attendance', to: '/dashboard/admin/attendance', icon: 'attendance' },
+  { labelKey: 'admin.payments', to: '/dashboard/admin/payments', icon: 'payments' },
+  { labelKey: 'admin.tickets', to: '/dashboard/admin/tickets', icon: 'tickets' },
   { labelKey: 'admin.pages', to: '/dashboard/admin/pages', icon: 'pages' },
+  { labelKey: 'admin.faqs', to: '/dashboard/admin/faqs', icon: 'faqs' },
+  { labelKey: 'admin.media', to: '/dashboard/admin/media', icon: 'media' },
   { labelKey: 'admin.sliders', to: '/dashboard/admin/sliders', icon: 'sliders' },
+  { labelKey: 'admin.auditLogs', to: '/dashboard/admin/audit-logs', icon: 'logs' },
   { labelKey: 'admin.settings', to: '/dashboard/admin/settings', icon: 'settings' },
+  { labelKey: 'admin.branding.title', to: '/dashboard/admin/branding', icon: 'branding' },
   { labelKey: 'admin.contacts', to: '/dashboard/admin/contacts', icon: 'contacts' },
 ]);
 
@@ -178,13 +196,19 @@ const instructorLinks = computed(() => [
   { labelKey: 'instructor.myCourses', to: '/dashboard/instructor/courses' },
   { labelKey: 'instructor.sessions', to: '/dashboard/instructor/sessions' },
   { labelKey: 'instructor.attendance', to: '/dashboard/instructor/attendance' },
+  { labelKey: 'instructor.assignments', to: '/dashboard/instructor/assignments' },
+  { labelKey: 'instructor.calendar', to: '/dashboard/instructor/calendar' },
   { labelKey: 'instructor.notes', to: '/dashboard/instructor/notes' },
+  { labelKey: 'instructor.messaging', to: '/dashboard/instructor/messaging' },
+  { labelKey: 'instructor.community', to: '/dashboard/instructor/community' },
 ]);
 
 const studentLinks = computed(() => [
   { labelKey: 'student.myCourses', to: '/dashboard/student/courses' },
   { labelKey: 'student.schedule', to: '/dashboard/student/sessions' },
   { labelKey: 'student.attendance', to: '/dashboard/student/attendance' },
+  { labelKey: 'student.payments', to: '/dashboard/student/payments' },
+  { labelKey: 'student.messaging', to: '/dashboard/student/messaging' },
   { labelKey: 'student.profile', to: '/dashboard/student/profile' },
 ]);
 

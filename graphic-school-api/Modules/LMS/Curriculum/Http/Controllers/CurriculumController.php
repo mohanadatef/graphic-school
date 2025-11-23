@@ -40,12 +40,14 @@ class CurriculumController extends Controller
     public function storeModule(StoreModuleRequest $request): JsonResponse
     {
         $module = $this->curriculumService->createModule($request->validated());
+        $module->load('translations');
         return ApiResponse::success(new CourseModuleResource($module), 'Module created successfully', 201);
     }
 
     public function updateModule(int $moduleId, UpdateModuleRequest $request): JsonResponse
     {
         $module = $this->curriculumService->updateModule($moduleId, $request->validated());
+        $module->load('translations');
         return ApiResponse::success(new CourseModuleResource($module), 'Module updated successfully');
     }
 
@@ -58,12 +60,14 @@ class CurriculumController extends Controller
     public function storeLesson(StoreLessonRequest $request): JsonResponse
     {
         $lesson = $this->curriculumService->createLesson($request->validated());
+        $lesson->load('translations');
         return ApiResponse::success(new LessonResource($lesson), 'Lesson created successfully', 201);
     }
 
     public function updateLesson(int $lessonId, UpdateLessonRequest $request): JsonResponse
     {
         $lesson = $this->curriculumService->updateLesson($lessonId, $request->validated());
+        $lesson->load('translations');
         return ApiResponse::success(new LessonResource($lesson), 'Lesson updated successfully');
     }
 

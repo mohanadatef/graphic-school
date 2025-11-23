@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Modules\LMS\Curriculum\Http\Controllers\CurriculumController;
 
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:api'])->group(function () {
     // Admin routes
     Route::middleware(['role:admin,instructor'])->prefix('admin')->group(function () {
         Route::get('/courses/{courseId}/curriculum', [CurriculumController::class, 'getCourseCurriculum']);

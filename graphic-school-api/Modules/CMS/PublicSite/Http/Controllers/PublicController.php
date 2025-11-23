@@ -2,7 +2,7 @@
 
 namespace Modules\CMS\PublicSite\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+use App\Support\Controllers\BaseController;
 use App\Http\Responses\ApiResponse;
 use Modules\CMS\PublicSite\Http\Requests\ContactMessageRequest;
 use Modules\CMS\PublicSite\Http\Requests\CourseListRequest;
@@ -15,7 +15,7 @@ use Modules\ACL\Users\Models\User;
 use Modules\LMS\Courses\Models\Course;
 use Modules\CMS\PublicSite\Services\PublicSiteService;
 
-class PublicController extends Controller
+class PublicController extends BaseController
 {
     public function __construct(private PublicSiteService $publicSiteService)
     {
@@ -23,8 +23,12 @@ class PublicController extends Controller
 
     public function courses(CourseListRequest $request)
     {
-        return CourseResource::collection(
-            $this->publicSiteService->listCourses($request->validated())
+        $courses = $this->publicSiteService->listCourses($request->validated());
+        $collection = CourseResource::collection($courses);
+        
+        return $this->success(
+            $collection->resolve(request()),
+            'Courses retrieved successfully'
         );
     }
 
@@ -44,12 +48,24 @@ class PublicController extends Controller
 
     public function categories()
     {
-        return CategoryResource::collection($this->publicSiteService->categories());
+        $categories = $this->publicSiteService->categories();
+        $collection = CategoryResource::collection($categories);
+        
+        return $this->success(
+            $collection->resolve(request()),
+            'Categories retrieved successfully'
+        );
     }
 
     public function instructors()
     {
-        return UserResource::collection($this->publicSiteService->instructors());
+        $instructors = $this->publicSiteService->instructors();
+        $collection = UserResource::collection($instructors);
+        
+        return $this->success(
+            $collection->resolve(request()),
+            'Instructors retrieved successfully'
+        );
     }
 
     public function instructorShow(User $instructor)
@@ -65,13 +81,23 @@ class PublicController extends Controller
 
     public function sliders()
     {
-        return SliderResource::collection($this->publicSiteService->sliders());
+        $sliders = $this->publicSiteService->sliders();
+        $collection = SliderResource::collection($sliders);
+        
+        return $this->success(
+            $collection->resolve(request()),
+            'Sliders retrieved successfully'
+        );
     }
 
     public function testimonials()
     {
-        return TestimonialResource::collection(
-            $this->publicSiteService->testimonials()
+        $testimonials = $this->publicSiteService->testimonials();
+        $collection = TestimonialResource::collection($testimonials);
+        
+        return $this->success(
+            $collection->resolve(request()),
+            'Testimonials retrieved successfully'
         );
     }
 
@@ -79,16 +105,16 @@ class PublicController extends Controller
     {
         $summary = $this->publicSiteService->homeSummary();
 
-        return response()->json([
-            'sliders' => SliderResource::collection($summary['sliders']),
-            'courses' => CourseResource::collection($summary['courses']),
-            'testimonials' => TestimonialResource::collection($summary['testimonials']),
+        return $this->success([
+            'sliders' => SliderResource::collection($summary['sliders'])->resolve(request()),
+            'courses' => CourseResource::collection($summary['courses'])->resolve(request()),
+            'testimonials' => TestimonialResource::collection($summary['testimonials'])->resolve(request()),
             'stats' => $summary['stats'],
             'highlight_cards' => $summary['highlight_cards'],
             'learning_pillars' => $summary['learning_pillars'],
             'community_features' => $summary['community_features'],
             'upcoming_sessions' => $summary['upcoming_sessions'],
-        ]);
+        ], 'Home summary retrieved successfully');
     }
 
     public function settings()
@@ -104,8 +130,9 @@ class PublicController extends Controller
             'logo',
         ];
 
-        return response()->json(
-            $this->publicSiteService->settings($keys)
+        return $this->success(
+            $this->publicSiteService->settings($keys),
+            'Settings retrieved successfully'
         );
     }
 
@@ -113,7 +140,7 @@ class PublicController extends Controller
     {
         $this->publicSiteService->storeContactMessage($request->validated());
 
-        return response()->json(['message' => 'شكراً لتواصلك معنا']);
+        return $this->success(null, 'شكراً لتواصلك معنا');
     }
 }
 

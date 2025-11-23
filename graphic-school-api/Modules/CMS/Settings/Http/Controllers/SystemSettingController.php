@@ -23,6 +23,7 @@ class SystemSettingController extends Controller
             'colors' => $this->settingService->getByGroup('colors'),
             'sections' => $this->settingService->getByGroup('sections'),
             'languages' => $this->settingService->getByGroup('languages'),
+            'currency' => $this->settingService->getByGroup('currency'),
         ];
 
         return response()->json($groups);

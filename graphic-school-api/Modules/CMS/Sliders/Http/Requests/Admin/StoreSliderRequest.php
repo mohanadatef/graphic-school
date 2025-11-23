@@ -21,6 +21,11 @@ class StoreSliderRequest extends FormRequest
             'image' => ['required', 'file', 'image', 'max:4096'],
             'is_active' => ['nullable', 'boolean'],
             'sort_order' => ['nullable', 'integer'],
+            'translations' => ['nullable', 'array'],
+            'translations.*.locale' => ['required', 'in:ar,en'],
+            'translations.*.title' => ['nullable', 'string', 'max:255'],
+            'translations.*.subtitle' => ['nullable', 'string', 'max:255'],
+            'translations.*.button_text' => ['nullable', 'string', 'max:50'],
         ];
     }
 }

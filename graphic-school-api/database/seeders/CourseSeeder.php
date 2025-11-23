@@ -36,76 +36,66 @@ class CourseSeeder extends Seeder
             ['title' => 'Print Design Workshop', 'days' => ['sat', 'sun'], 'sessions' => 6],
         ];
 
-        // إنشاء كورسات على مدى 5 سنوات
-        // كل سنة: 4 كورسات لكل template = 40 كورس/سنة = 200 كورس إجمالي
-        // لكن سنقلل للواقعية: ~15-20 كورس/سنة = 75-100 كورس إجمالي
+        // إنشاء كورسات للاختبار - 10 كورسات فقط
         
         $courseCounter = 1;
         $courseCodeCounter = 1;
+        $totalCourses = 10;
         
-        for ($year = 0; $year < 5; $year++) {
-            $yearStart = Carbon::now()->subYears(5 - $year)->startOfYear();
+        for ($i = 0; $i < $totalCourses; $i++) {
+            $template = $courseTemplates[array_rand($courseTemplates)];
             
-            // 15-20 كورس لكل سنة
-            $coursesPerYear = rand(15, 20);
+            // توزيع التواريخ على مدار السنة الماضية
+            $startDate = Carbon::now()->subMonths(rand(1, 12))->addDays(rand(1, 30));
             
-            for ($i = 0; $i < $coursesPerYear; $i++) {
-                $template = $courseTemplates[array_rand($courseTemplates)];
-                
-                // توزيع التواريخ على مدار السنة
-                $startDate = Carbon::createFromTimestamp(
-                    rand($yearStart->timestamp, $yearStart->copy()->endOfYear()->timestamp)
-                );
-                
-                // تحديد الحالة بناءً على التاريخ
-                $now = Carbon::now();
-                if ($startDate->isPast() && $startDate->addWeeks($template['sessions'])->isPast()) {
-                    $status = CourseStatus::COMPLETED;
-                } elseif ($startDate->isPast()) {
-                    $status = CourseStatus::RUNNING;
-                } elseif ($startDate->isFuture() && $startDate->diffInDays($now) < 30) {
-                    $status = CourseStatus::UPCOMING;
-                } else {
-                    $status = CourseStatus::DRAFT;
-                }
-                
-                $course = Course::create([
-                    'title' => $template['title'] . ' - Batch ' . ($year + 1) . '-' . str_pad($courseCounter, 2, '0', STR_PAD_LEFT),
-                    'slug' => Str::slug($template['title'] . '-batch-' . ($year + 1) . '-' . $courseCounter),
-                    'code' => 'GS-' . str_pad($courseCodeCounter, 4, '0', STR_PAD_LEFT),
-                    'category_id' => $categories[array_rand($categories)],
-                    'description' => $faker->paragraph(5),
-                    'price' => rand(1500, 5000),
-                    'start_date' => $startDate->toDateString(),
-                    'end_date' => $startDate->copy()->addWeeks($template['sessions'])->toDateString(),
-                    'session_count' => $template['sessions'],
-                    'days_of_week' => $template['days'],
-                    'duration_weeks' => $template['sessions'],
-                    'max_students' => rand(20, 40),
-                    'default_start_time' => rand(9, 11) . ':00',
-                    'default_end_time' => (rand(9, 11) + 2) . ':00',
-                    'auto_generate_sessions' => true,
-                    'status' => $status->value,
-                    'delivery_type' => $faker->randomElement(['on-site', 'online', 'hybrid']),
-                    'is_published' => $status !== CourseStatus::DRAFT,
-                    'is_hidden' => false,
-                    'created_at' => $startDate->copy()->subDays(rand(30, 90)),
-                    'updated_at' => $startDate->copy()->subDays(rand(1, 30)),
-                ]);
-
-                // تعيين 2-3 مدربين
-                $assigned = collect($instructors)->random(rand(2, 3))->values();
-                $instructorsData = [];
-                foreach ($assigned as $index => $instructorId) {
-                    $instructorsData[$instructorId] = ['is_supervisor' => $index === 0];
-                }
-                $course->instructors()->sync($instructorsData);
-                
-                $courseCounter++;
-                $courseCodeCounter++;
+            // تحديد الحالة بناءً على التاريخ
+            $now = Carbon::now();
+            if ($startDate->isPast() && $startDate->copy()->addWeeks($template['sessions'])->isPast()) {
+                $status = CourseStatus::COMPLETED;
+            } elseif ($startDate->isPast()) {
+                $status = CourseStatus::RUNNING;
+            } elseif ($startDate->isFuture() && $startDate->diffInDays($now) < 30) {
+                $status = CourseStatus::UPCOMING;
+            } else {
+                $status = CourseStatus::DRAFT;
             }
+            
+            $course = Course::create([
+                'title' => $template['title'] . ' - Batch ' . str_pad($courseCounter, 2, '0', STR_PAD_LEFT),
+                'slug' => Str::slug($template['title'] . '-batch-' . $courseCounter),
+                'code' => 'GS-' . str_pad($courseCodeCounter, 4, '0', STR_PAD_LEFT),
+                'category_id' => $categories[array_rand($categories)],
+                'description' => $faker->paragraph(5),
+                'price' => rand(1500, 5000),
+                'start_date' => $startDate->toDateString(),
+                'end_date' => $startDate->copy()->addWeeks($template['sessions'])->toDateString(),
+                'session_count' => $template['sessions'],
+                'days_of_week' => $template['days'],
+                'duration_weeks' => $template['sessions'],
+                'max_students' => rand(20, 40),
+                'default_start_time' => rand(9, 11) . ':00',
+                'default_end_time' => (rand(9, 11) + 2) . ':00',
+                'auto_generate_sessions' => true,
+                'status' => $status->value,
+                'delivery_type' => $faker->randomElement(['on-site', 'online', 'hybrid']),
+                'is_published' => $status !== CourseStatus::DRAFT,
+                'is_hidden' => false,
+                'created_at' => $startDate->copy()->subDays(rand(30, 90)),
+                'updated_at' => $startDate->copy()->subDays(rand(1, 30)),
+            ]);
+
+            // تعيين 2-3 مدربين
+            $assigned = collect($instructors)->random(rand(2, min(3, count($instructors))))->values();
+            $instructorsData = [];
+            foreach ($assigned as $index => $instructorId) {
+                $instructorsData[$instructorId] = ['is_supervisor' => $index === 0];
+            }
+            $course->instructors()->sync($instructorsData);
+            
+            $courseCounter++;
+            $courseCodeCounter++;
         }
 
-        $this->command->info("Courses seeded: {$courseCounter} courses over 5 years");
+        $this->command->info("Courses seeded: {$courseCounter} courses");
     }
 }

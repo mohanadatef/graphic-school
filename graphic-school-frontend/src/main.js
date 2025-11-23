@@ -4,6 +4,7 @@ import App from './App.vue';
 import router from './router';
 import i18n from './i18n';
 import ToastContainer from './components/common/ToastContainer.vue';
+import { useBrandingStore } from './stores/branding';
 import './style.css';
 
 // Initialize theme immediately
@@ -29,4 +30,36 @@ app.use(router);
 app.use(i18n);
 app.component('ToastContainer', ToastContainer);
 
-app.mount('#app');
+// Load branding and translations BEFORE mounting app
+async function initializeApp() {
+  try {
+    // 1. Load branding
+    const brandingStore = useBrandingStore();
+    await brandingStore.fetchBranding();
+    brandingStore.applyBrandingToDOM();
+    
+    // 2. Load translations dynamically
+    const savedLocale = localStorage.getItem('locale') || 'ar';
+    const { loadDynamicTranslations } = await import('./i18n');
+    await loadDynamicTranslations(savedLocale);
+    
+    // 3. Set document direction and language
+    const isRTL = savedLocale === 'ar';
+    document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
+    document.documentElement.lang = savedLocale;
+    if (isRTL) {
+      document.body.classList.add('rtl');
+      document.body.classList.remove('ltr');
+    } else {
+      document.body.classList.add('ltr');
+      document.body.classList.remove('rtl');
+    }
+  } catch (error) {
+    console.error('Failed to initialize app, using defaults:', error);
+    // App will still mount with defaults
+  } finally {
+    app.mount('#app');
+  }
+}
+
+initializeApp();

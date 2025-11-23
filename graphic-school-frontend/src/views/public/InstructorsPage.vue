@@ -40,7 +40,7 @@
               </div>
             </div>
             <p class="text-sm text-slate-600 dark:text-slate-300 line-clamp-3 mb-4 leading-relaxed">
-              {{ instructor.bio || 'مدرب معتمد في Graphic School مع سنوات من الخبرة في مجال التصميم الجرافيكي' }}
+              {{ instructor.bio || `مدرب معتمد في ${brandingStore.displayName} مع سنوات من الخبرة في مجال التصميم الجرافيكي` }}
             </p>
             <div class="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-700">
               <div class="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
@@ -86,8 +86,10 @@
 import { onMounted, ref } from 'vue';
 import { RouterLink } from 'vue-router';
 import api from '../../api';
+import { useBrandingStore } from '../../stores/branding';
 
 const instructors = ref([]);
+const brandingStore = useBrandingStore();
 
 onMounted(async () => {
   try {

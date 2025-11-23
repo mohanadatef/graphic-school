@@ -4,4 +4,5 @@ export { useCategoryStore } from './category';
 export { useInstructorStore } from './instructor';
 export { useStudentStore } from './student';
 export { useSettingsStore } from './settings';
+export { useBrandingStore } from './branding';
 

@@ -37,8 +37,9 @@ class LanguageController extends Controller
 
     /**
      * Get all translations for current locale
+     * If group is 'all' or not provided, returns all groups merged
      */
-    public function getTranslations(Request $request, string $group = 'messages'): JsonResponse
+    public function getTranslations(Request $request, ?string $group = null): JsonResponse
     {
         $locale = $request->header('Accept-Language') 
             ?? $request->query('locale') 
@@ -48,13 +49,37 @@ class LanguageController extends Controller
             $locale = 'en';
         }
 
+        // If group is 'all' or null, return all groups merged
+        if ($group === 'all' || $group === null) {
+            $allGroups = $this->translationService->getGroups();
+            $translations = [];
+            
+            foreach ($allGroups as $grp) {
+                $groupTranslations = $this->translationService->getAll($locale, $grp);
+                // Merge with group prefix: group.key => value
+                foreach ($groupTranslations as $key => $value) {
+                    $translations["{$grp}.{$key}"] = $value;
+                }
+            }
+            
+            // Also include default 'messages' group at root level for backward compatibility
+            $messages = $this->translationService->getAll($locale, 'messages');
+            $translations = array_merge($messages, $translations);
+
+            return ApiResponse::success([
+                'locale' => $locale,
+                'translations' => $translations,
+            ], 'Translations retrieved successfully');
+        }
+
+        // Single group
         $translations = $this->translationService->getAll($locale, $group);
 
-        return response()->json([
+        return ApiResponse::success([
             'locale' => $locale,
             'group' => $group,
             'translations' => $translations,
-        ]);
+        ], 'Translations retrieved successfully');
     }
 
     /**

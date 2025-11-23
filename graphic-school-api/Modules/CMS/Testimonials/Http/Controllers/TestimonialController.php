@@ -24,6 +24,7 @@ class TestimonialController extends Controller
     public function update(UpdateTestimonialRequest $request, Testimonial $testimonial)
     {
         $testimonial = $this->testimonialService->update($testimonial, $request->validated());
+        $testimonial->load('translations');
 
         return TestimonialResource::make($testimonial);
     }

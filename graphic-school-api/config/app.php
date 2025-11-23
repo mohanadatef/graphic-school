@@ -246,4 +246,16 @@ return [
         // 'ExampleClass' => App\Example\ExampleClass::class,
     ])->toArray(),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Support API Key
+    |--------------------------------------------------------------------------
+    |
+    | This key is used for external support system integration (tickets, health checks).
+    | Set this in your .env file as SUPPORT_API_KEY.
+    |
+    */
+
+    'support_api_key' => env('SUPPORT_API_KEY', null),
+
 ];

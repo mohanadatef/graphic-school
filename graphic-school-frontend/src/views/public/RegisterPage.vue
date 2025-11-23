@@ -120,7 +120,7 @@
 </template>
 
 <script setup>
-import { reactive } from 'vue';
+import { reactive, onMounted } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
 import { useAuthStore } from '../../stores/auth';
 import { useToast } from '../../composables/useToast';
@@ -138,24 +138,23 @@ const form = reactive({
   phone: '',
 });
 
+// Redirect if already authenticated
+onMounted(() => {
+  if (authStore.isAuthenticated) {
+    const redirectPath = authStore.afterLoginRedirect();
+    router.replace(redirectPath);
+  }
+});
+
 async function submit() {
   try {
-    const user = await authStore.register(form);
-    
-    toast.success(t('auth.registerSuccess') || 'تم التسجيل بنجاح');
-    
-    // Get role from authStore or user
-    const role = authStore.roleName || user?.role_name || user?.role?.name;
-    
-    if (role) {
-      router.push(`/dashboard/${role}`);
-    } else {
-      console.warn('No role found, redirecting to home');
-      router.push('/');
-    }
-  } catch (error) {
-    // Error is handled in store and displayed
-    console.error('Registration error:', error);
+    await authStore.register(form);
+
+    // Use the centralized redirect function
+    const redirectPath = authStore.afterLoginRedirect();
+    router.push(redirectPath);
+  } catch (e) {
+    // error handled by store
   }
 }
 </script>

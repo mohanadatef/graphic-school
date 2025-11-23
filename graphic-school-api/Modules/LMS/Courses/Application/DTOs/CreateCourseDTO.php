@@ -28,6 +28,7 @@ class CreateCourseDTO extends BaseDTO
     public string $deliveryType = 'on_site';
     public array $instructors = [];
     public array $supervisors = [];
+    public array $translations = [];
 
     public function validate(): void
     {

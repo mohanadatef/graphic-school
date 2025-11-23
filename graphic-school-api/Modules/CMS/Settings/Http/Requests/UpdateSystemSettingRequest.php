@@ -24,6 +24,11 @@ class UpdateSystemSettingRequest extends FormRequest
             'colors.dashboard' => ['sometimes', 'array'],
             'section' => ['sometimes', 'string'],
             'visible' => ['sometimes', 'boolean'],
+            'default_language' => ['sometimes', 'string', 'in:ar,en'],
+            'available_languages' => ['sometimes', 'array'],
+            'default_currency' => ['sometimes', 'string', 'in:EGP,SAR,AED,KWD,BHD,OMR,QAR,USD'],
+            'currency_symbol' => ['sometimes', 'string', 'max:10'],
+            'currency_position' => ['sometimes', 'string', 'in:before,after'],
         ];
     }
 }

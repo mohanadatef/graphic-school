@@ -7,6 +7,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Modules\CMS\Sliders\Models\Slider;
 use Modules\CMS\Sliders\Repositories\Interfaces\SliderRepositoryInterface;
+use App\Services\EntityTranslationService;
 
 class SliderService
 {
@@ -21,14 +22,28 @@ class SliderService
 
     public function create(array $data, UploadedFile $image): Slider
     {
+        $translations = $data['translations'] ?? [];
+        unset($data['translations']);
+
         $data['image_path'] = $image->store('sliders', 'public');
         unset($data['image']);
 
-        return $this->sliderRepository->create($data);
+        $slider = $this->sliderRepository->create($data);
+
+        // Save translations if provided
+        if (!empty($translations)) {
+            $translationService = app(EntityTranslationService::class);
+            $translationService->saveTranslations($slider, $translations);
+        }
+
+        return $slider;
     }
 
     public function update(Slider $slider, array $data, ?UploadedFile $image = null): Slider
     {
+        $translations = $data['translations'] ?? [];
+        unset($data['translations']);
+
         if ($image) {
             Storage::disk('public')->delete($slider->image_path);
             $data['image_path'] = $image->store('sliders', 'public');
@@ -36,11 +51,23 @@ class SliderService
 
         unset($data['image']);
 
-        return $this->sliderRepository->update($slider, $data);
+        $slider = $this->sliderRepository->update($slider, $data);
+
+        // Update translations if provided
+        if (!empty($translations)) {
+            $translationService = app(EntityTranslationService::class);
+            $translationService->saveTranslations($slider, $translations);
+        }
+
+        return $slider;
     }
 
     public function delete(Slider $slider): void
     {
+        // Delete translations
+        $translationService = app(EntityTranslationService::class);
+        $translationService->deleteTranslations($slider);
+
         Storage::disk('public')->delete($slider->image_path);
         $this->sliderRepository->delete($slider);
     }

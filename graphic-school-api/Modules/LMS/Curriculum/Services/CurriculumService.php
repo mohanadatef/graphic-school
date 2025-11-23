@@ -6,6 +6,7 @@ use Modules\LMS\Courses\Models\Course;
 use Modules\LMS\Curriculum\Models\CourseModule;
 use Modules\LMS\Curriculum\Models\Lesson;
 use Modules\LMS\Curriculum\Models\LessonResource;
+use App\Services\EntityTranslationService;
 use Illuminate\Support\Facades\DB;
 
 class CurriculumService
@@ -52,7 +53,17 @@ class CurriculumService
     public function createModule(array $data): CourseModule
     {
         return DB::transaction(function () use ($data) {
+            $translations = $data['translations'] ?? [];
+            unset($data['translations']);
+
             $module = CourseModule::create($data);
+
+            // Save translations if provided
+            if (!empty($translations)) {
+                $translationService = app(EntityTranslationService::class);
+                $translationService->saveTranslations($module, $translations);
+            }
+
             $this->updateCourseModuleCount($data['course_id']);
             return $module;
         });
@@ -60,8 +71,18 @@ class CurriculumService
 
     public function updateModule(int $moduleId, array $data): CourseModule
     {
+        $translations = $data['translations'] ?? [];
+        unset($data['translations']);
+
         $module = CourseModule::findOrFail($moduleId);
         $module->update($data);
+
+        // Update translations if provided
+        if (!empty($translations)) {
+            $translationService = app(EntityTranslationService::class);
+            $translationService->saveTranslations($module, $translations);
+        }
+
         $this->updateCourseModuleCount($module->course_id);
         return $module->fresh();
     }
@@ -71,6 +92,11 @@ class CurriculumService
         return DB::transaction(function () use ($moduleId) {
             $module = CourseModule::findOrFail($moduleId);
             $courseId = $module->course_id;
+
+            // Delete translations
+            $translationService = app(EntityTranslationService::class);
+            $translationService->deleteTranslations($module);
+
             $module->delete();
             $this->updateCourseModuleCount($courseId);
             return true;
@@ -80,7 +106,17 @@ class CurriculumService
     public function createLesson(array $data): Lesson
     {
         return DB::transaction(function () use ($data) {
+            $translations = $data['translations'] ?? [];
+            unset($data['translations']);
+
             $lesson = Lesson::create($data);
+
+            // Save translations if provided
+            if (!empty($translations)) {
+                $translationService = app(EntityTranslationService::class);
+                $translationService->saveTranslations($lesson, $translations);
+            }
+
             $module = CourseModule::findOrFail($data['module_id']);
             $this->updateCourseLessonCount($module->course_id);
             return $lesson;
@@ -89,8 +125,18 @@ class CurriculumService
 
     public function updateLesson(int $lessonId, array $data): Lesson
     {
+        $translations = $data['translations'] ?? [];
+        unset($data['translations']);
+
         $lesson = Lesson::findOrFail($lessonId);
         $lesson->update($data);
+
+        // Update translations if provided
+        if (!empty($translations)) {
+            $translationService = app(EntityTranslationService::class);
+            $translationService->saveTranslations($lesson, $translations);
+        }
+
         $module = CourseModule::findOrFail($lesson->module_id);
         $this->updateCourseLessonCount($module->course_id);
         return $lesson->fresh();
@@ -102,6 +148,11 @@ class CurriculumService
             $lesson = Lesson::findOrFail($lessonId);
             $module = CourseModule::findOrFail($lesson->module_id);
             $courseId = $module->course_id;
+
+            // Delete translations
+            $translationService = app(EntityTranslationService::class);
+            $translationService->deleteTranslations($lesson);
+
             $lesson->delete();
             $this->updateCourseLessonCount($courseId);
             return true;

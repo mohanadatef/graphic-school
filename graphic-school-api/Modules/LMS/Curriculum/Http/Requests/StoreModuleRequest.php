@@ -20,6 +20,10 @@ class StoreModuleRequest extends FormRequest
             'order' => ['sometimes', 'integer', 'min:0'],
             'is_published' => ['sometimes', 'boolean'],
             'is_preview' => ['sometimes', 'boolean'],
+            'translations' => ['nullable', 'array'],
+            'translations.*.locale' => ['required', 'in:ar,en'],
+            'translations.*.title' => ['nullable', 'string', 'max:255'],
+            'translations.*.description' => ['nullable', 'string'],
         ];
     }
 }

@@ -60,7 +60,7 @@
         <div class="relative animate-scale-in" style="animation-delay: 0.5s;">
           <div class="absolute -top-8 -left-8 w-32 h-32 bg-primary/30 blur-3xl rounded-full animate-pulse-glow"></div>
           <div class="absolute -bottom-10 -right-6 w-40 h-40 bg-secondary/40 blur-3xl rounded-full animate-pulse-glow" style="animation-delay: 1s;"></div>
-          <div class="relative glass-strong rounded-3xl overflow-hidden shadow-2xl hover:shadow-[0_40px_80px_rgba(0,0,0,0.3)] transition-all duration-700 border-2 border-white/20">
+          <div v-if="homeData.sections.slider" class="relative glass-strong rounded-3xl overflow-hidden shadow-2xl hover:shadow-[0_40px_80px_rgba(0,0,0,0.3)] transition-all duration-700 border-2 border-white/20">
             <div v-if="loading.home" class="h-[360px] flex items-center justify-center">
               <div class="size-16 rounded-full border-4 border-white/20 border-t-white animate-spin"></div>
             </div>
@@ -116,7 +116,7 @@
       <div class="hero-orb hero-orb--two"></div>
     </section>
 
-    <section class="max-w-6xl mx-auto px-4 py-12">
+    <section v-if="homeData.sections.statistics" class="max-w-6xl mx-auto px-4 py-12">
         <div class="grid gap-6 md:grid-cols-3">
         <article
           v-for="(card, index) in resolvedHighlightCards"
@@ -151,7 +151,7 @@
       </div>
     </section>
 
-    <section class="bg-white dark:bg-slate-900 py-14">
+    <section v-if="homeData.sections.featured_courses" class="bg-white dark:bg-slate-900 py-14">
       <div class="max-w-6xl mx-auto px-4">
         <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
           <div>
@@ -323,7 +323,7 @@
       </div>
     </section>
 
-    <section class="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 text-white py-20 overflow-hidden">
+    <section v-if="homeData.sections.testimonials" class="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 text-white py-20 overflow-hidden">
       <div class="absolute inset-0">
         <div class="absolute top-1/4 left-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
         <div class="absolute bottom-1/4 right-0 w-96 h-96 bg-secondary/10 rounded-full blur-3xl"></div>
@@ -393,7 +393,7 @@
         <div class="absolute inset-0 opacity-20" style="background-image: url('data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%23ffffff%22 fill-opacity=%220.05%22%3E%3Cpath d=%22M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
         <div class="relative p-10 md:p-16 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div class="flex-1">
-            <p class="text-sm uppercase tracking-[4px] text-white/90 font-bold mb-4">Graphic School</p>
+            <p class="text-sm uppercase tracking-[4px] text-white/90 font-bold mb-4">{{ brandingStore.displayName }}</p>
             <h2 class="text-4xl md:text-5xl font-black mb-4 leading-tight">
               <span class="block">جاهز لتصميم</span>
               <span class="block">أول براند متكامل لك؟</span>
@@ -428,10 +428,20 @@
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import { useApi } from '../../composables/useApi';
+import { useBrandingStore } from '../../stores/branding';
+
+const brandingStore = useBrandingStore();
 
 const { get, loading: apiLoading } = useApi();
 const loading = reactive({ home: true });
 const homeData = reactive({
+  sections: {
+    slider: true,
+    testimonials: true,
+    featured_courses: true,
+    statistics: true,
+    faq: true,
+  },
   sliders: [],
   courses: [],
   testimonials: [],
@@ -543,6 +553,13 @@ async function fetchHomepageData() {
   try {
     const data = await get('/home');
     if (data) {
+      homeData.sections = data.sections ?? {
+        slider: true,
+        testimonials: true,
+        featured_courses: true,
+        statistics: true,
+        faq: true,
+      };
       homeData.sliders = data.sliders ?? [];
       homeData.courses = data.courses ?? [];
       homeData.testimonials = data.testimonials ?? [];

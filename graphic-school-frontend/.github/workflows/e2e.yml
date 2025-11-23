@@ -1,0 +1,160 @@
+name: E2E Tests
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  e2e-tests:
+    name: Cypress E2E Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: graphic_school_test
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+      
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: --health-cmd="redis-cli ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: graphic-school-frontend/package-lock.json
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, mysql, redis, gd, zip, bcmath, intl
+          coverage: none
+
+      - name: Install backend dependencies
+        working-directory: graphic-school-api
+        run: composer install --no-interaction --no-progress
+
+      - name: Setup backend environment
+        working-directory: graphic-school-api
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          sed -i 's/DB_DATABASE=.*/DB_DATABASE=graphic_school_test/' .env
+          sed -i 's/DB_USERNAME=.*/DB_USERNAME=root/' .env
+          sed -i 's/DB_PASSWORD=.*/DB_PASSWORD=password/' .env
+          sed -i 's/DB_HOST=.*/DB_HOST=127.0.0.1/' .env
+          sed -i 's/REDIS_HOST=.*/REDIS_HOST=127.0.0.1/' .env
+
+      - name: Run backend migrations
+        working-directory: graphic-school-api
+        run: php artisan migrate --force
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: graphic_school_test
+          DB_USERNAME: root
+          DB_PASSWORD: password
+          REDIS_HOST: 127.0.0.1
+          REDIS_PORT: 6379
+
+      - name: Seed database
+        working-directory: graphic-school-api
+        run: php artisan db:seed --force
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: graphic_school_test
+          DB_USERNAME: root
+          DB_PASSWORD: password
+
+      - name: Start backend server
+        working-directory: graphic-school-api
+        run: php artisan serve --host=0.0.0.0 --port=8000 &
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: graphic_school_test
+          DB_USERNAME: root
+          DB_PASSWORD: password
+          REDIS_HOST: 127.0.0.1
+          REDIS_PORT: 6379
+
+      - name: Wait for backend
+        run: |
+          timeout 30 bash -c 'until curl -f http://localhost:8000/api/health; do sleep 1; done'
+
+      - name: Install frontend dependencies
+        working-directory: graphic-school-frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: graphic-school-frontend
+        run: npm run build
+        env:
+          VITE_API_URL: http://localhost:8000/api
+
+      - name: Start frontend server
+        working-directory: graphic-school-frontend
+        run: npm run preview -- --host 0.0.0.0 --port 5173 &
+        env:
+          VITE_API_URL: http://localhost:8000/api
+
+      - name: Wait for frontend
+        run: |
+          timeout 30 bash -c 'until curl -f http://localhost:5173; do sleep 1; done'
+
+      - name: Install Cypress
+        working-directory: graphic-school-frontend
+        run: npm install cypress --save-dev
+
+      - name: Run Cypress tests
+        working-directory: graphic-school-frontend
+        run: npm run cypress:run
+        env:
+          CYPRESS_baseUrl: http://localhost:5173
+
+      - name: Upload Cypress screenshots
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: cypress-screenshots
+          path: graphic-school-frontend/cypress/screenshots
+          retention-days: 7
+
+      - name: Upload Cypress videos
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: cypress-videos
+          path: graphic-school-frontend/cypress/videos
+          retention-days: 7
+
+      - name: Generate E2E report
+        if: always()
+        working-directory: graphic-school-frontend
+        run: |
+          echo "## E2E Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "Tests completed. Check artifacts for screenshots and videos." >> $GITHUB_STEP_SUMMARY
+

@@ -3,7 +3,7 @@ import { useAuthStore } from '../../stores/auth';
 import { monitorApiCall, logError } from '../../utils/monitoring';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://graphic-school.test/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://graphic-school.test/api',
   timeout: 30000, // 30 seconds timeout
 });
 

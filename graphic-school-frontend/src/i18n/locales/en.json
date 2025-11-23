@@ -2,6 +2,8 @@
   "common": {
     "loading": "Loading...",
     "save": "Save",
+    "saving": "Saving...",
+    "publishing": "Publishing...",
     "cancel": "Cancel",
     "delete": "Delete",
     "edit": "Edit",
@@ -17,7 +19,11 @@
     "confirm": "Confirm",
     "yes": "Yes",
     "no": "No",
-    "noData": "No data available"
+    "noData": "No data available",
+    "retry": "Retry",
+    "goHome": "Go Home",
+    "noLanguages": "No languages available",
+    "language": "Language"
   },
   "auth": {
     "login": "Login",
@@ -46,6 +52,9 @@
   "navigation": {
     "home": "Home",
     "courses": "Courses",
+    "programs": "Programs",
+    "community": "Community",
+    "faq": "FAQ",
     "instructors": "Instructors",
     "about": "About",
     "contact": "Contact",
@@ -54,6 +63,7 @@
     "settings": "Settings"
   },
   "nav": {
+    "home": "Home",
     "goToSite": "Go to Site"
   },
   "course": {
@@ -73,14 +83,40 @@
     "endDate": "End Date",
     "status": "Status",
     "myCourses": "My Courses",
-    "allCourses": "All Courses"
+    "allCourses": "All Courses",
+    "students": "Students",
+    "paidTotal": "Total Paid",
+    "totalSessions": "Total Sessions",
+    "completed": "Completed"
   },
   "dashboard": {
     "title": "Dashboard",
     "welcome": "Welcome",
     "overview": "Overview",
     "statistics": "Statistics",
-    "recentActivity": "Recent Activity"
+    "recentActivity": "Recent Activity",
+    "quickStats": "Quick Statistics",
+    "coursePerformance": "Course Performance",
+    "filterByCategory": "Filter by Category",
+    "students": "Students",
+    "instructors": "Instructors",
+    "activeCourses": "Active Courses",
+    "sessions": "Sessions",
+    "attendanceRate": "Attendance Rate",
+    "monthlyRevenueTrend": "Monthly Revenue Trend",
+    "topPerformingCourses": "Top Performing Courses",
+    "enrollments": "enrollments",
+    "allCategories": "All Categories",
+    "allInstructors": "All Instructors",
+    "allStatuses": "All Statuses",
+    "sessionsCompleted": "Sessions Completed",
+    "sessionsUpcoming": "Sessions Upcoming",
+    "totalAmount": "Total Amount",
+    "pendingAmount": "Pending Amount",
+    "collectionRate": "Collection Rate",
+    "enrollmentsPending": "Enrollments Pending",
+    "enrollmentsApproved": "Enrollments Approved",
+    "enrollmentsRejected": "Enrollments Rejected"
   },
   "student": {
     "title": "Student",
@@ -88,6 +124,8 @@
     "myCourses": "My Courses",
     "schedule": "Schedule",
     "attendance": "Attendance",
+    "payments": "Payments",
+    "messaging": "Messages",
     "profile": "Profile"
   },
   "instructor": {
@@ -96,7 +134,8 @@
     "myCourses": "My Courses",
     "sessions": "Sessions",
     "attendance": "Attendance",
-    "notes": "Notes"
+    "notes": "Notes",
+    "messaging": "Messages"
   },
   "admin": {
     "title": "Admin",
@@ -108,10 +147,16 @@
     "enrollments": "Enrollments",
     "sessions": "Sessions",
     "attendance": "Attendance",
+    "payments": "Payments",
+    "tickets": "Tickets",
+    "auditLogs": "Audit Logs",
+    "media": "Media Library",
+    "faqs": "FAQs",
     "settings": "Settings",
     "roles": "Roles & Permissions",
     "contacts": "Messages",
     "sliders": "Sliders",
+    "pages": "Pages",
     "testimonials": "Testimonials",
     "translations": "Translations",
     "translation": "Translation",
@@ -125,7 +170,48 @@
     "clearCache": "Clear Cache",
     "keyHint": "e.g., auth.login, messages.success",
     "groupHint": "Default: messages",
-    "valuePlaceholder": "Enter translation text"
+    "valuePlaceholder": "Enter translation text",
+    "websiteStatus": "Website Status",
+    "editSetup": "Edit Setup",
+    "activated": "Activated",
+    "yes": "Yes",
+    "no": "No",
+    "defaultLanguage": "Default Language",
+    "defaultCurrency": "Default Currency",
+    "homepageTemplate": "Homepage Template",
+    "enabledPages": "Enabled Pages",
+    "brandingPreview": "Branding Preview",
+    "runSetupWizard": "Run Setup Wizard",
+    "resetting": "Resetting...",
+    "resetToDefault": "Reset to Default",
+    "websiteSetup": "Website Setup",
+    "comprehensiveReports": "Comprehensive Reports",
+    "strategicReports": "Strategic Reports",
+    "branding": {
+      "title": "Branding & Appearance",
+      "description": "Customize your academy's brand identity, colors, fonts, and logos",
+      "brandName": "Brand Name",
+      "displayName": "Display Name",
+      "displayNamePlaceholder": "Enter academy name",
+      "displayNameHint": "This name will appear throughout the application",
+      "logos": "Logos",
+      "logoDefault": "Default Logo",
+      "logoDark": "Dark Mode Logo",
+      "favicon": "Favicon",
+      "faviconHint": "Recommended: 32x32 or 16x16 pixels",
+      "colors": "Colors",
+      "primaryColor": "Primary Color",
+      "secondaryColor": "Secondary Color",
+      "backgroundColor": "Background Color",
+      "textColor": "Text Color",
+      "fonts": "Fonts",
+      "mainFont": "Main Font",
+      "headingsFont": "Headings Font",
+      "layout": "Layout",
+      "borderRadius": "Border Radius",
+      "shadowLevel": "Shadow Level",
+      "preview": "Live Preview"
+    }
   },
   "language": {
     "switch": "Switch Language",
@@ -209,29 +295,113 @@
     "entity": "Entity",
     "timestamp": "Timestamp"
   },
-  "common": {
-    "loading": "Loading...",
-    "save": "Save",
-    "cancel": "Cancel",
-    "delete": "Delete",
-    "edit": "Edit",
-    "add": "Add",
-    "search": "Search",
-    "filter": "Filter",
-    "actions": "Actions",
-    "back": "Back",
-    "next": "Next",
+  "pagination": {
+    "page": "Page",
+    "of": "of",
+    "total": "Total",
+    "rowsPerPage": "Rows per page",
     "previous": "Previous",
-    "submit": "Submit",
-    "close": "Close",
-    "confirm": "Confirm",
-    "yes": "Yes",
-    "no": "No",
-    "noData": "No data available",
-    "justNow": "Just now",
-    "minutesAgo": "minutes ago",
-    "hoursAgo": "hours ago",
-    "daysAgo": "days ago"
+    "next": "Next"
+  },
+  "setup": {
+    "welcome": "Welcome to Graphic School",
+    "description": "Let's set up your academy in a few simple steps",
+    "activateDefault": "Activate Default Website",
+    "skip": "Skip Setup",
+    "next": "Next",
+    "back": "Back",
+    "saving": "Saving...",
+    "general": {
+      "title": "General Information",
+      "description": "Tell us about your academy",
+      "academyName": "Academy Name",
+      "academyNamePlaceholder": "Enter your academy name",
+      "country": "Country",
+      "selectCountry": "Select Country",
+      "defaultLanguage": "Default Language",
+      "timezone": "Timezone",
+      "defaultCurrency": "Default Currency"
+    },
+    "branding": {
+      "title": "Branding & Appearance",
+      "description": "Customize your academy's look and feel",
+      "logo": "Logo",
+      "logoHint": "PNG, JPG up to 4MB",
+      "primaryColor": "Primary Color",
+      "secondaryColor": "Secondary Color",
+      "mainFont": "Main Font",
+      "headingsFont": "Headings Font",
+      "defaultTheme": "Default Theme",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "pages": {
+      "title": "Website Pages",
+      "description": "Choose your homepage template and enable pages",
+      "homepageTemplate": "Homepage Template",
+      "enabledPages": "Enabled Pages"
+    },
+    "email": {
+      "title": "Email Configuration",
+      "description": "Configure SMTP settings for sending emails (optional)",
+      "smtpHost": "SMTP Host",
+      "smtpPort": "SMTP Port",
+      "smtpUsername": "SMTP Username",
+      "smtpPassword": "SMTP Password",
+      "smtpEncryption": "Encryption",
+      "testEmail": "Test Email",
+      "sending": "Sending...",
+      "sendTest": "Send Test"
+    },
+    "payment": {
+      "title": "Payment Configuration",
+      "description": "Configure payment gateways (optional)",
+      "stripeKey": "Publishable Key",
+      "stripeSecret": "Secret Key",
+      "paymobKey": "API Key",
+      "paytabsSecret": "Secret Key"
+    },
+    "launch": {
+      "title": "Launch Your Website",
+      "description": "Review your settings and launch your website",
+      "launching": "Launching...",
+      "launchWebsite": "🚀 Launch Website",
+      "activateDefault": "Activate Default Website Instead"
+    }
+  },
+  "errors": {
+    "somethingWentWrong": "Something went wrong",
+    "technicalDetails": "Technical Details",
+    "pageNotFound": "Page Not Found",
+    "pageNotFoundDescription": "The page you are looking for does not exist.",
+    "backToHome": "Back to Home",
+    "goBack": "Go Back"
+  },
+  "public": {
+    "programs": {
+      "title": "Our Programs",
+      "subtitle": "Discover our comprehensive training programs designed to help you excel in your career",
+      "filterType": "All Types",
+      "filterLevel": "All Levels",
+      "noPrograms": "No programs found",
+      "weeks": "weeks"
+    }
+  },
+  "pageBuilder": {
+    "editor": {
+      "publish": "Publish",
+      "blocks": "Blocks",
+      "noBlocks": "No blocks yet. Add a block from the sidebar.",
+      "properties": "Block Properties"
+    }
+  },
+  "courses": {
+    "title": "Title",
+    "category": "Category",
+    "students": "Students",
+    "paidTotal": "Paid Total",
+    "totalSessions": "Total Sessions",
+    "completed": "Completed"
   }
 }
 

@@ -61,4 +61,49 @@ class Page extends Model
     {
         return $query->orderBy('sort_order', 'asc');
     }
+
+    /**
+     * Translation relationships
+     */
+    public function translations()
+    {
+        return $this->hasMany(PageTranslation::class);
+    }
+
+    public function translation(?string $locale = null)
+    {
+        $locale = $locale ?? app()->getLocale();
+        return $this->hasOne(PageTranslation::class)
+            ->where('locale', $locale);
+    }
+
+    /**
+     * Get translated title
+     */
+    public function getTranslatedTitleAttribute(?string $locale = null): ?string
+    {
+        $locale = $locale ?? app()->getLocale();
+        $translation = $this->translations()->where('locale', $locale)->first();
+        return $translation?->title ?? $this->title ?? $this->translations()->first()?->title;
+    }
+
+    /**
+     * Get translated content
+     */
+    public function getTranslatedContentAttribute(?string $locale = null): ?string
+    {
+        $locale = $locale ?? app()->getLocale();
+        $translation = $this->translations()->where('locale', $locale)->first();
+        return $translation?->content ?? $this->content ?? $this->translations()->first()?->content;
+    }
+
+    /**
+     * Get translated sections (for page builder)
+     */
+    public function getTranslatedSectionsAttribute(?string $locale = null): ?array
+    {
+        $locale = $locale ?? app()->getLocale();
+        $translation = $this->translations()->where('locale', $locale)->first();
+        return $translation?->sections ?? $this->sections ?? $this->translations()->first()?->sections;
+    }
 }

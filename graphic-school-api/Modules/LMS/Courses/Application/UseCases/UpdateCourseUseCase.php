@@ -13,6 +13,7 @@ use Modules\LMS\Courses\Domain\Services\CourseSessionGeneratorService;
 use Modules\LMS\Courses\Domain\Services\CourseEndDateCalculatorService;
 use Modules\LMS\Courses\Domain\Services\CourseSlugGeneratorService;
 use Modules\LMS\Courses\Models\Course;
+use App\Services\EntityTranslationService;
 use Illuminate\Support\Facades\Event;
 
 /**
@@ -94,6 +95,12 @@ class UpdateCourseUseCase extends BaseUseCase
             }
 
             $course = $this->courseRepository->loadRelations($course, ['instructors', 'sessions']);
+
+            // Update translations if provided
+            if (!empty($dto->translations)) {
+                $translationService = app(EntityTranslationService::class);
+                $translationService->saveTranslations($course, $dto->translations);
+            }
 
             // Dispatch domain event
             Event::dispatch(new CourseUpdated(

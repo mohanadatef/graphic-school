@@ -125,6 +125,22 @@ async function fetchLocales() {
   
   try {
     loading.value = true;
+    
+    // Try to get from website settings first
+    try {
+      const { useWebsiteSettingsStore } = await import('../../stores/websiteSettings');
+      const websiteStore = useWebsiteSettingsStore();
+      await websiteStore.loadSettings();
+      
+      if (websiteStore.availableLanguages && websiteStore.availableLanguages.length > 0) {
+        availableLocales.value = websiteStore.availableLanguages;
+        return;
+      }
+    } catch (e) {
+      console.log('Website settings not available, trying API');
+    }
+    
+    // Fallback to API
     const response = await api.get('/locales');
     
     // Handle unified API response format: { success, message, data: { locales: [...] } }
@@ -241,7 +257,7 @@ function closeDropdown() {
   isOpen.value = false;
 }
 
-function switchLanguage(newLocale) {
+async function switchLanguage(newLocale) {
   try {
     // Get current locale
     const current = locale.value || 'ar';
@@ -251,6 +267,12 @@ function switchLanguage(newLocale) {
       closeDropdown();
       return;
     }
+    
+    loading.value = true;
+    
+    // Load dynamic translations for new locale
+    const { loadDynamicTranslations } = await import('../../i18n');
+    await loadDynamicTranslations(newLocale);
     
     // First, update i18n instance directly (this is critical for legacy mode)
     try {
@@ -270,7 +292,7 @@ function switchLanguage(newLocale) {
     }
     
     // Then use setLocale from useLocale composable (it handles localStorage, document, etc.)
-    setLocale(newLocale);
+    await setLocale(newLocale);
     
     closeDropdown();
     
@@ -281,6 +303,8 @@ function switchLanguage(newLocale) {
   } catch (error) {
     console.error('Error switching language:', error);
     closeDropdown();
+  } finally {
+    loading.value = false;
   }
 }
 

@@ -35,7 +35,7 @@
               <div>
                 <p class="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-1">البريد الإلكتروني</p>
                 <a :href="`mailto:${settings.email}`" class="text-lg font-bold text-slate-900 dark:text-white hover:text-primary transition-colors duration-200">
-                  {{ settings.email || 'info@graphicschool.com' }}
+                  {{ settings.email || `info@${brandingStore.displayName.toLowerCase().replace(/\s/g, '')}.com` }}
                 </a>
               </div>
             </div>

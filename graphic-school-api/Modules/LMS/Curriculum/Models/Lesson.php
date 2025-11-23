@@ -37,5 +37,50 @@ class Lesson extends Model
     {
         return $this->hasMany(LessonResource::class)->orderBy('order');
     }
+
+    /**
+     * Translation relationships
+     */
+    public function translations()
+    {
+        return $this->hasMany(\App\Models\LessonTranslation::class);
+    }
+
+    public function translation(?string $locale = null)
+    {
+        $locale = $locale ?? app()->getLocale();
+        return $this->hasOne(\App\Models\LessonTranslation::class)
+            ->where('locale', $locale);
+    }
+
+    /**
+     * Get translated title
+     */
+    public function getTranslatedTitleAttribute(?string $locale = null): ?string
+    {
+        $locale = $locale ?? app()->getLocale();
+        $translation = $this->translations()->where('locale', $locale)->first();
+        return $translation?->title ?? $this->title ?? $this->translations()->first()?->title;
+    }
+
+    /**
+     * Get translated description
+     */
+    public function getTranslatedDescriptionAttribute(?string $locale = null): ?string
+    {
+        $locale = $locale ?? app()->getLocale();
+        $translation = $this->translations()->where('locale', $locale)->first();
+        return $translation?->description ?? $this->description ?? $this->translations()->first()?->description;
+    }
+
+    /**
+     * Get translated content
+     */
+    public function getTranslatedContentAttribute(?string $locale = null): ?string
+    {
+        $locale = $locale ?? app()->getLocale();
+        $translation = $this->translations()->where('locale', $locale)->first();
+        return $translation?->content ?? $this->content ?? $this->translations()->first()?->content;
+    }
 }
 

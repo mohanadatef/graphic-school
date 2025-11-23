@@ -11,8 +11,19 @@ export function setMetaTags(meta) {
     image,
     url,
     type = 'website',
-    siteName = 'Graphic School',
+    siteName = null,
   } = meta;
+
+  // Get site name from branding store if not provided
+  if (!siteName && typeof window !== 'undefined') {
+    try {
+      const { useBrandingStore } = require('../stores/branding');
+      const brandingStore = useBrandingStore();
+      siteName = brandingStore.displayName || 'Graphic School';
+    } catch (e) {
+      siteName = siteName || 'Graphic School';
+    }
+  }
 
   // Title
   if (title) {
@@ -97,7 +108,7 @@ export function setCourseStructuredData(course) {
     description: course.description,
     provider: {
       '@type': 'Organization',
-      name: 'Graphic School',
+      name: siteName || 'Graphic School',
     },
     ...(course.price && {
       offers: {

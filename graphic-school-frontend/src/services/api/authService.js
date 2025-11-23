@@ -14,7 +14,20 @@ export const authService = {
     const response = await api.post('/login', credentials);
     // Interceptor already extracts data from unified format
     // Response is now { user, token } directly
-    return response.data || response;
+    const data = response.data || response;
+    
+    // Ensure token is saved to localStorage immediately
+    if (data && data.token) {
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('gs_token', data.token);
+    }
+    
+    // Ensure user is saved to localStorage immediately
+    if (data && data.user) {
+      localStorage.setItem('gs_user', JSON.stringify(data.user));
+    }
+    
+    return data;
   },
 
   /**

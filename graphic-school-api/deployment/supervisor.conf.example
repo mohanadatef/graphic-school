@@ -1,0 +1,69 @@
+# Supervisor Configuration for Graphic School 2.0 Queue Workers
+# Place this file at: /etc/supervisor/conf.d/graphic-school-workers.conf
+
+# Default Queue Worker
+[program:graphic-school-worker]
+process_name=%(program_name)s_%(process_num)02d
+command=php /var/www/graphic-school/graphic-school-api/artisan queue:work redis --sleep=3 --tries=3 --max-time=3600 --timeout=300
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+user=www-data
+numprocs=2
+redirect_stderr=true
+stdout_logfile=/var/www/graphic-school/graphic-school-api/storage/logs/worker.log
+stopwaitsecs=3600
+
+# Email Queue Worker (Higher Priority)
+[program:graphic-school-email-worker]
+process_name=%(program_name)s_%(process_num)02d
+command=php /var/www/graphic-school/graphic-school-api/artisan queue:work redis --queue=emails --sleep=3 --tries=3 --max-time=3600 --timeout=300
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+user=www-data
+numprocs=1
+redirect_stderr=true
+stdout_logfile=/var/www/graphic-school/graphic-school-api/storage/logs/email-worker.log
+stopwaitsecs=3600
+
+# Notification Queue Worker
+[program:graphic-school-notification-worker]
+process_name=%(program_name)s_%(process_num)02d
+command=php /var/www/graphic-school/graphic-school-api/artisan queue:work redis --queue=notifications --sleep=3 --tries=3 --max-time=3600 --timeout=300
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+user=www-data
+numprocs=1
+redirect_stderr=true
+stdout_logfile=/var/www/graphic-school/graphic-school-api/storage/logs/notification-worker.log
+stopwaitsecs=3600
+
+# Payment Webhook Worker (High Priority)
+[program:graphic-school-payment-worker]
+process_name=%(program_name)s_%(process_num)02d
+command=php /var/www/graphic-school/graphic-school-api/artisan queue:work redis --queue=payments --sleep=1 --tries=5 --max-time=3600 --timeout=300
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+user=www-data
+numprocs=1
+redirect_stderr=true
+stdout_logfile=/var/www/graphic-school/graphic-school-api/storage/logs/payment-worker.log
+stopwaitsecs=3600
+
+# Laravel Scheduler (Cron Replacement)
+[program:graphic-school-scheduler]
+process_name=%(program_name)s
+command=php /var/www/graphic-school/graphic-school-api/artisan schedule:work
+autostart=true
+autorestart=true
+user=www-data
+redirect_stderr=true
+stdout_logfile=/var/www/graphic-school/graphic-school-api/storage/logs/scheduler.log
+

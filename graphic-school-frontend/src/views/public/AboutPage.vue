@@ -22,12 +22,15 @@
 </template>
 
 <script setup>
-import { onMounted, reactive } from 'vue';
+import { computed, onMounted, reactive } from 'vue';
 import api from '../../api';
+import { useBrandingStore } from '../../stores/branding';
 
 const settings = reactive({});
-const defaultAbout =
-  'Graphic School هو مركز تدريبي متخصص في تعليم التصميم الجرافيكي والبراندنج، مع متابعة دقيقة للحضور والواجبات لكل طالب، وتوفير تقييمات للمدربين بعد انتهاء كل كورس.';
+const brandingStore = useBrandingStore();
+const defaultAbout = computed(() => 
+  `${brandingStore.displayName} هو مركز تدريبي متخصص في تعليم التصميم الجرافيكي والبراندنج، مع متابعة دقيقة للحضور والواجبات لكل طالب، وتوفير تقييمات للمدربين بعد انتهاء كل كورس.`
+);
 
 onMounted(async () => {
   const { data } = await api.get('/settings');

@@ -1,138 +1,67 @@
 <template>
   <div class="space-y-6">
-    <h2 class="text-2xl font-bold">تسجيل الحضور</h2>
-
-    <div class="grid md:grid-cols-3 gap-4">
-      <select v-model="selectedCourse" class="input">
-        <option value="">اختر كورس</option>
-        <option v-for="course in courses" :key="course.id" :value="course.id">{{ course.title }}</option>
-      </select>
-      <select v-model="selectedSession" class="input">
-        <option value="">اختر جلسة</option>
-        <option v-for="session in sessions" :key="session.id" :value="session.id">{{ session.title }}</option>
-      </select>
-      <div class="flex gap-2">
-        <button class="px-4 py-2 border rounded-md w-full" @click="markAll('absent')">جعل الجميع غياب</button>
-        <button class="px-4 py-2 border rounded-md w-full" @click="markAll('present')">جعل الجميع حضور</button>
-      </div>
+    <div>
+      <h2 class="text-2xl font-bold text-slate-900 dark:text-white">{{ $t('instructor.attendance.title') || 'Attendance Management' }}</h2>
+      <p class="text-sm text-slate-500 dark:text-slate-400">{{ $t('instructor.attendance.subtitle') || 'Manage attendance for your groups' }}</p>
     </div>
 
-    <div v-if="selectedSession" class="bg-white rounded-2xl border border-slate-100 shadow overflow-hidden">
-      <table class="w-full text-sm">
-        <thead class="bg-slate-50 text-xs uppercase">
-          <tr>
-            <th class="px-4 py-3 text-left">الطالب</th>
-            <th class="px-4 py-3 text-left">الإيميل</th>
-            <th class="px-4 py-3 text-left">الحضور</th>
-            <th class="px-4 py-3 text-left">ملاحظة</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="student in students" :key="student.student_id" class="border-t border-slate-100">
-            <td class="px-4 py-3">{{ student.name }}</td>
-            <td class="px-4 py-3 text-xs text-slate-500">{{ student.email }}</td>
-            <td class="px-4 py-3">
-              <select v-model="student.status" class="input">
-                <option value="present">حاضر</option>
-                <option value="absent">غائب</option>
-              </select>
-            </td>
-            <td class="px-4 py-3">
-              <input v-model="student.note" class="input" placeholder="تعليق" />
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <p v-if="!students.length" class="text-center py-6 text-sm text-slate-400">لا يوجد طلاب مسجلون.</p>
-      <div class="p-4 flex justify-end border-t border-slate-100">
-        <button class="px-5 py-2 bg-primary text-white rounded-md" :disabled="!students.length" @click="saveAttendance">
-          حفظ الحضور
-        </button>
+    <div v-if="loading" class="text-center py-20">
+      <div class="spinner-lg mx-auto mb-4"></div>
+      <p class="text-slate-500 dark:text-slate-400">{{ $t('common.loading') || 'Loading...' }}</p>
+    </div>
+
+    <div v-else-if="sessions.length === 0" class="text-center py-20">
+      <p class="text-slate-500 dark:text-slate-400 text-lg">{{ $t('instructor.attendance.noSessions') || 'No sessions found' }}</p>
+    </div>
+
+    <div v-else class="space-y-4">
+      <div v-for="session in sessions" :key="session.id" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+        <div class="flex items-start justify-between">
+          <div class="flex-1">
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">{{ session.title || session.name || 'Session' }}</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-400 mb-2">{{ formatDate(session.scheduled_at) }}</p>
+            <p class="text-sm text-slate-600 dark:text-slate-400">{{ session.group?.code || session.group?.name }}</p>
+          </div>
+          <button
+            @click="$router.push({ name: 'instructor-session-attendance', params: { id: session.id } })"
+            class="btn-primary"
+          >
+            {{ $t('instructor.attendance.markAttendance') || 'Mark Attendance' }}
+          </button>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
-import api from '../../../api';
+import { ref, onMounted } from 'vue';
+import api from '../../../services/api/client';
+import { useToast } from '../../../composables/useToast';
 
-const courses = ref([]);
+const toast = useToast();
+const loading = ref(false);
 const sessions = ref([]);
-const students = ref([]);
-const selectedCourse = ref('');
-const selectedSession = ref('');
-const route = useRoute();
 
-async function loadCourses() {
-  const { data } = await api.get('/instructor/courses');
-  courses.value = data;
+async function loadSessions() {
+  loading.value = true;
+  try {
+    const response = await api.get('/instructor/sessions');
+    sessions.value = response.data || [];
+  } catch (error) {
+    console.error('Error loading sessions:', error);
+    toast.error('Failed to load sessions');
+  } finally {
+    loading.value = false;
+  }
 }
 
-watch(selectedCourse, async () => {
-  selectedSession.value = '';
-  students.value = [];
-  if (!selectedCourse.value) {
-    sessions.value = [];
-    return;
-  }
-  const { data } = await api.get(`/instructor/courses/${selectedCourse.value}/sessions`);
-  sessions.value = data;
-  const targetSession = route.query.session;
-  if (targetSession && data.some((session) => session.id === Number(targetSession))) {
-    selectedSession.value = Number(targetSession);
-  }
-});
-
-watch(selectedSession, loadAttendanceList);
-
-async function loadAttendanceList() {
-  students.value = [];
-  if (!selectedSession.value) return;
-  const { data } = await api.get(`/instructor/attendance/${selectedSession.value}`);
-  students.value = data.map((record) => ({
-    student_id: record.student_id,
-    name: record.name,
-    email: record.email,
-    status: record.status || 'absent',
-    note: record.note || '',
-  }));
+function formatDate(date) {
+  if (!date) return '-';
+  return new Date(date).toLocaleDateString();
 }
 
-function markAll(status) {
-  students.value = students.value.map((student) => ({ ...student, status }));
-}
-
-async function saveAttendance() {
-  await api.post('/instructor/attendance', {
-    session_id: selectedSession.value,
-    records: students.value.map((student) => ({
-      student_id: student.student_id,
-      status: student.status,
-      note: student.note,
-    })),
-  });
-  alert('تم حفظ الحضور');
-}
-
-onMounted(async () => {
-  await loadCourses();
-  if (route.query.course) {
-    selectedCourse.value = Number(route.query.course);
-  }
-  if (route.query.session && !selectedCourse.value) {
-    selectedSession.value = Number(route.query.session);
-  }
+onMounted(() => {
+  loadSessions();
 });
 </script>
-
-<style scoped>
-.input {
-  width: 100%;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.75rem;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.9rem;
-}
-</style>

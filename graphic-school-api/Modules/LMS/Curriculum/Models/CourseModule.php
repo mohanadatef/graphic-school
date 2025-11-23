@@ -38,5 +38,40 @@ class CourseModule extends Model
     {
         return $this->lessons()->where('is_published', true);
     }
+
+    /**
+     * Translation relationships
+     */
+    public function translations()
+    {
+        return $this->hasMany(\App\Models\CourseModuleTranslation::class, 'module_id');
+    }
+
+    public function translation(?string $locale = null)
+    {
+        $locale = $locale ?? app()->getLocale();
+        return $this->hasOne(\App\Models\CourseModuleTranslation::class, 'module_id')
+            ->where('locale', $locale);
+    }
+
+    /**
+     * Get translated title
+     */
+    public function getTranslatedTitleAttribute(?string $locale = null): ?string
+    {
+        $locale = $locale ?? app()->getLocale();
+        $translation = $this->translations()->where('locale', $locale)->first();
+        return $translation?->title ?? $this->title ?? $this->translations()->first()?->title;
+    }
+
+    /**
+     * Get translated description
+     */
+    public function getTranslatedDescriptionAttribute(?string $locale = null): ?string
+    {
+        $locale = $locale ?? app()->getLocale();
+        $translation = $this->translations()->where('locale', $locale)->first();
+        return $translation?->description ?? $this->description ?? $this->translations()->first()?->description;
+    }
 }
 

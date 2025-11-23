@@ -11,9 +11,27 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('sessions')) {
+            // Table already exists, ensure it has Phase 2 columns
+            Schema::table('sessions', function (Blueprint $table) {
+                if (!Schema::hasColumn('sessions', 'group_id') && Schema::hasTable('groups')) {
+                    $table->foreignId('group_id')->nullable()->after('course_id')->constrained('groups')->onDelete('cascade');
+                    $table->index('group_id');
+                }
+            });
+            return;
+        }
+
         Schema::create('sessions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('course_id')->constrained()->cascadeOnDelete();
+            // Phase 2: Group support
+            if (Schema::hasTable('groups')) {
+                $table->foreignId('group_id')->nullable()->constrained('groups')->onDelete('cascade');
+                $table->index('group_id');
+            } else {
+                $table->unsignedBigInteger('group_id')->nullable();
+            }
             $table->string('title');
             $table->unsignedInteger('session_order')->default(1);
             $table->date('session_date')->nullable();

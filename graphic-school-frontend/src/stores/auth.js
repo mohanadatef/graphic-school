@@ -33,9 +33,9 @@ export const useAuthStore = defineStore('auth', () => {
   const loading = ref(false);
   const error = ref(null);
 
-  // Initialize from localStorage
-  const savedUser = localStorage.getItem('gs_user');
-  const savedToken = localStorage.getItem('gs_token');
+  // Initialize from localStorage ON APP START
+  const savedUser = localStorage.getItem('gs_user') || localStorage.getItem('user');
+  const savedToken = localStorage.getItem('gs_token') || localStorage.getItem('token');
   
   if (savedUser) {
     try {
@@ -51,10 +51,14 @@ export const useAuthStore = defineStore('auth', () => {
     } catch (e) {
       console.error('[authStore] Error parsing saved user:', e);
       localStorage.removeItem('gs_user');
+      localStorage.removeItem('user');
     }
   }
   if (savedToken) {
     token.value = savedToken;
+    // Ensure both token keys are set for compatibility
+    localStorage.setItem('gs_token', savedToken);
+    localStorage.setItem('token', savedToken);
   }
 
   // Getters
@@ -86,20 +90,31 @@ export const useAuthStore = defineStore('auth', () => {
     
     return null;
   });
-  const isAdmin = computed(() => roleName.value === 'admin');
+  const isAdmin = computed(() => {
+    const role = roleName.value;
+    return role === 'admin' || role === 'super_admin';
+  });
   const isInstructor = computed(() => roleName.value === 'instructor');
   const isStudent = computed(() => roleName.value === 'student');
 
   // Actions
   function setSession(userData, tokenData) {
-    // Ensure role is preserved correctly
-    if (userData && !userData.role_name && typeof userData.role === 'string') {
-      // If role is a string, keep it as is
-      userData.role_name = userData.role;
-    } else if (userData && userData.role && typeof userData.role === 'object' && userData.role.name) {
-      // If role is an object, extract the name
-      userData.role_name = userData.role.name;
-      userData.role = userData.role.name; // Also set role as string for consistency
+    // Ensure role is always a STRING
+    if (userData) {
+      // Normalize role to string
+      if (userData.role && typeof userData.role === 'object' && userData.role.name) {
+        // If role is an object, extract the name
+        userData.role = userData.role.name;
+        userData.role_name = userData.role;
+      } else if (userData.role && typeof userData.role !== 'string') {
+        // Convert to string if not already
+        userData.role = String(userData.role);
+      }
+      
+      // Ensure role_name is set if role exists
+      if (userData.role && !userData.role_name) {
+        userData.role_name = userData.role;
+      }
     }
     
     user.value = userData;
@@ -126,8 +141,23 @@ export const useAuthStore = defineStore('auth', () => {
       // The interceptor already extracts data, so response is { user, token }
       const data = response.data || response; // Support both formats for backward compatibility
       if (data && data.user && data.token) {
+        // Ensure role is always a STRING
+        if (data.user.role && typeof data.user.role !== 'string') {
+          data.user.role = String(data.user.role);
+        }
+        // Ensure role_name is set if role exists
+        if (data.user.role && !data.user.role_name) {
+          data.user.role_name = data.user.role;
+        }
+        
         setSession(data.user, data.token);
-        return data.user;
+        // Ensure token is persisted
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('gs_token', data.token);
+        }
+        // Return resolved promise with user data
+        return Promise.resolve(data.user);
       } else {
         throw new Error('Invalid response format from server');
       }
@@ -148,6 +178,15 @@ export const useAuthStore = defineStore('auth', () => {
       // The interceptor already extracts data, so response is { user, token }
       const data = response.data || response; // Support both formats for backward compatibility
       if (data && data.user && data.token) {
+        // Ensure role is always a STRING
+        if (data.user.role && typeof data.user.role !== 'string') {
+          data.user.role = String(data.user.role);
+        }
+        // Ensure role_name is set if role exists
+        if (data.user.role && !data.user.role_name) {
+          data.user.role_name = data.user.role;
+        }
+        
         setSession(data.user, data.token);
         return data.user;
       } else {
@@ -195,6 +234,25 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  /**
+   * Get the redirect path after login based on user role
+   * @returns {string} The redirect path
+   */
+  function afterLoginRedirect() {
+    const role = roleName.value;
+    
+    if (role === 'student') {
+      return '/';
+    } else if (role === 'instructor') {
+      return '/dashboard/instructor';
+    } else if (role === 'admin' || role === 'super_admin') {
+      return '/dashboard/admin';
+    }
+    
+    // Default fallback
+    return '/dashboard/admin';
+  }
+
   return {
     // State
     user,
@@ -214,6 +272,7 @@ export const useAuthStore = defineStore('auth', () => {
     setSession,
     clearSession,
     fetchCurrentUser,
+    afterLoginRedirect,
   };
 });
 

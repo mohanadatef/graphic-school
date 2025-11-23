@@ -10,6 +10,7 @@ use Modules\LMS\CourseReviews\Http\Resources\CourseReviewResource;
 use Modules\CMS\Testimonials\Http\Resources\TestimonialResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Services\EntityTranslationService;
 
 class CourseResource extends JsonResource
 {
@@ -20,13 +21,24 @@ class CourseResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $locale = $request->attributes->get('locale') ?? app()->getLocale();
+        $translationService = app(EntityTranslationService::class);
+
+        // Get translated fields
+        $title = $translationService->getTranslatedField($this->resource, 'title', $locale, $this->title);
+        $description = $translationService->getTranslatedField($this->resource, 'description', $locale, $this->description);
+        $metaTitle = $translationService->getTranslatedField($this->resource, 'meta_title', $locale);
+        $metaDescription = $translationService->getTranslatedField($this->resource, 'meta_description', $locale);
+
         return [
             'id' => $this->id,
-            'title' => $this->title,
+            'title' => $title,
             'slug' => $this->slug,
             'code' => $this->code,
             'category_id' => $this->category_id,
-            'description' => $this->description,
+            'description' => $description,
+            'meta_title' => $metaTitle,
+            'meta_description' => $metaDescription,
             'image_path' => $this->image_path,
             'price' => $this->price,
             'start_date' => optional($this->start_date)?->toDateString(),

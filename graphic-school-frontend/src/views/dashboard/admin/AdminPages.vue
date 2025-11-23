@@ -168,12 +168,23 @@ const reload = async () => {
 
     const response = await cmsService.getPages(params);
 
-    if (response.success) {
-      pages.value = response.data.data || [];
-      pagination.current_page = response.data.current_page || 1;
-      pagination.last_page = response.data.last_page || 1;
-      pagination.per_page = response.data.per_page || 10;
-      pagination.total = response.data.total || 0;
+    if (response.success && response.data) {
+      // Handle both paginated and non-paginated responses
+      const data = response.data.data || response.data;
+      pages.value = Array.isArray(data) ? data : [];
+      
+      // Pagination meta
+      if (response.data.meta) {
+        pagination.current_page = response.data.meta.current_page || 1;
+        pagination.last_page = response.data.meta.last_page || 1;
+        pagination.per_page = response.data.meta.per_page || 10;
+        pagination.total = response.data.meta.total || 0;
+      } else if (response.data.current_page) {
+        pagination.current_page = response.data.current_page || 1;
+        pagination.last_page = response.data.last_page || 1;
+        pagination.per_page = response.data.per_page || 10;
+        pagination.total = response.data.total || 0;
+      }
     }
   } catch (error) {
     console.error('Error loading pages:', error);

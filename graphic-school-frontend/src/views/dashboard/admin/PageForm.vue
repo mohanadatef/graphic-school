@@ -90,6 +90,58 @@
       </div>
 
       <div class="bg-white border border-slate-100 rounded-2xl shadow p-6 space-y-4">
+        <h3 class="text-lg font-semibold text-slate-900">التحكم في الأقسام (Sections)</h3>
+        <p class="text-sm text-slate-500 mb-4">اختر الأقسام التي تريد إظهارها في هذه الصفحة</p>
+
+        <div class="grid grid-cols-2 gap-4">
+          <label class="flex items-center space-x-2 cursor-pointer">
+            <input
+              v-model="form.sections.slider"
+              type="checkbox"
+              class="w-4 h-4 text-primary rounded"
+            />
+            <span class="text-sm font-medium text-slate-700">السلايدر (Slider)</span>
+          </label>
+
+          <label class="flex items-center space-x-2 cursor-pointer">
+            <input
+              v-model="form.sections.testimonials"
+              type="checkbox"
+              class="w-4 h-4 text-primary rounded"
+            />
+            <span class="text-sm font-medium text-slate-700">الشهادات (Testimonials)</span>
+          </label>
+
+          <label class="flex items-center space-x-2 cursor-pointer">
+            <input
+              v-model="form.sections.featured_courses"
+              type="checkbox"
+              class="w-4 h-4 text-primary rounded"
+            />
+            <span class="text-sm font-medium text-slate-700">الكورسات المميزة</span>
+          </label>
+
+          <label class="flex items-center space-x-2 cursor-pointer">
+            <input
+              v-model="form.sections.statistics"
+              type="checkbox"
+              class="w-4 h-4 text-primary rounded"
+            />
+            <span class="text-sm font-medium text-slate-700">الإحصائيات</span>
+          </label>
+
+          <label class="flex items-center space-x-2 cursor-pointer">
+            <input
+              v-model="form.sections.faq"
+              type="checkbox"
+              class="w-4 h-4 text-primary rounded"
+            />
+            <span class="text-sm font-medium text-slate-700">الأسئلة الشائعة (FAQ)</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="bg-white border border-slate-100 rounded-2xl shadow p-6 space-y-4">
         <h3 class="text-lg font-semibold text-slate-900">إعدادات SEO</h3>
 
         <div>
@@ -154,6 +206,13 @@ const form = reactive({
   title: '',
   content: '',
   template: 'default',
+  sections: {
+    slider: true,
+    testimonials: true,
+    featured_courses: true,
+    statistics: true,
+    faq: true,
+  },
   is_active: true,
   meta_title: '',
   meta_description: '',
@@ -164,24 +223,35 @@ const loadPage = async () => {
 
   try {
     loading.value = true;
-    // Note: We need to get page by ID, but API only has getPage(slug)
-    // We'll need to update the API or use a workaround
+    // Get all pages and find by ID
     const response = await cmsService.getPages({ per_page: 1000 });
-    if (response.success) {
-      const page = response.data.data.find((p) => p.id === parseInt(pageId));
+    if (response.success && response.data) {
+      const pages = response.data.data || response.data || [];
+      const page = pages.find((p) => p.id === parseInt(pageId));
       if (page) {
         form.slug = page.slug;
         form.title = page.title;
         form.content = page.content || '';
         form.template = page.template || 'default';
+        form.sections = page.sections || {
+          slider: true,
+          testimonials: true,
+          featured_courses: true,
+          statistics: true,
+          faq: true,
+        };
         form.is_active = page.is_active ?? true;
         form.meta_title = page.meta_title || '';
         form.meta_description = page.meta_description || '';
+      } else {
+        toast.error('الصفحة غير موجودة');
+        router.push('/dashboard/admin/pages');
       }
     }
   } catch (error) {
     console.error('Error loading page:', error);
     toast.error('حدث خطأ أثناء تحميل الصفحة');
+    router.push('/dashboard/admin/pages');
   } finally {
     loading.value = false;
   }
@@ -196,6 +266,7 @@ const submit = async () => {
       title: form.title,
       content: form.content,
       template: form.template,
+      sections: form.sections,
       is_active: form.is_active,
       meta_title: form.meta_title,
       meta_description: form.meta_description,

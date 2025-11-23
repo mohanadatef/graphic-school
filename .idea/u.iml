@@ -122,6 +122,11 @@
       <excludeFolder url="file://$MODULE_DIR$/graphic-school-api/vendor/voku/portable-ascii" />
       <excludeFolder url="file://$MODULE_DIR$/graphic-school-api/storage/app" />
       <excludeFolder url="file://$MODULE_DIR$/graphic-school-api/storage/framework" />
+      <excludeFolder url="file://$MODULE_DIR$/graphic-school-api/vendor/darkaonline/l5-swagger" />
+      <excludeFolder url="file://$MODULE_DIR$/graphic-school-api/vendor/doctrine/annotations" />
+      <excludeFolder url="file://$MODULE_DIR$/graphic-school-api/vendor/psr/cache" />
+      <excludeFolder url="file://$MODULE_DIR$/graphic-school-api/vendor/swagger-api/swagger-ui" />
+      <excludeFolder url="file://$MODULE_DIR$/graphic-school-api/vendor/zircote/swagger-php" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Modules\LMS\Assessments\Http\Controllers\QuizController;
 
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:api'])->group(function () {
     // Admin routes
     Route::middleware(['role:admin,instructor'])->prefix('admin')->group(function () {
         Route::post('/quizzes', [QuizController::class, 'store']);

@@ -95,7 +95,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter, RouterLink } from 'vue-router';
 import { useAuthStore } from '../../stores/auth';
 import { useToast } from '../../composables/useToast';
@@ -109,26 +109,26 @@ const { t } = useI18n();
 const email = ref('');
 const password = ref('');
 
+// Redirect if already authenticated
+onMounted(() => {
+  if (authStore.isAuthenticated) {
+    const redirectPath = authStore.afterLoginRedirect();
+    router.replace(redirectPath);
+  }
+});
+
 async function handleSubmit() {
   try {
-    const user = await authStore.login({
+    await authStore.login({
       email: email.value,
       password: password.value,
     });
-    
-    toast.success(t('auth.loginSuccess'));
-    
-    // Get role from user or authStore
-    const role = authStore.roleName || user?.role_name || user?.role?.name;
-    
-    if (role) {
-      router.push(`/dashboard/${role}`);
-    } else {
-      console.warn('No role found, redirecting to home');
-      router.push('/');
-    }
-  } catch (error) {
-    // Error is handled in store and displayed
+
+    // Use the centralized redirect function
+    const redirectPath = authStore.afterLoginRedirect();
+    router.push(redirectPath);
+  } catch (e) {
+    // error handled by store
   }
 }
 </script>

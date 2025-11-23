@@ -1,0 +1,244 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  LARAVEL_VERSION: 10.x
+  PHP_VERSION: 8.2
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: graphic_school_test
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+      
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: --health-cmd="redis-cli ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, xml, mysql, redis, gd, zip, bcmath, intl
+          coverage: none
+
+      - name: Copy .env
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Run migrations
+        run: php artisan migrate --force
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: graphic_school_test
+          DB_USERNAME: root
+          DB_PASSWORD: password
+          REDIS_HOST: 127.0.0.1
+          REDIS_PORT: 6379
+
+      - name: Run tests
+        run: php artisan test
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: graphic_school_test
+          DB_USERNAME: root
+          DB_PASSWORD: password
+          REDIS_HOST: 127.0.0.1
+          REDIS_PORT: 6379
+
+  build-frontend:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: graphic-school-frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: graphic-school-frontend
+        run: npm ci
+
+      - name: Run tests
+        working-directory: graphic-school-frontend
+        run: npm run test
+        continue-on-error: true
+
+      - name: Build frontend
+        working-directory: graphic-school-frontend
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: frontend-build
+          path: graphic-school-frontend/dist
+          retention-days: 7
+
+  deploy:
+    name: Deploy to Server
+    needs: [test, build-frontend]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, xml, mysql, redis, gd, zip, bcmath, intl
+
+      - name: Install dependencies
+        run: |
+          cd graphic-school-api
+          composer install --no-dev --optimize-autoloader --no-interaction --no-progress
+
+      - name: Download frontend build
+        uses: actions/download-artifact@v3
+        with:
+          name: frontend-build
+          path: graphic-school-frontend/dist
+
+      - name: Deploy to server
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          source: "graphic-school-api/*,graphic-school-frontend/dist/*"
+          target: "/tmp/graphic-school-deploy"
+          strip_components: 0
+
+      - name: Run deployment script
+        uses: appleboy/ssh-action@v0.1.5
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          script: |
+            cd /var/www/graphic-school
+            
+            # Backup current version
+            sudo cp -r graphic-school-api/storage /tmp/storage-backup || true
+            sudo cp -r graphic-school-api/bootstrap/cache /tmp/cache-backup || true
+            
+            # Copy new files
+            sudo rsync -av --exclude='.env' --exclude='storage' --exclude='bootstrap/cache' /tmp/graphic-school-deploy/graphic-school-api/ graphic-school-api/
+            sudo rsync -av /tmp/graphic-school-deploy/graphic-school-frontend/dist/ graphic-school-frontend/dist/
+            
+            # Restore storage and cache
+            sudo cp -r /tmp/storage-backup/* graphic-school-api/storage/ || true
+            sudo cp -r /tmp/cache-backup/* graphic-school-api/bootstrap/cache/ || true
+            
+            # Set permissions
+            sudo chown -R www-data:www-data /var/www/graphic-school
+            sudo chmod -R 755 /var/www/graphic-school
+            sudo chmod -R 775 /var/www/graphic-school/graphic-school-api/storage
+            sudo chmod -R 775 /var/www/graphic-school/graphic-school-api/bootstrap/cache
+            
+            # Run Laravel optimizations
+            cd graphic-school-api
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            php artisan event:cache
+            
+            # Run migrations (NO fresh - incremental only)
+            php artisan migrate --force
+            
+            # Clear and rebuild cache
+            php artisan cache:clear
+            php artisan config:clear
+            php artisan route:clear
+            php artisan view:clear
+            php artisan cache:clear
+            
+            # Rebuild cache
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            
+            # Restart queue workers
+            sudo supervisorctl restart graphic-school-worker:*
+            sudo supervisorctl restart graphic-school-email-worker:*
+            sudo supervisorctl restart graphic-school-notification-worker:*
+            sudo supervisorctl restart graphic-school-payment-worker:*
+            
+            # Reload PHP-FPM
+            sudo systemctl reload php8.2-fpm
+            
+            # Test health endpoint
+            curl -f https://${{ secrets.DOMAIN }}/api/health || exit 1
+
+      - name: Cleanup
+        uses: appleboy/ssh-action@v0.1.5
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          script: |
+            rm -rf /tmp/graphic-school-deploy
+            rm -rf /tmp/storage-backup
+            rm -rf /tmp/cache-backup
+
+  notify:
+    name: Notify Deployment Status
+    needs: [deploy]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Notify success
+        if: needs.deploy.result == 'success'
+        run: |
+          echo "✅ Deployment successful!"
+          # Add Slack/Discord/Email notification here
+      
+      - name: Notify failure
+        if: needs.deploy.result == 'failure'
+        run: |
+          echo "❌ Deployment failed!"
+          # Add Slack/Discord/Email notification here
+

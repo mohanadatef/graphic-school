@@ -33,6 +33,7 @@ class SessionController extends Controller
     public function update(UpdateSessionRequest $request, Session $session)
     {
         $session = $this->sessionService->update($session, $request->validated());
+        $session->load('translations');
 
         return SessionResource::make($session);
     }

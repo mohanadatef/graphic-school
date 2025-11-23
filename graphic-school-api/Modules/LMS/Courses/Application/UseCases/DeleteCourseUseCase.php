@@ -7,6 +7,7 @@ use App\Support\Database\TransactionManager;
 use Modules\LMS\Courses\Domain\Events\CourseDeleted;
 use Modules\LMS\Courses\Repositories\Interfaces\CourseRepositoryInterface;
 use Modules\LMS\Courses\Models\Course;
+use App\Services\EntityTranslationService;
 use Illuminate\Support\Facades\Event;
 
 class DeleteCourseUseCase extends BaseUseCase
@@ -24,6 +25,10 @@ class DeleteCourseUseCase extends BaseUseCase
         TransactionManager::transaction(function () use ($course) {
             $courseId = $course->id;
             $courseTitle = $course->title;
+
+            // Delete translations (cascade should handle this, but explicit for cache clearing)
+            $translationService = app(EntityTranslationService::class);
+            $translationService->deleteTranslations($course);
 
             $this->courseRepository->delete($course);
 

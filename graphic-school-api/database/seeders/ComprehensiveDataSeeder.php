@@ -6,7 +6,7 @@ use Illuminate\Database\Seeder;
 use Modules\LMS\Courses\Models\Course;
 use Modules\LMS\Enrollments\Models\Enrollment;
 use Modules\LMS\Sessions\Models\Session;
-use Modules\LMS\Attendance\Models\Attendance;
+use App\Models\Attendance;
 use Modules\LMS\Attendance\Enums\AttendanceStatus;
 use Modules\LMS\CourseReviews\Models\CourseReview;
 use Modules\LMS\Assessments\Models\Quiz;
@@ -31,7 +31,7 @@ class ComprehensiveDataSeeder extends Seeder
     {
         $this->faker = Faker::create('ar_EG');
         
-        $this->command->info('Seeding comprehensive data for 5 years...');
+        $this->command->info('Seeding comprehensive data for testing...');
 
         $this->seedAttendance();
         $this->seedCourseReviews();
@@ -199,10 +199,16 @@ class ComprehensiveDataSeeder extends Seeder
                 // محاولات الطلاب
                 $enrolledStudents = Enrollment::where('course_id', $course->id)
                     ->where('status', 'approved')
+                    ->whereNotNull('course_id')
+                    ->whereNotNull('id')
                     ->with('student')
                     ->get();
 
                 foreach ($enrolledStudents as $enrollment) {
+                    if (!$enrollment->id || !$enrollment->course_id) {
+                        continue; // Skip if enrollment has no ID or course_id
+                    }
+                    
                     // 70% من الطلاب يجتازون Quiz
                     if (rand(1, 100) > 70) {
                         continue;
@@ -221,20 +227,29 @@ class ComprehensiveDataSeeder extends Seeder
                             ->sum('points');
                         $percentage = $totalPoints > 0 ? round(($score / $totalPoints) * 100, 2) : 0;
                         
-                        QuizAttempt::create([
-                            'quiz_id' => $quiz->id,
-                            'student_id' => $enrollment->student_id,
-                            'enrollment_id' => $enrollment->id,
-                            'answers' => [], // Simplified
-                            'score' => $score,
-                            'total_points' => $totalPoints,
-                            'percentage' => $percentage,
-                            'is_passed' => $isPassed,
-                            'started_at' => $startedAt,
-                            'completed_at' => $startedAt->copy()->addMinutes($timeTaken),
-                            'time_taken' => $timeTaken * 60, // in seconds
-                            'created_at' => $startedAt,
-                        ]);
+                        if (!$enrollment->id) {
+                            continue; // Skip if enrollment has no ID
+                        }
+                        
+                        try {
+                            QuizAttempt::create([
+                                'quiz_id' => $quiz->id,
+                                'student_id' => $enrollment->student_id,
+                                'enrollment_id' => $enrollment->id,
+                                'answers' => [], // Simplified
+                                'score' => $score,
+                                'total_points' => $totalPoints,
+                                'percentage' => $percentage,
+                                'is_passed' => $isPassed,
+                                'started_at' => $startedAt,
+                                'completed_at' => $startedAt->copy()->addMinutes($timeTaken),
+                                'time_taken' => $timeTaken * 60, // in seconds
+                                'created_at' => $startedAt,
+                            ]);
+                        } catch (\Exception $e) {
+                            $this->command->warn("Failed to create quiz attempt: " . $e->getMessage());
+                            continue;
+                        }
                         
                         $attemptCount++;
                         
@@ -262,10 +277,15 @@ class ComprehensiveDataSeeder extends Seeder
         foreach ($courses as $course) {
             $enrolledStudents = Enrollment::where('course_id', $course->id)
                 ->where('status', 'approved')
+                ->whereNotNull('course_id') // Only course-based enrollments
                 ->with('student')
                 ->get();
 
             foreach ($enrolledStudents as $enrollment) {
+                if (!$enrollment->id || !$enrollment->course_id) {
+                    continue; // Skip if enrollment has no ID or course_id
+                }
+                
                 // 50% من الطلاب يقدمون مشروع
                 if (rand(1, 100) > 50) {
                     continue;
@@ -275,14 +295,19 @@ class ComprehensiveDataSeeder extends Seeder
                 $weights = [10, 20, 20, 40, 10]; // 10% pending, 20% submitted, 20% in_review, 40% approved, 10% needs_revision
                 $status = $this->weightedRandom($statuses, $weights);
                 
-                $module = $course->modules()->first();
-                $lesson = $module ? $module->lessons()->first() : null;
+                $module = \Modules\LMS\Curriculum\Models\CourseModule::where('course_id', $course->id)->first();
+                $lesson = $module ? \Modules\LMS\Curriculum\Models\Lesson::where('module_id', $module->id)->first() : null;
                 $instructor = $course->instructors()->first();
 
-                StudentProject::create([
-                    'course_id' => $course->id,
-                    'student_id' => $enrollment->student_id,
-                    'enrollment_id' => $enrollment->id,
+                if (!$enrollment->id) {
+                    continue; // Skip if enrollment has no ID
+                }
+                
+                try {
+                    StudentProject::create([
+                        'course_id' => $course->id,
+                        'student_id' => $enrollment->student_id,
+                        'enrollment_id' => $enrollment->id,
                     'module_id' => $module?->id,
                     'lesson_id' => $lesson?->id,
                     'title' => "Project - " . $this->faker->words(3, true),
@@ -301,9 +326,13 @@ class ComprehensiveDataSeeder extends Seeder
                         ? Carbon::parse($course->start_date)->addDays(rand(90, 120))
                         : null,
                     'created_at' => Carbon::parse($course->start_date)->addDays(rand(20, 60)),
-                ]);
-                
-                $projectCount++;
+                    ]);
+                    
+                    $projectCount++;
+                } catch (\Exception $e) {
+                    $this->command->warn("Failed to create student project: " . $e->getMessage());
+                    continue;
+                }
             }
         }
 
@@ -316,13 +345,22 @@ class ComprehensiveDataSeeder extends Seeder
         
         $enrollments = Enrollment::where('status', 'approved')
             ->where('can_attend', true)
+            ->whereNotNull('course_id') // Only course-based enrollments for progress
             ->with(['student', 'course'])
             ->get();
 
         $progressCount = 0;
 
         foreach ($enrollments as $enrollment) {
+            if (!$enrollment->id || !$enrollment->course_id) {
+                continue; // Skip if enrollment is invalid
+            }
+            
             $course = $enrollment->course;
+            if (!$course) {
+                continue;
+            }
+            
             $lessons = Lesson::whereHas('module', function ($q) use ($course) {
                 $q->where('course_id', $course->id);
             })->get();
@@ -344,25 +382,38 @@ class ComprehensiveDataSeeder extends Seeder
                     ? $startedAt->copy()->addDays(rand(1, 7))
                     : null;
 
-                StudentProgress::create([
-                    'student_id' => $enrollment->student_id,
-                    'enrollment_id' => $enrollment->id,
-                    'course_id' => $course->id,
-                    'module_id' => $lesson->module_id,
-                    'lesson_id' => $lesson->id,
-                    'type' => 'lesson',
-                    'is_completed' => $isCompleted,
-                    'progress_percentage' => $progressPercentage,
-                    'time_spent' => $timeSpent,
-                    'started_at' => $startedAt,
-                    'completed_at' => $completedAt,
-                    'last_accessed_at' => $isCompleted 
-                        ? $completedAt 
-                        : Carbon::now()->subDays(rand(0, 30)),
-                    'created_at' => $startedAt,
-                ]);
+                if (!$enrollment->id) {
+                    continue; // Skip if enrollment has no ID
+                }
                 
-                $progressCount++;
+                try {
+                    StudentProgress::updateOrCreate(
+                        [
+                            'student_id' => $enrollment->student_id,
+                            'enrollment_id' => $enrollment->id,
+                            'lesson_id' => $lesson->id,
+                        ],
+                    [
+                        'course_id' => $course->id,
+                        'module_id' => $lesson->module_id,
+                        'type' => 'lesson',
+                        'is_completed' => $isCompleted,
+                        'progress_percentage' => $progressPercentage,
+                        'time_spent' => $timeSpent,
+                        'started_at' => $startedAt,
+                        'completed_at' => $completedAt,
+                        'last_accessed_at' => $isCompleted 
+                            ? $completedAt 
+                            : Carbon::now()->subDays(rand(0, 30)),
+                        'created_at' => $startedAt,
+                    ]
+                    );
+                    
+                    $progressCount++;
+                } catch (\Exception $e) {
+                    $this->command->warn("Failed to create student progress: " . $e->getMessage());
+                    continue;
+                }
             }
         }
 
@@ -383,12 +434,23 @@ class ComprehensiveDataSeeder extends Seeder
         $certificateCount = 0;
 
         foreach ($completedEnrollments as $enrollment) {
+            if (!$enrollment->id || !$enrollment->course_id) {
+                continue; // Skip if enrollment is invalid
+            }
+            
             $course = $enrollment->course;
+            if (!$course) {
+                continue;
+            }
             
             // التحقق من إتمام الكورس (100% progress)
             $totalLessons = Lesson::whereHas('module', function ($q) use ($course) {
                 $q->where('course_id', $course->id);
             })->count();
+            
+            if ($totalLessons === 0) {
+                continue;
+            }
             
             $completedLessons = StudentProgress::where('enrollment_id', $enrollment->id)
                 ->where('is_completed', true)
@@ -396,15 +458,19 @@ class ComprehensiveDataSeeder extends Seeder
             
             // 70% من الطلاب المكملين يحصلون على شهادة
             if ($completedLessons >= $totalLessons * 0.8 && rand(1, 100) <= 70) {
-                Certificate::create([
-                    'course_id' => $course->id,
-                    'student_id' => $enrollment->student_id,
-                    'enrollment_id' => $enrollment->id,
-                    'issued_date' => Carbon::parse($course->end_date)->addDays(rand(1, 7)),
-                    'is_verified' => true,
-                ]);
-                
-                $certificateCount++;
+                try {
+                    Certificate::create([
+                        'course_id' => $course->id,
+                        'student_id' => $enrollment->student_id,
+                        'enrollment_id' => $enrollment->id,
+                        'issued_date' => $course->end_date ? Carbon::parse($course->end_date)->addDays(rand(1, 7)) : Carbon::now(),
+                        'is_verified' => true,
+                    ]);
+                    
+                    $certificateCount++;
+                } catch (\Exception $e) {
+                    $this->command->warn("Failed to create certificate for enrollment {$enrollment->id}: " . $e->getMessage());
+                }
             }
         }
 
@@ -417,7 +483,7 @@ class ComprehensiveDataSeeder extends Seeder
         
         $students = User::whereHas('role', fn ($q) => $q->where('name', 'student'))
             ->inRandomOrder()
-            ->take(30)
+            ->take(10)
             ->get();
 
         $testimonialCount = 0;
@@ -425,8 +491,9 @@ class ComprehensiveDataSeeder extends Seeder
         foreach ($students as $student) {
             Testimonial::create([
                 'name' => $student->name,
-                'relation' => 'Student',
-                'rating' => rand(4, 5), // معظم التقييمات إيجابية
+                'role' => 'Student',
+                'rating_course' => rand(4, 5), // معظم التقييمات إيجابية
+                'rating_instructor' => rand(4, 5),
                 'comment' => $this->faker->paragraph(3),
                 'is_approved' => rand(1, 10) <= 9, // 90% approved
                 'created_at' => Carbon::now()->subMonths(rand(1, 24)),
@@ -446,23 +513,23 @@ class ComprehensiveDataSeeder extends Seeder
             [
                 'title' => 'مرحباً بك في جرافيك سكول',
                 'subtitle' => 'منصة تعليمية متكاملة',
-                'description' => 'تعلم التصميم الجرافيكي من الصفر للإحتراف',
                 'button_text' => 'استكشف الكورسات',
                 'button_url' => '/courses',
+                'image_path' => '/images/slider1.jpg',
             ],
             [
                 'title' => 'كورسات احترافية',
                 'subtitle' => 'مع مدربين محترفين',
-                'description' => 'دروس مباشرة ومتابعة شخصية',
                 'button_text' => 'سجل الآن',
                 'button_url' => '/register',
+                'image_path' => '/images/slider2.jpg',
             ],
             [
                 'title' => 'شهادات معتمدة',
                 'subtitle' => 'عند إتمام الكورس',
-                'description' => 'احصل على شهادة معتمدة تثبت مهاراتك',
                 'button_text' => 'اعرف المزيد',
                 'button_url' => '/about',
+                'image_path' => '/images/slider3.jpg',
             ],
         ];
 
@@ -470,9 +537,9 @@ class ComprehensiveDataSeeder extends Seeder
             Slider::create([
                 'title' => $slider['title'],
                 'subtitle' => $slider['subtitle'],
-                'description' => $slider['description'],
                 'button_text' => $slider['button_text'],
                 'button_url' => $slider['button_url'],
+                'image_path' => $slider['image_path'] ?? '/images/slider-' . ($index + 1) . '.jpg',
                 'is_active' => true,
                 'sort_order' => $index + 1,
                 'created_at' => Carbon::now()->subYears(5),
@@ -488,9 +555,9 @@ class ComprehensiveDataSeeder extends Seeder
         
         $contactCount = 0;
 
-        // 200 رسالة على مدى 5 سنوات
-        for ($i = 0; $i < 200; $i++) {
-            $createdAt = Carbon::now()->subYears(5)->addDays(rand(0, 1825));
+        // 20 رسالة للاختبار
+        for ($i = 0; $i < 20; $i++) {
+            $createdAt = Carbon::now()->subMonths(rand(1, 12))->addDays(rand(1, 30));
             
             $isResolved = $createdAt->isPast() && rand(1, 100) <= 70; // 70% resolved
             

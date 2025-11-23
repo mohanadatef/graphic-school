@@ -45,6 +45,28 @@ class CertificateService
             Course::where('id', $enrollment->course_id)
                 ->increment('completion_count');
 
+            // Award gamification points for certificate
+            try {
+                $gamificationService = app(\App\Services\GamificationService::class);
+                $student = $enrollment->student;
+                $gamificationService->awardPointsForEvent(
+                    $student,
+                    'certificate_issued',
+                    'certificates',
+                    $certificate->id,
+                    [
+                        'course_id' => $enrollment->course_id,
+                        'enrollment_id' => $enrollmentId,
+                    ]
+                );
+            } catch (\Exception $e) {
+                // Log but don't fail certificate if gamification fails
+                \Illuminate\Support\Facades\Log::warning('Gamification failed for certificate', [
+                    'certificate_id' => $certificate->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
             return $certificate;
         });
     }

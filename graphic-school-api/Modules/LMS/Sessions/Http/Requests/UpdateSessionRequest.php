@@ -26,6 +26,10 @@ class UpdateSessionRequest extends FormRequest
             'student_file' => ['nullable', 'file', 'max:10240'],
             'instructor_comment' => ['nullable', 'string'],
             'supervisor_comment' => ['nullable', 'string'],
+            'translations' => ['nullable', 'array'],
+            'translations.*.locale' => ['required', 'in:ar,en'],
+            'translations.*.title' => ['nullable', 'string', 'max:255'],
+            'translations.*.note' => ['nullable', 'string'],
         ];
     }
 }

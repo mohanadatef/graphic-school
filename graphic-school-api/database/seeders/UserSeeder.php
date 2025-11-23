@@ -24,7 +24,7 @@ class UserSeeder extends Seeder
         User::updateOrCreate(
             ['email' => 'admin@graphicschool.com'],
             [
-                'name' => 'Graphic School Admin',
+                'name' => env('APP_NAME', 'Graphic School') . ' Admin',
                 'password' => $passwordHasher->hash('password'),
                 'role_id' => $adminRole?->id,
                 'is_active' => true,
@@ -32,15 +32,10 @@ class UserSeeder extends Seeder
             ]
         );
 
-        // Instructors - 25 مدرب على مدى 5 سنوات
+        // Instructors - 5 مدربين للاختبار
         $instructorNames = [
             'أحمد محمد علي', 'سارة أحمد حسن', 'محمد خالد إبراهيم', 'فاطمة محمود سعيد',
-            'علي حسن محمد', 'نورا أحمد فتحي', 'خالد محمود علي', 'مريم سعد الدين',
-            'يوسف أحمد كمال', 'ليلى محمد رضا', 'طارق حسن علي', 'سلمى أحمد محمود',
-            'حسام الدين محمد', 'رانيا خالد فتحي', 'أيمن سعد الدين', 'هند محمود علي',
-            'كريم أحمد حسن', 'دينا محمد سعيد', 'عمرو خالد إبراهيم', 'شيماء أحمد فتحي',
-            'مصطفى محمود علي', 'نور الدين حسن', 'ريم أحمد كمال', 'وائل محمد رضا',
-            'إيمان سعد الدين',
+            'علي حسن محمد',
         ];
 
         foreach ($instructorNames as $index => $name) {
@@ -62,36 +57,26 @@ class UserSeeder extends Seeder
             );
         }
 
-        // Students - 500 طالب على مدى 5 سنوات
-        // توزيع الطلاب على 5 سنوات: 50, 80, 100, 120, 150
-        $studentsPerYear = [50, 80, 100, 120, 150];
-        
+        // Students - 50 طالب للاختبار
         $studentCounter = 1;
-        for ($year = 0; $year < 5; $year++) {
-            $yearStart = Carbon::now()->subYears(5 - $year)->startOfYear();
-            $yearEnd = Carbon::now()->subYears(5 - $year)->endOfYear();
+        for ($i = 0; $i < 50; $i++) {
+            $createdAt = Carbon::now()->subMonths(rand(1, 12))->addDays(rand(1, 30));
             
-            for ($i = 0; $i < $studentsPerYear[$year]; $i++) {
-                $createdAt = Carbon::createFromTimestamp(
-                    rand($yearStart->timestamp, $yearEnd->timestamp)
-                );
-                
-                User::create([
-                    'name' => $faker->name(),
-                    'email' => "student{$studentCounter}@graphicschool.com",
-                    'password' => $passwordHasher->hash('password'),
-                    'role_id' => $studentRole?->id,
-                    'phone' => '01' . rand(10000000, 99999999),
-                    'address' => $faker->address(),
-                    'is_active' => rand(1, 10) <= 8, // 80% active
-                    'created_at' => $createdAt,
-                    'updated_at' => $createdAt->copy()->addDays(rand(1, 365)),
-                ]);
-                
-                $studentCounter++;
-            }
+            User::create([
+                'name' => $faker->name(),
+                'email' => "student{$studentCounter}@graphicschool.com",
+                'password' => $passwordHasher->hash('password'),
+                'role_id' => $studentRole?->id,
+                'phone' => '01' . rand(10000000, 99999999),
+                'address' => $faker->address(),
+                'is_active' => rand(1, 10) <= 8, // 80% active
+                'created_at' => $createdAt,
+                'updated_at' => $createdAt->copy()->addDays(rand(1, 30)),
+            ]);
+            
+            $studentCounter++;
         }
 
-        $this->command->info('Users seeded: 1 Admin, 25 Instructors, 500 Students');
+        $this->command->info('Users seeded: 1 Admin, 5 Instructors, 50 Students');
     }
 }

@@ -56,4 +56,39 @@ class FAQ extends Model
     {
         return $query->orderBy('sort_order', 'asc');
     }
+
+    /**
+     * Translation relationships
+     */
+    public function translations()
+    {
+        return $this->hasMany(FAQTranslation::class, 'faq_id');
+    }
+
+    public function translation(?string $locale = null)
+    {
+        $locale = $locale ?? app()->getLocale();
+        return $this->hasOne(FAQTranslation::class, 'faq_id')
+            ->where('locale', $locale);
+    }
+
+    /**
+     * Get translated question
+     */
+    public function getTranslatedQuestionAttribute(?string $locale = null): ?string
+    {
+        $locale = $locale ?? app()->getLocale();
+        $translation = $this->translations()->where('locale', $locale)->first();
+        return $translation?->question ?? $this->question ?? $this->translations()->first()?->question;
+    }
+
+    /**
+     * Get translated answer
+     */
+    public function getTranslatedAnswerAttribute(?string $locale = null): ?string
+    {
+        $locale = $locale ?? app()->getLocale();
+        $translation = $this->translations()->where('locale', $locale)->first();
+        return $translation?->answer ?? $this->answer ?? $this->translations()->first()?->answer;
+    }
 }

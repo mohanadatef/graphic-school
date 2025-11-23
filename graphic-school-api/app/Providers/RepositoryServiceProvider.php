@@ -48,6 +48,24 @@ class RepositoryServiceProvider extends ServiceProvider
             SessionRepositoryInterface::class,
             \Modules\LMS\Sessions\Repositories\Eloquent\SessionRepository::class
         );
+
+        // Program Repository Interface
+        $this->app->bind(
+            \App\Repositories\Interfaces\ProgramRepositoryInterface::class,
+            \App\Repositories\Eloquent\ProgramRepository::class
+        );
+
+        // Batch Repository Interface
+        $this->app->bind(
+            \App\Repositories\Interfaces\BatchRepositoryInterface::class,
+            \App\Repositories\Eloquent\BatchRepository::class
+        );
+
+        // Group Repository Interface
+        $this->app->bind(
+            \App\Repositories\Interfaces\GroupRepositoryInterface::class,
+            \App\Repositories\Eloquent\GroupRepository::class
+        );
     }
 
     /**
