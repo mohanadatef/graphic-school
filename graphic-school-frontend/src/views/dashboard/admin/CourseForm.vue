@@ -132,12 +132,28 @@ onMounted(async () => {
 
 async function loadOptions() {
   try {
-    const [{ data: categoryData }, { data: instructorData }] = await Promise.all([
+    const [categoryResponse, instructorResponse] = await Promise.allSettled([
       get('/admin/categories'),
       get('/instructors'),
     ]);
-    categories.value = Array.isArray(categoryData) ? categoryData : (categoryData.data || []);
-    instructors.value = Array.isArray(instructorData) ? instructorData : (instructorData.data || []);
+    
+    // Handle categories
+    if (categoryResponse.status === 'fulfilled') {
+      const categoryData = categoryResponse.value;
+      categories.value = Array.isArray(categoryData) ? categoryData : (categoryData?.data || []);
+    } else {
+      console.warn('Failed to load categories:', categoryResponse.reason);
+      categories.value = [];
+    }
+    
+    // Handle instructors
+    if (instructorResponse.status === 'fulfilled') {
+      const instructorData = instructorResponse.value;
+      instructors.value = Array.isArray(instructorData) ? instructorData : (instructorData?.data || []);
+    } else {
+      console.warn('Failed to load instructors:', instructorResponse.reason);
+      instructors.value = [];
+    }
     
     if (!form.category_id && categories.value.length) {
       form.category_id = categories.value[0].id;
@@ -145,6 +161,8 @@ async function loadOptions() {
   } catch (err) {
     console.error('Error loading options:', err);
     toast.error('حدث خطأ أثناء تحميل البيانات');
+    categories.value = [];
+    instructors.value = [];
   }
 }
 

@@ -33,9 +33,15 @@ export function useListPage(config = {}) {
    */
   async function loadItems(additionalParams = {}) {
     try {
+      // Ensure pagination is initialized
+      if (!pagination) {
+        console.warn('Pagination not initialized, using defaults');
+        return;
+      }
+
       const params = buildParams({
-        page: pagination.current_page,
-        per_page: pagination.per_page,
+        page: pagination.current_page || 1,
+        per_page: pagination.per_page || perPage,
         ...additionalParams,
       });
 
@@ -44,15 +50,15 @@ export function useListPage(config = {}) {
       // Backend returns unified format: { success, message, data: [...], meta: { pagination: {...} } }
       // The interceptor already extracts data, so response is the array
       // But we need to check if it's an array or an object with data property
-      const data = Array.isArray(response) ? response : (response.data || []);
+      const data = Array.isArray(response) ? response : (response?.data || []);
       items.value = Array.isArray(data) ? data : [];
       
       // Check for pagination in meta (attached by interceptor) or in response
-      if (response.meta?.pagination) {
+      if (response?.meta?.pagination) {
         updatePagination(response.meta.pagination);
-      } else if (response.meta) {
+      } else if (response?.meta) {
         updatePagination(response.meta);
-      } else if (response.pagination) {
+      } else if (response?.pagination) {
         updatePagination(response.pagination);
       }
 
@@ -60,6 +66,10 @@ export function useListPage(config = {}) {
     } catch (err) {
       console.error('Error loading items:', err);
       items.value = [];
+      // Ensure pagination has default values even on error
+      if (pagination) {
+        updatePagination({ current_page: 1, last_page: 1, per_page: perPage, total: 0 });
+      }
       throw err;
     }
   }

@@ -232,7 +232,8 @@ class StrategicReportService
     {
         $cacheKey = 'strategic_report_student_analytics_' . md5(json_encode($filters));
         
-        return Cache::remember($cacheKey, 3600, function () use ($filters) {
+        try {
+            return Cache::remember($cacheKey, 3600, function () use ($filters) {
             $startDate = $filters['start_date'] ?? now()->subMonths(6)->startOfMonth();
             $endDate = $filters['end_date'] ?? now()->endOfMonth();
             
@@ -335,7 +336,72 @@ class StrategicReportService
                 'recommendations' => $this->generateStudentRecommendations($completionData, $attendanceData, $satisfactionData),
                 'generated_at' => now()->toDateTimeString(),
             ];
-        });
+            });
+        } catch (\Exception $e) {
+            // Log error and return empty structure
+            Log::error('Error generating student analytics report: ' . $e->getMessage());
+            $startDate = $filters['start_date'] ?? now()->subMonths(6)->startOfMonth();
+            $endDate = $filters['end_date'] ?? now()->endOfMonth();
+            
+            if (is_string($startDate)) {
+                $startDate = Carbon::parse($startDate);
+            }
+            if (is_string($endDate)) {
+                $endDate = Carbon::parse($endDate);
+            }
+            
+            return [
+                'period' => [
+                    'start_date' => $startDate->toDateString(),
+                    'end_date' => $endDate->toDateString(),
+                ],
+                'overview' => [
+                    'total_students' => 0,
+                    'new_students' => 0,
+                    'growth_rate' => 0,
+                ],
+                'enrollments' => [
+                    'total' => 0,
+                    'approved' => 0,
+                    'pending' => 0,
+                    'rejected' => 0,
+                    'approval_rate' => 0,
+                ],
+                'completion' => [
+                    'total' => 0,
+                    'completed' => 0,
+                    'in_progress' => 0,
+                    'not_started' => 0,
+                    'completion_rate' => 0,
+                ],
+                'attendance' => [
+                    'total_sessions' => 0,
+                    'total_attendance' => 0,
+                    'present' => 0,
+                    'absent' => 0,
+                    'rate' => 0,
+                ],
+                'satisfaction' => [
+                    'avg_course_rating' => 0,
+                    'avg_instructor_rating' => 0,
+                    'total_reviews' => 0,
+                ],
+                'retention' => [
+                    'total_students' => 0,
+                    'returning_students' => 0,
+                    'retention_rate' => 0,
+                ],
+                'segments' => [
+                    'active' => 0,
+                    'completed' => 0,
+                    'inactive' => 0,
+                ],
+                'insights' => [],
+                'recommendations' => [],
+                'generated_at' => now()->toDateTimeString(),
+                'error' => config('app.debug') ? $e->getMessage() : 'Error generating report',
+            ];
+        }
     }
     
     /**
@@ -942,6 +1008,12 @@ class StrategicReportService
         $notStarted = 0;
         
         foreach ($enrollments as $enrollment) {
+            // Handle case where course might be null
+            if (!$enrollment->course) {
+                $notStarted++;
+                continue;
+            }
+            
             if ($enrollment->course->status === CourseStatus::COMPLETED->value) {
                 $completed++;
             } elseif (in_array($enrollment->course->status, [CourseStatus::UPCOMING->value, CourseStatus::RUNNING->value])) {

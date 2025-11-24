@@ -1,11 +1,16 @@
 import { ref, computed } from 'vue';
 import { useLocale } from './useLocale';
+import api from '../api';
 
 // Currency configuration
 const currency = ref('EGP');
 const currencySymbol = ref('ج.م');
 const currencyPosition = ref('after'); // 'before' or 'after'
 const loading = ref(false);
+
+// Cache for API availability check (prevents repeated 404s)
+let apiChecked = false;
+let apiAvailable = null;
 
 // Initialize currency from settings
 async function initCurrency() {
@@ -24,28 +29,59 @@ async function initCurrency() {
       currencyPosition.value = savedPosition;
     }
     
-    // Fetch from API
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://graphic-school.test/api';
-    const response = await fetch(`${apiBaseUrl}/system-settings/public`);
-    if (response.ok) {
-      const data = await response.json();
-      currency.value = data.default_currency || 'EGP';
-      currencySymbol.value = data.currency_symbol || getDefaultSymbol(currency.value);
-      currencyPosition.value = data.currency_position || 'after';
-      
-      // Save to localStorage
-      localStorage.setItem('gs_currency', currency.value);
-      localStorage.setItem('gs_currency_symbol', currencySymbol.value);
-      localStorage.setItem('gs_currency_position', currencyPosition.value);
+    // Check if API endpoint is available (cache per session)
+    if (!apiChecked) {
+      const cached = sessionStorage.getItem('currencyApiAvailable');
+      if (cached === 'false') {
+        apiAvailable = false;
+        apiChecked = true;
+      } else if (cached === 'true') {
+        apiAvailable = true;
+        apiChecked = true;
+      }
+    }
+    
+    // Skip API call if we know it's not available
+    if (apiAvailable === false) {
+      return;
+    }
+    
+    // Fetch from API (silently fail if endpoint doesn't exist)
+    try {
+      const response = await api.get('/system-settings/public');
+      if (response && response.data) {
+        const data = response.data;
+        currency.value = data.default_currency || 'EGP';
+        currencySymbol.value = data.currency_symbol || getDefaultSymbol(currency.value);
+        currencyPosition.value = data.currency_position || 'after';
+        
+        // Save to localStorage
+        localStorage.setItem('gs_currency', currency.value);
+        localStorage.setItem('gs_currency_symbol', currencySymbol.value);
+        localStorage.setItem('gs_currency_position', currencyPosition.value);
+        
+        // Mark API as available
+        apiAvailable = true;
+        sessionStorage.setItem('currencyApiAvailable', 'true');
+      }
+    } catch (error) {
+      // Silently handle 404 and other errors - endpoint may not exist
+      if (error.response?.status === 404 || error.response?.status === 500) {
+        apiAvailable = false;
+        sessionStorage.setItem('currencyApiAvailable', 'false');
+      }
+      // Use localStorage values or defaults (already set above)
     }
   } catch (error) {
-    console.error('Error loading currency settings:', error);
-    // Use defaults
-    currency.value = 'EGP';
-    currencySymbol.value = 'ج.م';
-    currencyPosition.value = 'after';
+    // Use defaults if something unexpected happens
+    if (!currency.value || currency.value === 'EGP') {
+      currency.value = 'EGP';
+      currencySymbol.value = 'ج.م';
+      currencyPosition.value = 'after';
+    }
   } finally {
     loading.value = false;
+    apiChecked = true;
   }
 }
 

@@ -6,11 +6,12 @@ describe('Instructor E2E Tests', () => {
 
   it('1. Instructor login', () => {
     cy.loginAsInstructor();
+    // Login command already checks redirect, just verify dashboard loaded
     cy.waitUntilFrontendReady();
-    cy.url().should('include', '/dashboard/instructor');
-    cy.get('body').should(($body) => {
+    cy.get('[data-cy="sidebar"]', { timeout: 10000 }).should('exist');
+    cy.get('body', { timeout: 10000 }).should(($body) => {
       const text = $body.text();
-      expect(text.includes('Dashboard') || text.includes('Instructor')).to.be.true;
+      expect(text.includes('Dashboard') || text.includes('Instructor') || text.includes('مدرب')).to.be.true;
     });
     cy.screenshot('instructor-dashboard');
   });
@@ -94,7 +95,7 @@ describe('Instructor E2E Tests', () => {
     
     // Create post
     cy.get('body').then(($body) => {
-      const createPostBtn = $body.find('[data-cy="create-post-btn"], a[href*="/create"], button[aria-label*="create post" i]').first();
+      const createPostBtn = $body.find('[data-cy="create-post-btn"], a[href*="/create"], button[aria-label*="create post"], button[aria-label*="Create post"], button[aria-label*="Create Post"]').first();
       if (createPostBtn.length > 0) {
         cy.wrap(createPostBtn).click({ force: true });
         cy.wait(2000);
@@ -122,9 +123,10 @@ describe('Instructor E2E Tests', () => {
 
   it('7. Instructor logout', () => {
     cy.loginAsInstructor();
+    cy.waitUntilFrontendReady();
     cy.logout();
-    cy.url().should((url) => {
-      expect(url.includes('/login') || url === '/' || url.endsWith('/')).to.be.true;
+    cy.location('pathname', { timeout: 10000 }).should((pathname) => {
+      expect(pathname === '/login' || pathname === '/' || pathname.endsWith('/')).to.be.true;
     });
     cy.screenshot('instructor-logout-success');
   });

@@ -375,6 +375,12 @@ Route::middleware('auth:api')->group(function () {
         Route::apiResource('batches', \App\Http\Controllers\Admin\BatchController::class);
         Route::apiResource('groups', \App\Http\Controllers\Admin\GroupController::class);
 
+        // Language Settings
+        Route::prefix('language')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\LanguageSettingsController::class, 'index']);
+            Route::post('/update', [\App\Http\Controllers\Admin\LanguageSettingsController::class, 'update']);
+        });
+
         // CHANGE-006: Ticketing System
         Route::prefix('tickets')->group(function () {
             Route::get('/', [\Modules\Support\Tickets\Http\Controllers\TicketController::class, 'index']);

@@ -2,8 +2,8 @@
   <div class="space-y-6">
     <div class="flex items-center justify-between flex-wrap gap-4">
       <div>
-        <h2 class="text-2xl font-bold">الجلسات</h2>
-        <p class="text-sm text-slate-500">تعديل مواعيد المحاضرات.</p>
+        <h2 class="text-2xl font-bold">{{ $t('admin.sessions') || 'Sessions' }}</h2>
+        <p class="text-sm text-slate-500">{{ $t('admin.sessionsDescription') || 'Manage session schedules' }}</p>
       </div>
     </div>
 
@@ -12,18 +12,14 @@
         <FilterDropdown
           v-model="filters.course_id"
           :options="courses"
-          placeholder="كل الكورسات"
+          :placeholder="$t('dashboard.allCategories') || 'All Courses'"
           label-key="title"
           @update:modelValue="handleFilterChange"
         />
         <FilterDropdown
           v-model="filters.status"
-          :options="[
-            { id: 'scheduled', name: 'مجدولة' },
-            { id: 'completed', name: 'منتهية' },
-            { id: 'cancelled', name: 'ملغاة' }
-          ]"
-          placeholder="كل الحالات"
+          :options="statusOptions"
+          :placeholder="$t('dashboard.allStatuses') || 'All Statuses'"
           @update:modelValue="handleFilterChange"
         />
         <FilterDropdown
@@ -33,7 +29,7 @@
             { id: 20, name: '20' },
             { id: 50, name: '50' }
           ]"
-          placeholder="عدد الصفحات"
+          :placeholder="$t('pagination.rowsPerPage') || 'Rows per page'"
           @update:modelValue="changePerPage"
         />
       </div>
@@ -43,10 +39,10 @@
       <table class="w-full text-sm">
         <thead class="bg-slate-50 text-xs uppercase">
           <tr>
-            <th class="px-4 py-3 text-left">الكورس</th>
-            <th class="px-4 py-3 text-left">العنوان</th>
-            <th class="px-4 py-3 text-left">التاريخ</th>
-            <th class="px-4 py-3 text-left">الحالة</th>
+            <th class="px-4 py-3 text-left">{{ $t('course.courses') || 'Course' }}</th>
+            <th class="px-4 py-3 text-left">{{ $t('courses.title') || 'Title' }}</th>
+            <th class="px-4 py-3 text-left">{{ $t('course.startDate') || 'Date' }}</th>
+            <th class="px-4 py-3 text-left">{{ $t('course.status') || 'Status' }}</th>
             <th class="px-4 py-3"></th>
           </tr>
         </thead>
@@ -61,14 +57,14 @@
                 :to="`/dashboard/admin/sessions/${session.id}/edit`"
                 class="text-primary text-xs hover:underline"
               >
-                تعديل
+                {{ $t('common.edit') || 'Edit' }}
               </RouterLink>
             </td>
           </tr>
         </tbody>
       </table>
-      <p v-if="loading" class="text-center py-6 text-sm text-slate-400">جاري التحميل...</p>
-      <p v-else-if="!sessions.length" class="text-center py-6 text-sm text-slate-400">لا توجد بيانات.</p>
+      <p v-if="loading" class="text-center py-6 text-sm text-slate-400">{{ $t('common.loading') || 'Loading...' }}</p>
+      <p v-else-if="!sessions.length" class="text-center py-6 text-sm text-slate-400">{{ $t('common.noData') || 'No data available' }}</p>
       <p v-if="error" class="text-center py-6 text-sm text-red-500">{{ error }}</p>
     </div>
 
@@ -82,14 +78,22 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import { RouterLink } from 'vue-router';
 import { useListPage } from '../../../composables/useListPage';
 import { useApi } from '../../../composables/useApi';
+import { useI18n } from '../../../composables/useI18n';
 import PaginationControls from '../../../components/common/PaginationControls.vue';
 import FilterDropdown from '../../../components/common/FilterDropdown.vue';
 
+const { t } = useI18n();
 const courses = ref([]);
+
+const statusOptions = computed(() => [
+  { id: 'scheduled', name: t('admin.sessionsStatus.scheduled') || 'Scheduled' },
+  { id: 'completed', name: t('admin.sessionsStatus.completed') || 'Completed' },
+  { id: 'cancelled', name: t('admin.sessionsStatus.cancelled') || 'Cancelled' }
+]);
 
 // Use unified list page composable
 const {
@@ -118,11 +122,24 @@ const { get } = useApi();
 
 async function loadCourses() {
   try {
-    const data = await get('/admin/courses', { params: { per_page: 1000 } });
+    // Try with a reasonable per_page value first, or without it if backend doesn't support it
+    // Some backends have max per_page limits (e.g., 100)
+    const data = await get('/admin/courses', { params: { per_page: 100 } });
     courses.value = Array.isArray(data) ? data : (data.data || []);
   } catch (err) {
-    console.error('Error loading courses:', err);
-    courses.value = [];
+    // If 422 error (validation), try without per_page parameter
+    if (err.response?.status === 422) {
+      try {
+        const data = await get('/admin/courses');
+        courses.value = Array.isArray(data) ? data : (data.data || []);
+      } catch (retryErr) {
+        console.error('Error loading courses:', retryErr);
+        courses.value = [];
+      }
+    } else {
+      console.error('Error loading courses:', err);
+      courses.value = [];
+    }
   }
 }
 

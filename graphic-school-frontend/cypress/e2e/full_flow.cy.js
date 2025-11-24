@@ -82,7 +82,7 @@ describe('Full Platform Flow Simulation', () => {
         cy.wrap(programLink).click({ force: true });
         cy.wait(2000);
         cy.get('body').then(($body) => {
-          const enrollBtn = $body.find('[data-cy="enroll-btn"], button[aria-label*="enroll" i], button[aria-label*="join" i]').first();
+          const enrollBtn = $body.find('[data-cy="enroll-btn"], button[aria-label*="enroll"], button[aria-label*="Enroll"], button[aria-label*="join"], button[aria-label*="Join"]').first();
           if (enrollBtn.length > 0) {
             cy.wrap(enrollBtn).click({ force: true });
             cy.wait(2000);
@@ -135,7 +135,7 @@ describe('Full Platform Flow Simulation', () => {
     cy.navigateTo('community');
     cy.wait(2000);
     cy.get('body').then(($body) => {
-      const createPostBtn = $body.find('[data-cy="create-post-btn"], a[href*="/create"], button[aria-label*="create post" i]').first();
+      const createPostBtn = $body.find('[data-cy="create-post-btn"], a[href*="/create"], button[aria-label*="create post"], button[aria-label*="Create post"], button[aria-label*="Create Post"]').first();
       if (createPostBtn.length > 0) {
         cy.wrap(createPostBtn).click({ force: true });
         cy.wait(2000);
@@ -153,7 +153,7 @@ describe('Full Platform Flow Simulation', () => {
     cy.navigateTo('community');
     cy.wait(2000);
     cy.get('body').then(($body) => {
-      const pinBtn = $body.find('button[aria-label*="pin" i], [data-cy="pin-btn"]').first();
+      const pinBtn = $body.find('button[aria-label*="pin"], button[aria-label*="Pin"], [data-cy="pin-btn"]').first();
       if (pinBtn.length > 0) {
         cy.wrap(pinBtn).click({ force: true });
         cy.wait(1000);
@@ -186,7 +186,7 @@ describe('Full Platform Flow Simulation', () => {
         
         // Add blocks
         cy.get('body').then(($body) => {
-          const heroBtn = $body.find('[data-cy="hero-block-btn"], button[aria-label*="hero" i]').first();
+          const heroBtn = $body.find('[data-cy="hero-block-btn"], button[aria-label*="hero"], button[aria-label*="Hero"]').first();
           if (heroBtn.length > 0) {
             cy.wrap(heroBtn).click({ force: true });
             cy.wait(1000);
@@ -194,9 +194,9 @@ describe('Full Platform Flow Simulation', () => {
         });
         
         // Save and publish
-        cy.get('button[type="button"][aria-label*="save" i], [data-cy="save-btn"]').first().click({ force: true });
+        cy.get('button[type="button"][aria-label*="save"], button[type="button"][aria-label*="Save"], [data-cy="save-btn"]').first().click({ force: true });
         cy.wait(2000);
-        cy.get('button[type="button"][aria-label*="publish" i], [data-cy="publish-btn"]').first().click({ force: true });
+        cy.get('button[type="button"][aria-label*="publish"], button[type="button"][aria-label*="Publish"], [data-cy="publish-btn"]').first().click({ force: true });
         cy.wait(2000);
         cy.screenshot('flow-14-admin-page-published');
       }

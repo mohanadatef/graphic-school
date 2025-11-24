@@ -1,29 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { authService } from '../services/api';
-import i18n from '../i18n';
-
-// Helper function to get translation in legacy mode
-const t = (key, params) => {
-  // Try i18n.global.t (composition API mode)
-  if (i18n.global && typeof i18n.global.t === 'function') {
-    return i18n.global.t(key, params);
-  }
-  // Try i18n.t (legacy mode)
-  if (typeof i18n.t === 'function') {
-    return i18n.t(key, params);
-  }
-  // Fallback: manual translation lookup
-  const locale = i18n.locale || 'ar';
-  const messages = i18n.messages?.[locale] || i18n.messages?.ar || {};
-  const keys = key.split('.');
-  let value = messages;
-  for (const k of keys) {
-    value = value?.[k];
-    if (value === undefined) break;
-  }
-  return value || key;
-};
+import { translate } from '../i18n';
 
 export const useAuthStore = defineStore('auth', () => {
   
@@ -162,7 +140,7 @@ export const useAuthStore = defineStore('auth', () => {
         throw new Error('Invalid response format from server');
       }
     } catch (err) {
-      error.value = err.response?.data?.message || err.message || t('auth.loginError');
+      error.value = err.response?.data?.message || err.message || translate('auth.loginError');
       throw err;
     } finally {
       loading.value = false;
@@ -193,7 +171,7 @@ export const useAuthStore = defineStore('auth', () => {
         throw new Error('Invalid response format from server');
       }
     } catch (err) {
-      error.value = err.response?.data?.message || err.message || t('auth.registerError');
+      error.value = err.response?.data?.message || err.message || translate('auth.registerError');
       throw err;
     } finally {
       loading.value = false;

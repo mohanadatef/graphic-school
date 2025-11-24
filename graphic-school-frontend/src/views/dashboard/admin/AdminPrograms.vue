@@ -6,6 +6,7 @@
         <p class="text-sm text-slate-500 dark:text-slate-400">{{ $t('admin.programs.subtitle') || 'Manage all programs' }}</p>
       </div>
       <button
+        data-cy="create-btn"
         @click="$router.push({ name: 'admin-programs-new' })"
         class="btn-primary inline-flex items-center gap-2"
       >
@@ -43,6 +44,7 @@
           @update:modelValue="handleFilterChange"
         />
         <FilterDropdown
+          v-if="pagination"
           v-model.number="pagination.per_page"
           :options="[
             { id: 10, name: '10' },
@@ -145,12 +147,15 @@
 
     <!-- Pagination -->
     <PaginationControls
-      v-if="!loading && programs.length > 0"
-      :current-page="pagination.current_page"
-      :last-page="pagination.last_page"
-      :per-page="pagination.per_page"
-      :total="pagination.total"
-      @page-change="changePage"
+      v-if="!loading && programs.length > 0 && pagination"
+      :meta="{
+        current_page: pagination?.current_page || 1,
+        last_page: pagination?.last_page || 1,
+        per_page: pagination?.per_page || 10,
+        total: pagination?.total || 0,
+      }"
+      @change-page="changePage"
+      @change-per-page="changePerPage"
     />
 
     <!-- Delete Confirmation Modal -->

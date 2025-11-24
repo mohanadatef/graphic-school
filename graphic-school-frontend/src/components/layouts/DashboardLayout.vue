@@ -23,6 +23,7 @@
             v-for="item in adminLinks"
             :key="item.to"
             :to="item.to"
+            :data-cy="`nav-${item.to.split('/').pop()}`"
             class="nav-link group"
           >
             <span class="nav-link-icon">
@@ -49,6 +50,7 @@
             v-for="item in instructorLinks"
             :key="item.to"
             :to="item.to"
+            :data-cy="`nav-${item.to.split('/').pop()}`"
             class="nav-link"
           >
             {{ $t(item.labelKey) || item.labelKey }}
@@ -60,6 +62,7 @@
             v-for="item in studentLinks"
             :key="item.to"
             :to="item.to"
+            :data-cy="`nav-${item.to.split('/').pop()}`"
             class="nav-link"
           >
             {{ $t(item.labelKey) || item.labelKey }}
@@ -83,6 +86,8 @@
           {{ $t('nav.goToSite') }}
         </RouterLink>
         <button
+          data-cy="logout"
+          aria-label="logout"
           class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900 dark:bg-slate-700 text-white rounded-lg text-sm font-medium hover:bg-slate-800 dark:hover:bg-slate-600 transition-all duration-200 hover:shadow-lg"
           @click="handleLogout"
         >
@@ -118,6 +123,8 @@
             {{ $t('nav.goToSite') }}
           </RouterLink>
           <button
+            data-cy="logout"
+            aria-label="logout"
             class="md:hidden px-4 py-2 bg-slate-900 dark:bg-slate-700 text-white rounded-lg hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors font-medium text-sm"
             @click="handleLogout"
           >
@@ -177,6 +184,9 @@ const adminLinks = computed(() => [
   { labelKey: 'admin.roles', to: '/dashboard/admin/roles', icon: 'roles' },
   { labelKey: 'admin.categories', to: '/dashboard/admin/categories', icon: 'courses' },
   { labelKey: 'admin.courses', to: '/dashboard/admin/courses', icon: 'courses' },
+  { labelKey: 'admin.programs', to: '/dashboard/admin/programs', icon: 'programs' },
+  { labelKey: 'admin.batches', to: '/dashboard/admin/batches', icon: 'batches' },
+  { labelKey: 'admin.groups', to: '/dashboard/admin/groups', icon: 'groups' },
   { labelKey: 'admin.sessions', to: '/dashboard/admin/sessions', icon: 'sessions' },
   { labelKey: 'admin.enrollments', to: '/dashboard/admin/enrollments', icon: 'enrollments' },
   { labelKey: 'admin.attendance', to: '/dashboard/admin/attendance', icon: 'attendance' },

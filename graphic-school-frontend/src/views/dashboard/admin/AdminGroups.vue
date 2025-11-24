@@ -8,7 +8,8 @@
         </p>
       </div>
       <button
-        @click="showCreateModal = true"
+        data-cy="create-btn"
+        @click="$router.push({ name: 'admin-groups-new' })"
         class="btn-primary inline-flex items-center gap-2"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -69,7 +70,7 @@
             {{ $t('common.view') || 'View' }}
           </button>
           <button
-            @click="editGroup(group)"
+            @click="$router.push({ name: 'admin-groups-edit', params: { id: group.id } })"
             class="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -80,140 +81,28 @@
       </div>
     </div>
 
-    <!-- Create/Edit Modal -->
-    <div v-if="showCreateModal || editingGroup" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div class="bg-white dark:bg-slate-800 rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4">
-          {{ editingGroup ? ($t('admin.groups.edit') || 'Edit Group') : ($t('admin.groups.create') || 'Create Group') }}
-        </h3>
-        <form @submit.prevent="saveGroup" class="space-y-4">
-          <div>
-            <label class="label">{{ $t('admin.groups.code') || 'Code' }}</label>
-            <input v-model="groupForm.code" class="input" />
-          </div>
-          <div class="grid md:grid-cols-2 gap-4">
-            <div>
-              <label class="label">{{ $t('admin.groups.capacity') || 'Capacity' }}</label>
-              <input v-model.number="groupForm.capacity" type="number" min="1" class="input" />
-            </div>
-            <div>
-              <label class="label">{{ $t('admin.groups.room') || 'Room' }}</label>
-              <input v-model="groupForm.room" class="input" />
-            </div>
-          </div>
-          <div>
-            <label class="label">{{ $t('admin.groups.instructor') || 'Instructor' }}</label>
-            <select v-model="groupForm.instructor_id" class="input">
-              <option value="">{{ $t('common.none') || 'None' }}</option>
-              <option v-for="instructor in instructors" :key="instructor.id" :value="instructor.id">
-                {{ instructor.name }}
-              </option>
-            </select>
-          </div>
-          <div>
-            <label class="label mb-4 block">{{ $t('admin.groups.translations') || 'Translations' }}</label>
-            <div class="space-y-3">
-              <div v-for="lang in availableLanguages" :key="lang.code" class="p-3 rounded-lg border border-slate-200 dark:border-slate-700">
-                <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">{{ lang.native_name }}</label>
-                <input
-                  v-model="groupForm.translations[lang.code].name"
-                  class="input text-sm"
-                  :placeholder="`${$t('admin.groups.name') || 'Name'} (${lang.native_name})`"
-                  :required="lang.code === 'ar'"
-                />
-                <textarea
-                  v-model="groupForm.translations[lang.code].description"
-                  class="input text-sm mt-2"
-                  rows="2"
-                  :placeholder="`${$t('admin.groups.description') || 'Description'} (${lang.native_name})`"
-                ></textarea>
-              </div>
-            </div>
-          </div>
-          <div>
-            <label class="flex items-center gap-3 cursor-pointer">
-              <input type="checkbox" v-model="groupForm.is_active" class="w-5 h-5 text-primary border-slate-300 rounded" />
-              <span class="text-sm font-medium text-slate-700 dark:text-slate-300">{{ $t('common.active') || 'Active' }}</span>
-            </label>
-          </div>
-          <div class="flex gap-3 pt-4">
-            <button type="submit" class="btn-primary flex-1" :disabled="saving">
-              {{ saving ? ($t('common.saving') || 'Saving...') : ($t('common.save') || 'Save') }}
-            </button>
-            <button type="button" @click="closeModal" class="btn-secondary flex-1">
-              {{ $t('common.cancel') || 'Cancel' }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { ref, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 import { useApi } from '../../../composables/useApi';
 import { useToast } from '../../../composables/useToast';
 
 const route = useRoute();
-const router = useRouter();
-const { get, post, put } = useApi();
+const { get } = useApi();
 const toast = useToast();
 
 const batchId = route.params.batchId || route.query.batch_id;
 const loading = ref(false);
-const saving = ref(false);
 const batch = ref(null);
 const groups = ref([]);
-const instructors = ref([]);
-const showCreateModal = ref(false);
-const editingGroup = ref(null);
-const availableLanguages = ref([]);
-
-const groupForm = reactive({
-  code: '',
-  capacity: 20,
-  room: '',
-  instructor_id: null,
-  is_active: true,
-  translations: {},
-});
 
 onMounted(async () => {
-  await loadLanguages();
   await loadBatch();
-  await loadInstructors();
   await loadGroups();
 });
-
-async function loadLanguages() {
-  try {
-    const response = await get('/locales');
-    let languages = [];
-    if (response?.data?.locales) languages = response.data.locales;
-    else if (response?.locales) languages = response.locales;
-    else if (Array.isArray(response)) languages = response;
-    
-    if (languages.length === 0) {
-      languages = [
-        { code: 'en', name: 'English', native_name: 'English' },
-        { code: 'ar', name: 'Arabic', native_name: 'العربية' },
-      ];
-    }
-    availableLanguages.value = languages;
-    
-    languages.forEach(lang => {
-      groupForm.translations[lang.code] = {
-        locale: lang.code,
-        name: '',
-        description: '',
-      };
-    });
-  } catch (error) {
-    console.error('Error loading languages:', error);
-  }
-}
 
 async function loadBatch() {
   if (!batchId) return;
@@ -225,14 +114,6 @@ async function loadBatch() {
   }
 }
 
-async function loadInstructors() {
-  try {
-    const response = await get('/admin/users?role=instructor');
-    instructors.value = (response?.data || response || []).filter(u => u.role?.name === 'instructor');
-  } catch (error) {
-    console.error('Error loading instructors:', error);
-  }
-}
 
 async function loadGroups() {
   try {
@@ -247,71 +128,5 @@ async function loadGroups() {
   }
 }
 
-function editGroup(group) {
-  editingGroup.value = group;
-  groupForm.code = group.code || '';
-  groupForm.capacity = group.capacity || 20;
-  groupForm.room = group.room || '';
-  groupForm.instructor_id = group.instructor_id || null;
-  groupForm.is_active = group.is_active;
-  
-  if (group.translations) {
-    group.translations.forEach(trans => {
-      if (groupForm.translations[trans.locale]) {
-        groupForm.translations[trans.locale].name = trans.name || '';
-        groupForm.translations[trans.locale].description = trans.description || '';
-      }
-    });
-  }
-  
-  showCreateModal.value = true;
-}
-
-function closeModal() {
-  showCreateModal.value = false;
-  editingGroup.value = null;
-  Object.keys(groupForm.translations).forEach(locale => {
-    groupForm.translations[locale].name = '';
-    groupForm.translations[locale].description = '';
-  });
-  groupForm.code = '';
-  groupForm.capacity = 20;
-  groupForm.room = '';
-  groupForm.instructor_id = null;
-  groupForm.is_active = true;
-}
-
-async function saveGroup() {
-  try {
-    saving.value = true;
-    const translationsArray = availableLanguages.value.map(lang => groupForm.translations[lang.code]);
-    
-    const data = {
-      batch_id: batchId,
-      code: groupForm.code,
-      capacity: groupForm.capacity,
-      room: groupForm.room,
-      instructor_id: groupForm.instructor_id || null,
-      is_active: groupForm.is_active,
-      translations: translationsArray,
-    };
-    
-    if (editingGroup.value) {
-      await put(`/admin/groups/${editingGroup.value.id}`, data);
-      toast.success('Group updated successfully');
-    } else {
-      await post('/admin/groups', data);
-      toast.success('Group created successfully');
-    }
-    
-    closeModal();
-    await loadGroups();
-  } catch (error) {
-    toast.error('Failed to save group');
-    console.error(error);
-  } finally {
-    saving.value = false;
-  }
-}
 </script>
 

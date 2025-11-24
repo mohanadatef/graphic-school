@@ -1,0 +1,10 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`FilterDropdown Snapshot > should match snapshot 1`] = `
+"<div data-v-c1f4bb8a="" class="relative"><select data-v-c1f4bb8a="" class="filter-dropdown" value="">
+    <option data-v-c1f4bb8a="" value="">Select option</option>
+    <option data-v-c1f4bb8a="" value="1">Option 1</option>
+    <option data-v-c1f4bb8a="" value="2">Option 2</option>
+    <option data-v-c1f4bb8a="" value="3">Option 3</option>
+  </select></div>"
+`;

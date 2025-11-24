@@ -6,6 +6,7 @@ use App\Models\WebsiteSetting;
 use App\Models\PageBuilderPage;
 use App\Models\PageBuilderStructure;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class WebsiteActivationService
 {
@@ -62,63 +63,89 @@ class WebsiteActivationService
      */
     public function activateDefaultWebsite(): WebsiteSetting
     {
-        return DB::transaction(function () {
-            $settings = WebsiteSetting::getDefault();
-            
-            // Set default branding if not set
-            if (empty($settings->branding)) {
-                $settings->branding = [
-                    'logo' => null,
-                    'primary_color' => '#3b82f6',
-                    'secondary_color' => '#6366f1',
-                    'font_main' => 'Cairo',
-                    'font_headings' => 'Poppins',
-                    'default_theme' => 'light',
-                ];
-            }
+        try {
+            return DB::transaction(function () {
+                $settings = WebsiteSetting::getDefault();
+                
+                // Ensure settings are saved to database if they're new
+                if (!$settings->exists) {
+                    $settings->save();
+                }
+                
+                // Set default branding if not set
+                if (empty($settings->branding)) {
+                    $settings->branding = [
+                        'logo' => null,
+                        'primary_color' => '#3b82f6',
+                        'secondary_color' => '#6366f1',
+                        'font_main' => 'Cairo',
+                        'font_headings' => 'Poppins',
+                        'default_theme' => 'light',
+                    ];
+                }
 
-            // Set default language if not set
-            if (empty($settings->default_language)) {
-                $settings->default_language = 'en';
-            }
+                // Set default language if not set
+                if (empty($settings->default_language)) {
+                    $settings->default_language = 'en';
+                }
 
-            // Set default currency if not set
-            if (empty($settings->default_currency)) {
-                $settings->default_currency = 'USD';
-            }
+                // Set default currency if not set
+                if (empty($settings->default_currency)) {
+                    $settings->default_currency = 'USD';
+                }
 
-            // Set default general info if not set
-            if (empty($settings->general_info)) {
-                $settings->general_info = [
-                    'academy_name' => 'Graphic School',
-                    'country' => null,
-                ];
-            }
+                // Set default general info if not set
+                if (empty($settings->general_info)) {
+                    $settings->general_info = [
+                        'academy_name' => 'Graphic School',
+                        'country' => null,
+                    ];
+                }
 
-            // Set default enabled pages if not set
-            if (empty($settings->enabled_pages)) {
-                $settings->enabled_pages = [
-                    'home' => true,
-                    'about' => true,
-                    'contact' => true,
-                    'programs' => true,
-                    'community' => true,
-                    'faq' => false,
-                ];
-            }
+                // Set default enabled pages if not set
+                if (empty($settings->enabled_pages)) {
+                    $settings->enabled_pages = [
+                        'home' => true,
+                        'about' => true,
+                        'contact' => true,
+                        'programs' => true,
+                        'community' => true,
+                        'faq' => false,
+                    ];
+                }
 
-            // Create default homepage if not exists
-            if (empty($settings->homepage_id)) {
-                $homepage = $this->createDefaultHomepage();
-                $settings->homepage_id = $homepage->id;
-            }
+                // Create default homepage if not exists
+                if (empty($settings->homepage_id)) {
+                    try {
+                        $homepage = $this->createDefaultHomepage();
+                        if ($homepage && $homepage->id) {
+                            $settings->homepage_id = $homepage->id;
+                        }
+                    } catch (\Exception $e) {
+                        // If homepage creation fails, log but continue without it
+                        // This allows activation to proceed even if homepage can't be created
+                        \Log::warning('Failed to create default homepage: ' . $e->getMessage(), [
+                            'exception' => $e,
+                        ]);
+                        // Continue without homepage_id - it's optional
+                    }
+                }
 
-            // Activate
-            $settings->activate();
-            $settings->save();
+                // Save settings before activating
+                $settings->save();
 
-            return $settings;
-        });
+                // Activate (this will save automatically)
+                $settings->activate();
+
+                return $settings;
+            });
+        } catch (\Exception $e) {
+            \Log::error('Error in activateDefaultWebsite: ' . $e->getMessage(), [
+                'exception' => $e,
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw $e;
+        }
     }
 
     /**
@@ -126,8 +153,14 @@ class WebsiteActivationService
      */
     public function completeSetup(array $data): WebsiteSetting
     {
-        return DB::transaction(function () use ($data) {
-            $settings = WebsiteSetting::getDefault();
+        try {
+            return DB::transaction(function () use ($data) {
+                $settings = WebsiteSetting::getDefault();
+                
+                // Ensure settings are saved to database if they're new
+                if (!$settings->exists) {
+                    $settings->save();
+                }
 
             // Update general info
             if (isset($data['general_info'])) {
@@ -177,16 +210,35 @@ class WebsiteActivationService
 
             // Create homepage if specified
             if (isset($data['homepage_template']) && empty($settings->homepage_id)) {
-                $homepage = $this->createHomepageFromTemplate($data['homepage_template']);
-                $settings->homepage_id = $homepage->id;
+                try {
+                    $homepage = $this->createHomepageFromTemplate($data['homepage_template']);
+                    if ($homepage && $homepage->id) {
+                        $settings->homepage_id = $homepage->id;
+                    }
+                } catch (\Exception $e) {
+                    // If homepage creation fails, log but continue without it
+                    \Log::warning('Failed to create homepage from template: ' . $e->getMessage(), [
+                        'exception' => $e,
+                    ]);
+                    // Continue without homepage_id - it's optional
+                }
             }
 
-            // Activate
-            $settings->activate();
-            $settings->save();
+                // Save settings before activating
+                $settings->save();
 
-            return $settings;
-        });
+                // Activate (this will save automatically)
+                $settings->activate();
+
+                return $settings;
+            });
+        } catch (\Exception $e) {
+            \Log::error('Error in completeSetup: ' . $e->getMessage(), [
+                'exception' => $e,
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw $e;
+        }
     }
 
     /**
@@ -266,41 +318,81 @@ class WebsiteActivationService
      */
     protected function createDefaultHomepage(): PageBuilderPage
     {
-        $page = PageBuilderPage::create([
-            'title' => 'Home',
-            'slug' => 'home',
-            'status' => 'published',
-        ]);
+        try {
+            // Get the first admin user for academy_id (required by migration)
+            $adminUser = \Modules\ACL\Users\Models\User::whereHas('role', function ($q) {
+                $q->where('name', 'admin');
+            })->first();
 
-        // Create structure
-        $page->structure()->create([
-            'structure' => [
-                'blocks' => [
-                    [
-                        'type' => 'hero',
-                        'data' => [
-                            'title' => 'Welcome to Graphic School',
-                            'subtitle' => 'Learn graphic design and creative skills',
-                            'cta_text' => 'Explore Programs',
-                            'cta_link' => '/programs',
-                        ],
-                    ],
-                    [
-                        'type' => 'features',
-                        'data' => [
-                            'title' => 'Why Choose Us',
-                            'features' => [
-                                ['title' => 'Expert Instructors', 'description' => 'Learn from industry professionals'],
-                                ['title' => 'Hands-on Projects', 'description' => 'Build real-world portfolios'],
-                                ['title' => 'Flexible Learning', 'description' => 'Study at your own pace'],
+            // If no admin exists, try to get any user
+            if (!$adminUser) {
+                $adminUser = \Modules\ACL\Users\Models\User::first();
+            }
+
+            // Check if homepage already exists
+            $existingPage = PageBuilderPage::where('slug', 'home')
+                ->when($adminUser, fn($q) => $q->where('academy_id', $adminUser->id))
+                ->first();
+            
+            if ($existingPage) {
+                return $existingPage;
+            }
+
+            // If no user exists, we can't create a page (migration requires academy_id)
+            if (!$adminUser) {
+                throw new \Exception('Cannot create homepage: No admin user found. Please create an admin user first.');
+            }
+
+            $page = PageBuilderPage::create([
+                'academy_id' => $adminUser->id,
+                'title' => 'Home',
+                'slug' => 'home',
+                'status' => 'published',
+            ]);
+
+            // Create structure if page was created successfully
+            if ($page && $page->id) {
+                try {
+                    $page->structure()->create([
+                        'structure' => [
+                            'blocks' => [
+                                [
+                                    'type' => 'hero',
+                                    'data' => [
+                                        'title' => 'Welcome to Graphic School',
+                                        'subtitle' => 'Learn graphic design and creative skills',
+                                        'cta_text' => 'Explore Programs',
+                                        'cta_link' => '/programs',
+                                    ],
+                                ],
+                                [
+                                    'type' => 'features',
+                                    'data' => [
+                                        'title' => 'Why Choose Us',
+                                        'features' => [
+                                            ['title' => 'Expert Instructors', 'description' => 'Learn from industry professionals'],
+                                            ['title' => 'Hands-on Projects', 'description' => 'Build real-world portfolios'],
+                                            ['title' => 'Flexible Learning', 'description' => 'Study at your own pace'],
+                                        ],
+                                    ],
+                                ],
                             ],
                         ],
-                    ],
-                ],
-            ],
-        ]);
+                    ]);
+                } catch (\Exception $e) {
+                    // If structure creation fails, log but return the page anyway
+                    \Log::warning('Failed to create homepage structure: ' . $e->getMessage());
+                }
+            }
 
-        return $page;
+            return $page;
+        } catch (\Exception $e) {
+            \Log::error('Error creating default homepage: ' . $e->getMessage(), [
+                'exception' => $e,
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw $e;
+        }
     }
 
     /**
@@ -315,7 +407,22 @@ class WebsiteActivationService
 
         // Template B: Advanced (with more sections)
         if ($template === 'template-b') {
+            // Get the first admin user for academy_id (required by migration)
+            $adminUser = \Modules\ACL\Users\Models\User::whereHas('role', function ($q) {
+                $q->where('name', 'admin');
+            })->first();
+
+            // If no admin exists, try to get any user
+            if (!$adminUser) {
+                $adminUser = \Modules\ACL\Users\Models\User::first();
+            }
+
+            if (!$adminUser) {
+                throw new \Exception('Cannot create homepage: No admin user found. Please create an admin user first.');
+            }
+
             $page = PageBuilderPage::create([
+                'academy_id' => $adminUser->id,
                 'title' => 'Home',
                 'slug' => 'home',
                 'status' => 'published',

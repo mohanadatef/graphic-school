@@ -7,6 +7,14 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Self-healing logs (optional - uncomment to ignore)
+# self-heal-logs/
+
+# Auto-generated files (optional - uncomment to ignore)
+# src/views/auto-generated/
+# src/i18n/auto/
+# cypress/e2e/auto/
+
 node_modules
 dist
 dist-ssr
@@ -23,12 +31,9 @@ dist-ssr
 *.sln
 *.sw?
 
-# Test coverage
-coverage
-.nyc_output
-
-# Vitest
-.vitest
-
-# Snapshots
-**/__snapshots__/*.snap
+# Cypress
+cypress/videos
+cypress/screenshots
+cypress/downloads
+cypress/results
+cypress/e2e-logs

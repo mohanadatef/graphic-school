@@ -2,14 +2,14 @@
   <div class="space-y-6">
     <div class="flex flex-wrap items-center justify-between gap-4">
       <div>
-        <h2 class="text-2xl font-bold text-slate-900">الكورسات</h2>
-        <p class="text-sm text-slate-500">إنشاء كورسات جديدة وتعيين المدربين والتحكم في الجلسات.</p>
+        <h2 class="text-2xl font-bold text-slate-900">{{ $t('admin.courses') || 'Courses' }}</h2>
+        <p class="text-sm text-slate-500">{{ $t('admin.coursesDescription') || 'Create new courses, assign instructors, and manage sessions' }}</p>
       </div>
       <RouterLink
         to="/dashboard/admin/courses/new"
         class="px-4 py-2 bg-primary text-white rounded-md inline-block"
       >
-        كورس جديد
+        {{ $t('admin.coursesCreate') || 'New Course' }}
       </RouterLink>
     </div>
 
@@ -18,18 +18,13 @@
         <input
           v-model="filters.search"
           class="text-xs px-3 py-1.5 border border-slate-200 rounded-lg w-40"
-          placeholder="بحث..."
+          :placeholder="$t('common.search') || 'Search...'"
           @input="handleSearch"
         />
         <FilterDropdown
           v-model="filters.status"
-          :options="[
-            { id: 'draft', name: 'مسودة' },
-            { id: 'upcoming', name: 'قادمة' },
-            { id: 'running', name: 'قيد التنفيذ' },
-            { id: 'completed', name: 'منتهية' }
-          ]"
-          placeholder="كل الحالات"
+          :options="statusOptions"
+          :placeholder="$t('dashboard.allStatuses') || 'All Statuses'"
           @update:modelValue="handleFilterChange"
         />
         <FilterDropdown
@@ -39,7 +34,7 @@
             { id: 20, name: '20' },
             { id: 50, name: '50' }
           ]"
-          placeholder="عدد الصفحات"
+          :placeholder="$t('pagination.rowsPerPage') || 'Rows per page'"
           @update:modelValue="changePerPage"
         />
       </div>
@@ -49,12 +44,12 @@
       <table class="w-full text-sm">
         <thead class="bg-slate-50 text-xs uppercase text-slate-500">
           <tr>
-            <th class="px-4 py-3 text-left">العنوان</th>
-            <th class="px-4 py-3 text-left">التصنيف</th>
-            <th class="px-4 py-3 text-left">البداية</th>
-            <th class="px-4 py-3 text-left">الوقت</th>
-            <th class="px-4 py-3 text-left">الحالة</th>
-            <th class="px-4 py-3 text-left">المدربين</th>
+            <th class="px-4 py-3 text-left">{{ $t('courses.title') || 'Title' }}</th>
+            <th class="px-4 py-3 text-left">{{ $t('courses.category') || 'Category' }}</th>
+            <th class="px-4 py-3 text-left">{{ $t('course.startDate') || 'Start Date' }}</th>
+            <th class="px-4 py-3 text-left">{{ $t('course.duration') || 'Time' }}</th>
+            <th class="px-4 py-3 text-left">{{ $t('course.status') || 'Status' }}</th>
+            <th class="px-4 py-3 text-left">{{ $t('course.instructors') || 'Instructors' }}</th>
             <th class="px-4 py-3"></th>
           </tr>
         </thead>
@@ -81,15 +76,15 @@
                 :to="`/dashboard/admin/courses/${course.id}/edit`"
                 class="text-primary mr-2 hover:underline"
               >
-                تعديل
+                {{ $t('common.edit') || 'Edit' }}
               </RouterLink>
-              <button class="text-red-500" @click="remove(course.id)">حذف</button>
+              <button class="text-red-500" @click="remove(course.id)">{{ $t('common.delete') || 'Delete' }}</button>
             </td>
           </tr>
         </tbody>
       </table>
-      <p v-if="loading" class="text-center py-6 text-sm text-slate-400">جاري التحميل...</p>
-      <p v-else-if="!courses.length" class="text-center py-6 text-sm text-slate-400">لا توجد بيانات.</p>
+      <p v-if="loading" class="text-center py-6 text-sm text-slate-400">{{ $t('common.loading') || 'Loading...' }}</p>
+      <p v-else-if="!courses.length" class="text-center py-6 text-sm text-slate-400">{{ $t('common.noData') || 'No data available' }}</p>
       <p v-if="error" class="text-center py-6 text-sm text-red-500">{{ error }}</p>
     </div>
 
@@ -103,12 +98,22 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import { RouterLink } from 'vue-router';
 import { useListPage } from '../../../composables/useListPage';
 import { useApi } from '../../../composables/useApi';
+import { useI18n } from '../../../composables/useI18n';
 import PaginationControls from '../../../components/common/PaginationControls.vue';
 import FilterDropdown from '../../../components/common/FilterDropdown.vue';
+
+const { t } = useI18n();
+
+const statusOptions = computed(() => [
+  { id: 'draft', name: t('admin.coursesStatus.draft') || 'Draft' },
+  { id: 'upcoming', name: t('admin.coursesStatus.upcoming') || 'Upcoming' },
+  { id: 'running', name: t('admin.coursesStatus.running') || 'Running' },
+  { id: 'completed', name: t('admin.coursesStatus.completed') || 'Completed' }
+]);
 
 // Use unified list page composable
 const {
@@ -138,16 +143,17 @@ const {
 
 
 async function remove(id) {
-  if (!confirm('تأكيد الحذف؟')) return;
+  const confirmMessage = t('common.confirmDelete') || 'Are you sure you want to delete this item?';
+  if (!confirm(confirmMessage)) return;
   try {
     await deleteItem(id);
   } catch (err) {
-    alert(error.value || 'حدث خطأ أثناء الحذف');
+    alert(error.value || t('errors.deleteError'));
   }
 }
 
 function formatDate(date) {
-  if (!date) return 'غير محدد';
+  if (!date) return t('common.notSpecified') || 'Not specified';
   return new Date(date).toLocaleDateString('ar-EG');
 }
 
@@ -167,7 +173,8 @@ function handleFilterChange() {
 }
 
 onMounted(async () => {
-  await loadOptions();
+  // Load items on mount
+  await loadItems();
 });
 </script>
 

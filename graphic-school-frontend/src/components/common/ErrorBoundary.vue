@@ -30,7 +30,7 @@
 <script setup>
 import { ref, onErrorCaptured } from 'vue';
 import { useRouter } from 'vue-router';
-import { useI18n } from 'vue-i18n';
+import { useI18n } from '../../composables/useI18n';
 
 const router = useRouter();
 const { t } = useI18n();

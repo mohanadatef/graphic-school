@@ -120,6 +120,7 @@ import { RouterLink } from 'vue-router';
 import api from '../../api';
 import { useToast } from '../../composables/useToast';
 import { useWebsiteSettingsStore } from '../../stores/websiteSettings';
+import { useI18n } from '../../composables/useI18n';
 
 const props = defineProps({
   status: {
@@ -130,6 +131,7 @@ const props = defineProps({
 
 const toast = useToast();
 const websiteStore = useWebsiteSettingsStore();
+const { t } = useI18n();
 
 const resetting = ref(false);
 
@@ -140,24 +142,25 @@ const homepageTemplate = computed(() => {
   return 'Template A'; // Placeholder
 });
 
-const pageLabels = {
-  home: 'Home',
-  about: 'About',
-  contact: 'Contact',
-  programs: 'Programs',
-  community: 'Community',
-  faq: 'FAQ',
-};
+const pageLabels = computed(() => ({
+  home: t('navigation.home'),
+  about: t('navigation.about'),
+  contact: t('navigation.contact'),
+  programs: t('navigation.programs'),
+  community: t('navigation.community'),
+  faq: t('navigation.faq'),
+}));
 
 async function handleReset() {
-  if (!confirm('Are you sure you want to reset the website to default? This will reset all branding and page settings.')) {
+  const confirmMessage = t('admin.resetConfirm') || 'Are you sure you want to reset the website to default? This will reset all branding and page settings.';
+  if (!confirm(confirmMessage)) {
     return;
   }
 
   try {
     resetting.value = true;
     await api.post('/admin/setup/reset');
-    toast.success('Website reset to default successfully');
+    toast.success(t('admin.resetSuccess') || 'Website reset to default successfully');
     
     // Refresh status
     await websiteStore.refresh();
@@ -168,7 +171,10 @@ async function handleReset() {
     }, 1000);
   } catch (error) {
     console.error('Error resetting website:', error);
-    toast.error('Failed to reset website');
+    const errorMessage = error.response?.status === 503 
+      ? (t('errors.serviceUnavailable') || 'Service is temporarily unavailable. Please try again later.')
+      : (t('admin.resetError') || 'Failed to reset website');
+    toast.error(errorMessage);
   } finally {
     resetting.value = false;
   }

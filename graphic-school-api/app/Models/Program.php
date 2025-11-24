@@ -4,12 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use Database\Factories\ProgramFactory;
 
 class Program extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'slug',
@@ -83,6 +84,17 @@ class Program extends Model
         static::creating(function ($program) {
             if (empty($program->slug)) {
                 $program->slug = Str::slug($program->getTranslated('title', 'en') ?? 'program-' . time());
+            }
+        });
+
+        // Cascade soft-delete batches when program is deleted
+        static::deleted(function ($program) {
+            if ($program->isForceDeleting()) {
+                // Hard delete - delete batches permanently
+                $program->batches()->withTrashed()->forceDelete();
+            } else {
+                // Soft delete - soft delete batches
+                $program->batches()->delete();
             }
         });
     }

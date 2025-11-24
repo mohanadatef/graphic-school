@@ -1,5 +1,23 @@
 import { ref } from 'vue';
 import api from '../api';
+import { translate } from '../i18n';
+
+// Cache for failed endpoints (to prevent repeated requests to non-existent endpoints)
+const failedEndpoints = new Set();
+
+/**
+ * Check if an endpoint has previously failed with 404/500
+ */
+function isEndpointFailed(url) {
+  return failedEndpoints.has(url);
+}
+
+/**
+ * Mark an endpoint as failed
+ */
+function markEndpointFailed(url) {
+  failedEndpoints.add(url);
+}
 
 /**
  * Unified API composable for consistent API calls
@@ -13,13 +31,40 @@ export function useApi() {
    * Make a GET request
    */
   async function get(url, config = {}) {
+    // Skip request if we know this endpoint has failed before (404/500)
+    // This prevents repeated failed requests and console spam
+    if (isEndpointFailed(url)) {
+      const fakeError = {
+        response: { status: 404, data: { message: 'Endpoint not available' } },
+        message: 'Endpoint not available',
+      };
+      error.value = fakeError.response.data.message;
+      throw fakeError;
+    }
+    
     loading.value = true;
     error.value = null;
     try {
       const response = await api.get(url, config);
       return response.data;
     } catch (err) {
-      error.value = err.response?.data?.message || err.message || 'حدث خطأ أثناء تحميل البيانات';
+      error.value = err.response?.data?.message || err.message || translate('errors.loadDataError');
+      
+      // Cache failed endpoints (404/500) to prevent repeated requests
+      const status = err?.response?.status;
+      if (status === 404 || status === 500) {
+        markEndpointFailed(url);
+        // Silently handle - don't log to console, but still throw for error handling
+        // The calling code will handle the error appropriately
+      } else if (import.meta.env.DEV) {
+        // Only log unexpected errors in development
+        console.warn('[useApi] GET request failed:', {
+          url,
+          status,
+          message: err.response?.data?.message || err.message,
+        });
+      }
+      
       throw err;
     } finally {
       loading.value = false;
@@ -36,7 +81,7 @@ export function useApi() {
       const response = await api.post(url, data, config);
       return response.data;
     } catch (err) {
-      error.value = err.response?.data?.message || err.message || 'حدث خطأ أثناء الحفظ';
+      error.value = err.response?.data?.message || err.message || translate('errors.saveError');
       throw err;
     } finally {
       loading.value = false;
@@ -53,7 +98,7 @@ export function useApi() {
       const response = await api.put(url, data, config);
       return response.data;
     } catch (err) {
-      error.value = err.response?.data?.message || err.message || 'حدث خطأ أثناء التحديث';
+      error.value = err.response?.data?.message || err.message || translate('errors.updateError');
       throw err;
     } finally {
       loading.value = false;
@@ -70,7 +115,7 @@ export function useApi() {
       const response = await api.delete(url, config);
       return response.data;
     } catch (err) {
-      error.value = err.response?.data?.message || err.message || 'حدث خطأ أثناء الحذف';
+      error.value = err.response?.data?.message || err.message || translate('errors.deleteError');
       throw err;
     } finally {
       loading.value = false;

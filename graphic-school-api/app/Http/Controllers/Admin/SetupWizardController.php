@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\WebsiteActivationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class SetupWizardController extends Controller
 {
@@ -33,11 +34,11 @@ class SetupWizardController extends Controller
     {
         $validated = $request->validate([
             'general_info' => 'sometimes|array',
-            'academy_name' => 'sometimes|string|max:255',
-            'country' => 'sometimes|string|max:100',
-            'default_language' => 'sometimes|string|in:ar,en',
-            'default_currency' => 'sometimes|string|in:EGP,SAR,AED,USD,KWD,BHD,OMR,QAR',
-            'timezone' => 'sometimes|string|max:100',
+            'academy_name' => 'sometimes|nullable|string|max:255',
+            'country' => 'sometimes|nullable|string|max:100',
+            'default_language' => 'sometimes|nullable|string|in:ar,en',
+            'default_currency' => 'sometimes|nullable|string|in:EGP,SAR,AED,USD,KWD,BHD,OMR,QAR',
+            'timezone' => 'sometimes|nullable|string|max:100',
             'branding' => 'sometimes|array',
             'logo' => 'sometimes|string',
             'primary_color' => 'sometimes|string|max:7',
@@ -95,12 +96,24 @@ class SetupWizardController extends Controller
      */
     public function activateDefault(): JsonResponse
     {
-        $settings = $this->activationService->activateDefaultWebsite();
+        try {
+            $settings = $this->activationService->activateDefaultWebsite();
 
-        return response()->json([
-            'message' => 'Default website activated successfully',
-            'settings' => $settings->getPublicSettings(),
-        ]);
+            return response()->json([
+                'message' => 'Default website activated successfully',
+                'settings' => $settings->getPublicSettings(),
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error activating default website: ' . $e->getMessage(), [
+                'exception' => $e,
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'message' => 'Failed to activate default website',
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred while activating the website',
+            ], 500);
+        }
     }
 
     /**
@@ -108,24 +121,36 @@ class SetupWizardController extends Controller
      */
     public function complete(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'general_info' => 'sometimes|array',
-            'branding' => 'sometimes|array',
-            'default_language' => 'sometimes|string|in:ar,en',
-            'default_currency' => 'sometimes|string|in:EGP,SAR,AED,USD,KWD,BHD,OMR,QAR',
-            'timezone' => 'sometimes|string|max:100',
-            'enabled_pages' => 'sometimes|array',
-            'homepage_template' => 'sometimes|string|in:template-a,template-b',
-            'email_settings' => 'sometimes|array',
-            'payment_settings' => 'sometimes|array',
-        ]);
+        try {
+            $validated = $request->validate([
+                'general_info' => 'sometimes|array',
+                'branding' => 'sometimes|array',
+                'default_language' => 'sometimes|string|in:ar,en',
+                'default_currency' => 'sometimes|string|in:EGP,SAR,AED,USD,KWD,BHD,OMR,QAR',
+                'timezone' => 'sometimes|string|max:100',
+                'enabled_pages' => 'sometimes|array',
+                'homepage_template' => 'sometimes|string|in:template-a,template-b',
+                'email_settings' => 'sometimes|array',
+                'payment_settings' => 'sometimes|array',
+            ]);
 
-        $settings = $this->activationService->completeSetup($validated);
+            $settings = $this->activationService->completeSetup($validated);
 
-        return response()->json([
-            'message' => 'Setup completed successfully',
-            'settings' => $settings->getPublicSettings(),
-        ]);
+            return response()->json([
+                'message' => 'Setup completed successfully',
+                'settings' => $settings->getPublicSettings(),
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error completing setup: ' . $e->getMessage(), [
+                'exception' => $e,
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'message' => 'Failed to complete setup',
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred while completing the setup',
+            ], 500);
+        }
     }
 
     /**

@@ -51,10 +51,21 @@ api.interceptors.response.use(
       };
     }
     
+    // Handle authentication errors
     if (error.response?.status === 401) {
       localStorage.removeItem('gs_token');
       localStorage.removeItem('gs_user');
     }
+    
+    // Suppress console logging for expected errors (404, 500)
+    // These are handled by the calling code and don't need console spam
+    const status = error.response?.status;
+    if (status === 404 || status === 500) {
+      // Mark error as suppressed to prevent axios from logging it
+      // The error is still thrown so calling code can handle it
+      error._suppressLog = true;
+    }
+    
     return Promise.reject(error);
   },
 );

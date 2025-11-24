@@ -206,14 +206,23 @@ async function handleNext() {
     // Update store
     Object.assign(store.formData.general, localData);
     
-    // Save to backend
-    await store.saveStep(1, {
-      academy_name: localData.academy_name,
-      country: localData.country,
-      default_language: localData.default_language,
-      timezone: localData.timezone,
-      default_currency: localData.default_currency,
+    // Save to backend - filter out empty strings
+    const payload = {
+      academy_name: localData.academy_name || null,
+      country: localData.country || null,
+      default_language: localData.default_language || null,
+      timezone: localData.timezone || null,
+      default_currency: localData.default_currency || null,
+    };
+    
+    // Remove null values to avoid sending them
+    Object.keys(payload).forEach(key => {
+      if (payload[key] === null || payload[key] === '') {
+        delete payload[key];
+      }
     });
+    
+    await store.saveStep(1, payload);
 
     toast.success('General information saved');
     emit('next');

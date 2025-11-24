@@ -1,31 +1,22 @@
-import { computed, watch, getCurrentInstance } from 'vue';
+import { computed } from 'vue';
+import { useI18n as useVueI18n } from 'vue-i18n';
 import api from '../api';
 import i18n from '../i18n';
 
 export function useI18n() {
-  // In legacy mode, access i18n instance directly
-  const i18nInstance = getCurrentInstance()?.appContext.config.globalProperties.$i18n || i18n;
+  // Use vue-i18n's useI18n composable (composition mode)
+  const { locale, t, te } = useVueI18n({ useScope: 'global' });
   
-  // In legacy mode, locale is a string, not a ref
-  const locale = computed({
-    get: () => i18nInstance.locale || 'ar',
+  // Create a computed for locale that works with refs
+  const localeRef = computed({
+    get: () => {
+      // In composition mode, locale is a ref
+      return locale.value || 'ar';
+    },
     set: (value) => {
-      if (i18nInstance.locale !== undefined) {
-        i18nInstance.locale = value;
-      }
-      if (i18n && i18n.locale !== undefined) {
-        i18n.locale = value;
-      }
+      locale.value = value;
     }
   });
-  
-  function t(key, params) {
-    return i18nInstance.t(key, params);
-  }
-  
-  function te(key) {
-    return i18nInstance.te(key);
-  }
 
   // Check if current locale is RTL
   const isRTL = computed(() => locale.value === 'ar');
@@ -36,13 +27,8 @@ export function useI18n() {
       return;
     }
 
-    // Update vue-i18n locale (in legacy mode, it's a string property)
-    if (i18nInstance.locale !== undefined) {
-      i18nInstance.locale = newLocale;
-    }
-    if (i18n && i18n.locale !== undefined) {
-      i18n.locale = newLocale;
-    }
+    // Update vue-i18n locale (composition mode - it's a ref)
+    locale.value = newLocale;
     
     // Save to localStorage
     localStorage.setItem('gs_locale', newLocale);
@@ -79,19 +65,14 @@ export function useI18n() {
     document.documentElement.dir = isRTLValue ? 'rtl' : 'ltr';
     document.documentElement.lang = savedLocale;
     
-    // Set locale in i18n instance
-    if (i18nInstance.locale !== undefined) {
-      i18nInstance.locale = savedLocale;
-    }
-    if (i18n && i18n.locale !== undefined) {
-      i18n.locale = savedLocale;
-    }
+    // Set locale in i18n (composition mode - it's a ref)
+    locale.value = savedLocale;
     
     api.defaults.headers.common['Accept-Language'] = savedLocale;
   }
 
   return {
-    locale,
+    locale: localeRef,
     t,
     te,
     setLocale,

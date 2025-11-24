@@ -35,7 +35,8 @@ describe('Login Page Debug', () => {
         'input[type="email"]',
         'input[name="email"]',
         'input[id*="email"]',
-        'input[placeholder*="email" i]',
+        'input[placeholder*="email"]',
+        'input[placeholder*="Email"]',
       ];
       
       emailSelectors.forEach(selector => {
@@ -62,7 +63,8 @@ describe('Login Page Debug', () => {
         'input[type="password"]',
         'input[name="password"]',
         'input[id*="password"]',
-        'input[placeholder*="password" i]',
+        'input[placeholder*="password"]',
+        'input[placeholder*="Password"]',
       ];
       
       passwordSelectors.forEach(selector => {
@@ -87,8 +89,10 @@ describe('Login Page Debug', () => {
       const buttonSelectors = [
         'button[type="submit"]',
         'form button',
-        'button[aria-label*="login" i]',
-        'button[aria-label*="sign in" i]',
+        'button[aria-label*="login"]',
+        'button[aria-label*="Login"]',
+        'button[aria-label*="sign in"]',
+        'button[aria-label*="Sign in"]',
       ];
       
       buttonSelectors.forEach(selector => {

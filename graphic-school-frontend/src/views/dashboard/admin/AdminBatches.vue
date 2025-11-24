@@ -8,7 +8,8 @@
         </p>
       </div>
       <button
-        @click="showCreateModal = true"
+        data-cy="create-btn"
+        @click="$router.push({ name: 'admin-batches-new' })"
         class="btn-primary inline-flex items-center gap-2"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -66,7 +67,7 @@
             {{ $t('admin.batches.viewGroups') || 'View Groups' }}
           </button>
           <button
-            @click="editBatch(batch)"
+            @click="$router.push({ name: 'admin-batches-edit', params: { id: batch.id } })"
             class="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -77,133 +78,28 @@
       </div>
     </div>
 
-    <!-- Create/Edit Modal -->
-    <div v-if="showCreateModal || editingBatch" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div class="bg-white dark:bg-slate-800 rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4">
-          {{ editingBatch ? ($t('admin.batches.edit') || 'Edit Batch') : ($t('admin.batches.create') || 'Create Batch') }}
-        </h3>
-        <form @submit.prevent="saveBatch" class="space-y-4">
-          <div>
-            <label class="label">{{ $t('admin.batches.code') || 'Code' }}</label>
-            <input v-model="batchForm.code" class="input" />
-          </div>
-          <div class="grid md:grid-cols-2 gap-4">
-            <div>
-              <label class="label">{{ $t('admin.batches.startDate') || 'Start Date' }}</label>
-              <input v-model="batchForm.start_date" type="date" class="input" required />
-            </div>
-            <div>
-              <label class="label">{{ $t('admin.batches.endDate') || 'End Date' }}</label>
-              <input v-model="batchForm.end_date" type="date" class="input" />
-            </div>
-          </div>
-          <div>
-            <label class="label">{{ $t('admin.batches.maxStudents') || 'Max Students' }}</label>
-            <input v-model.number="batchForm.max_students" type="number" min="1" class="input" />
-          </div>
-          <div>
-            <label class="label mb-4 block">{{ $t('admin.batches.translations') || 'Translations' }}</label>
-            <div class="space-y-3">
-              <div v-for="lang in availableLanguages" :key="lang.code" class="p-3 rounded-lg border border-slate-200 dark:border-slate-700">
-                <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">{{ lang.native_name }}</label>
-                <input
-                  v-model="batchForm.translations[lang.code].name"
-                  class="input text-sm"
-                  :placeholder="`${$t('admin.batches.name') || 'Name'} (${lang.native_name})`"
-                  :required="lang.code === 'ar'"
-                />
-                <textarea
-                  v-model="batchForm.translations[lang.code].description"
-                  class="input text-sm mt-2"
-                  rows="2"
-                  :placeholder="`${$t('admin.batches.description') || 'Description'} (${lang.native_name})`"
-                ></textarea>
-              </div>
-            </div>
-          </div>
-          <div>
-            <label class="flex items-center gap-3 cursor-pointer">
-              <input type="checkbox" v-model="batchForm.is_active" class="w-5 h-5 text-primary border-slate-300 rounded" />
-              <span class="text-sm font-medium text-slate-700 dark:text-slate-300">{{ $t('common.active') || 'Active' }}</span>
-            </label>
-          </div>
-          <div class="flex gap-3 pt-4">
-            <button type="submit" class="btn-primary flex-1" :disabled="saving">
-              {{ saving ? ($t('common.saving') || 'Saving...') : ($t('common.save') || 'Save') }}
-            </button>
-            <button type="button" @click="closeModal" class="btn-secondary flex-1">
-              {{ $t('common.cancel') || 'Cancel' }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { ref, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 import { useApi } from '../../../composables/useApi';
 import { useToast } from '../../../composables/useToast';
 
 const route = useRoute();
-const router = useRouter();
-const { get, post, put } = useApi();
+const { get } = useApi();
 const toast = useToast();
 
 const programId = route.params.programId || route.query.program_id;
 const loading = ref(false);
-const saving = ref(false);
 const program = ref(null);
 const batches = ref([]);
-const showCreateModal = ref(false);
-const editingBatch = ref(null);
-const availableLanguages = ref([]);
-
-const batchForm = reactive({
-  code: '',
-  start_date: '',
-  end_date: '',
-  max_students: null,
-  is_active: true,
-  translations: {},
-});
 
 onMounted(async () => {
-  await loadLanguages();
   await loadProgram();
   await loadBatches();
 });
-
-async function loadLanguages() {
-  try {
-    const response = await get('/locales');
-    let languages = [];
-    if (response?.data?.locales) languages = response.data.locales;
-    else if (response?.locales) languages = response.locales;
-    else if (Array.isArray(response)) languages = response;
-    
-    if (languages.length === 0) {
-      languages = [
-        { code: 'en', name: 'English', native_name: 'English' },
-        { code: 'ar', name: 'Arabic', native_name: 'العربية' },
-      ];
-    }
-    availableLanguages.value = languages;
-    
-    languages.forEach(lang => {
-      batchForm.translations[lang.code] = {
-        locale: lang.code,
-        name: '',
-        description: '',
-      };
-    });
-  } catch (error) {
-    console.error('Error loading languages:', error);
-  }
-}
 
 async function loadProgram() {
   if (!programId) return;
@@ -231,73 +127,6 @@ async function loadBatches() {
 function formatDate(date) {
   if (!date) return '-';
   return new Date(date).toLocaleDateString();
-}
-
-function editBatch(batch) {
-  editingBatch.value = batch;
-  batchForm.code = batch.code || '';
-  batchForm.start_date = batch.start_date || '';
-  batchForm.end_date = batch.end_date || '';
-  batchForm.max_students = batch.max_students || null;
-  batchForm.is_active = batch.is_active;
-  
-  if (batch.translations) {
-    batch.translations.forEach(trans => {
-      if (batchForm.translations[trans.locale]) {
-        batchForm.translations[trans.locale].name = trans.name || '';
-        batchForm.translations[trans.locale].description = trans.description || '';
-      }
-    });
-  }
-  
-  showCreateModal.value = true;
-}
-
-function closeModal() {
-  showCreateModal.value = false;
-  editingBatch.value = null;
-  Object.keys(batchForm.translations).forEach(locale => {
-    batchForm.translations[locale].name = '';
-    batchForm.translations[locale].description = '';
-  });
-  batchForm.code = '';
-  batchForm.start_date = '';
-  batchForm.end_date = '';
-  batchForm.max_students = null;
-  batchForm.is_active = true;
-}
-
-async function saveBatch() {
-  try {
-    saving.value = true;
-    const translationsArray = availableLanguages.value.map(lang => batchForm.translations[lang.code]);
-    
-    const data = {
-      program_id: programId,
-      code: batchForm.code,
-      start_date: batchForm.start_date,
-      end_date: batchForm.end_date,
-      max_students: batchForm.max_students,
-      is_active: batchForm.is_active,
-      translations: translationsArray,
-    };
-    
-    if (editingBatch.value) {
-      await put(`/admin/batches/${editingBatch.value.id}`, data);
-      toast.success('Batch updated successfully');
-    } else {
-      await post('/admin/batches', data);
-      toast.success('Batch created successfully');
-    }
-    
-    closeModal();
-    await loadBatches();
-  } catch (error) {
-    toast.error('Failed to save batch');
-    console.error(error);
-  } finally {
-    saving.value = false;
-  }
 }
 </script>
 

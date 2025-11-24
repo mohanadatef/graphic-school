@@ -5,7 +5,17 @@ import router from './router';
 import i18n from './i18n';
 import ToastContainer from './components/common/ToastContainer.vue';
 import { useBrandingStore } from './stores/branding';
+import { setupSelfHealingRouter } from './router/selfHealRouter';
 import './style.css';
+
+// Initialize self-healing system (only in development, not in tests)
+if (typeof window !== 'undefined' && import.meta.env.DEV && !window.Cypress) {
+  try {
+    setupSelfHealingRouter(router);
+  } catch (error) {
+    console.warn('[Self-Heal] Failed to initialize:', error.message);
+  }
+}
 
 // Initialize theme immediately
 if (typeof window !== 'undefined') {

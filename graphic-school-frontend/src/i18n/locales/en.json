@@ -20,10 +20,15 @@
     "yes": "Yes",
     "no": "No",
     "noData": "No data available",
+    "notSpecified": "Not specified",
+    "confirmDelete": "Are you sure you want to delete this item?",
     "retry": "Retry",
     "goHome": "Go Home",
     "noLanguages": "No languages available",
-    "language": "Language"
+    "language": "Language",
+    "select": "Select",
+    "none": "None",
+    "view": "View"
   },
   "auth": {
     "login": "Login",
@@ -143,9 +148,11 @@
     "dashboard": "Dashboard",
     "users": "Users",
     "courses": "Courses",
+    "coursesDescription": "Create new courses, assign instructors, and manage sessions",
     "categories": "Categories",
     "enrollments": "Enrollments",
     "sessions": "Sessions",
+    "sessionsDescription": "Manage session schedules",
     "attendance": "Attendance",
     "payments": "Payments",
     "tickets": "Tickets",
@@ -184,9 +191,24 @@
     "runSetupWizard": "Run Setup Wizard",
     "resetting": "Resetting...",
     "resetToDefault": "Reset to Default",
+    "resetConfirm": "Are you sure you want to reset the website to default? This will reset all branding and page settings.",
+    "resetSuccess": "Website reset to default successfully",
+    "resetError": "Failed to reset website",
     "websiteSetup": "Website Setup",
     "comprehensiveReports": "Comprehensive Reports",
     "strategicReports": "Strategic Reports",
+    "sessionsStatus": {
+      "scheduled": "Scheduled",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "coursesStatus": {
+      "draft": "Draft",
+      "upcoming": "Upcoming",
+      "running": "Running",
+      "completed": "Completed"
+    },
+    "coursesCreate": "New Course",
     "branding": {
       "title": "Branding & Appearance",
       "description": "Customize your academy's brand identity, colors, fonts, and logos",
@@ -211,7 +233,79 @@
       "borderRadius": "Border Radius",
       "shadowLevel": "Shadow Level",
       "preview": "Live Preview"
-    }
+    },
+    "programs": {
+      "title": "Programs Management",
+      "subtitle": "Manage all programs",
+      "create": "Create Program",
+      "edit": "Edit Program",
+      "filterType": "All Types",
+      "filterStatus": "All Status",
+      "name": "Name",
+      "description": "Description",
+      "type": "Type",
+      "duration": "Duration",
+      "price": "Price",
+      "level": "Level",
+      "image": "Image",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "batches": {
+      "title": "Batches Management",
+      "subtitle": "Manage all batches",
+      "create": "Create Batch",
+      "edit": "Edit Batch",
+      "name": "Name",
+      "program": "Program",
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "status": "Status",
+      "maxStudents": "Max Students",
+      "upcoming": "Upcoming",
+      "active": "Active",
+      "completed": "Completed"
+    },
+    "groups": {
+      "title": "Groups Management",
+      "subtitle": "Manage all groups",
+      "create": "Create Group",
+      "createSubtitle": "Add a new group",
+      "edit": "Edit Group",
+      "editSubtitle": "Update group information",
+      "name": "Name",
+      "code": "Code",
+      "batch": "Batch",
+      "instructor": "Instructor",
+      "maxStudents": "Max Students",
+      "capacity": "Capacity",
+      "room": "Room",
+      "students": "Students",
+      "availableSpots": "Available Spots",
+      "translations": "Translations",
+      "description": "Description",
+      "noGroups": "No groups found",
+      "created": "Group created successfully",
+      "updated": "Group updated successfully"
+    },
+    "language": {
+      "title": "Language Settings",
+      "subtitle": "Manage default language, available languages, and RTL settings",
+      "defaultLocale": "Default Language",
+      "defaultLocaleHint": "The language that will be shown when users first visit the site",
+      "availableLocales": "Available Languages",
+      "availableLocalesHint": "Languages that users can select from the language switcher",
+      "rtlLocales": "Right-to-Left Languages",
+      "rtlLocalesHint": "Languages that should use right-to-left text direction",
+      "preview": "Preview",
+      "saved": "Language settings saved successfully",
+      "errors": {
+        "noAvailableLocales": "At least one language must be available",
+        "defaultNotAvailable": "Default language must be in available languages"
+      }
+    },
+    "save": "Save Changes",
+    "saved": "Updated successfully"
   },
   "language": {
     "switch": "Switch Language",
@@ -375,7 +469,20 @@
     "pageNotFound": "Page Not Found",
     "pageNotFoundDescription": "The page you are looking for does not exist.",
     "backToHome": "Back to Home",
-    "goBack": "Go Back"
+    "goBack": "Go Back",
+    "serviceUnavailable": "Service is temporarily unavailable. Please try again later.",
+    "generic": "An error occurred",
+    "badRequest": "Bad request",
+    "unauthorized": "Unauthorized access",
+    "forbidden": "Access forbidden",
+    "notFound": "Resource not found",
+    "validation": "Validation error",
+    "serverError": "Server error",
+    "networkError": "Network error",
+    "loadDataError": "An error occurred while loading data",
+    "saveError": "An error occurred while saving",
+    "updateError": "An error occurred while updating",
+    "deleteError": "An error occurred while deleting"
   },
   "public": {
     "programs": {
@@ -398,7 +505,9 @@
   "courses": {
     "title": "Title",
     "category": "Category",
+    "level": "Level",
     "students": "Students",
+    "enrollments": "Enrollments",
     "paidTotal": "Paid Total",
     "totalSessions": "Total Sessions",
     "completed": "Completed"

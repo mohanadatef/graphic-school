@@ -362,6 +362,12 @@ const dashboardChildren = [
     props: true,
     meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
   },
+  // Redirect /dashboard/groups to /dashboard/admin/groups for admins
+  {
+    path: 'groups',
+    redirect: '/dashboard/admin/groups',
+    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
+  },
   {
     path: 'admin/groups',
     name: 'admin-groups',
@@ -373,6 +379,38 @@ const dashboardChildren = [
     name: 'admin-batches-groups',
     component: () => import('../views/dashboard/admin/AdminGroups.vue'),
     props: true,
+    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
+  },
+  {
+    path: 'admin/batches/new',
+    name: 'admin-batches-new',
+    component: () => import('../views/dashboard/admin/AdminBatchCreate.vue'),
+    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
+  },
+  {
+    path: 'admin/batches/:id/edit',
+    name: 'admin-batches-edit',
+    component: () => import('../views/dashboard/admin/AdminBatchEdit.vue'),
+    props: true,
+    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
+  },
+  {
+    path: 'admin/groups/new',
+    name: 'admin-groups-new',
+    component: () => import('../views/dashboard/admin/AdminGroupCreate.vue'),
+    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
+  },
+  {
+    path: 'admin/groups/:id/edit',
+    name: 'admin-groups-edit',
+    component: () => import('../views/dashboard/admin/AdminGroupEdit.vue'),
+    props: true,
+    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
+  },
+  {
+    path: 'admin/language',
+    name: 'admin-language',
+    component: () => import('../views/dashboard/admin/AdminLanguages.vue'),
     meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
   },
   {
@@ -847,6 +885,22 @@ router.beforeEach(async (to, from, next) => {
     // Setup check passed, continue to route-specific middleware
     continueToRouteMiddleware();
   });
+
+  // Self-healing: Check for 404 routes (only in development, not in tests)
+  if (to.matched.length === 0 && to.path !== '/' && !to.path.startsWith('/setup') && !window.Cypress) {
+    // Route not found - trigger self-healing (non-blocking)
+    try {
+      import('../utils/selfHealBrowser').then(({ handle404Route }) => {
+        handle404Route(to.path).catch(() => {
+          // Silently ignore errors
+        });
+      }).catch(() => {
+        // Silently ignore
+      });
+    } catch (error) {
+      // Silently ignore
+    }
+  }
 
   function continueToRouteMiddleware() {
     const middlewares = to.matched

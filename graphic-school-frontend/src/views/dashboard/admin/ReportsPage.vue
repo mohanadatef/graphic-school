@@ -408,7 +408,7 @@
         <!-- Monthly Revenue Chart -->
         <div class="card-premium p-6">
           <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-4">الإيرادات الشهرية</h3>
-          <div class="space-y-3">
+          <div v-if="financialReport.by_month && Array.isArray(financialReport.by_month) && financialReport.by_month.length > 0" class="space-y-3">
             <div
               v-for="month in financialReport.by_month"
               :key="month.month"
@@ -426,13 +426,16 @@
               </div>
             </div>
           </div>
+          <div v-else class="text-center py-8 text-slate-500 dark:text-slate-400">
+            لا توجد بيانات شهرية متاحة
+          </div>
         </div>
       </div>
 
       <!-- By Course -->
       <div class="card-premium p-6">
         <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-4">حسب الكورس</h3>
-        <div class="overflow-x-auto">
+        <div v-if="financialReport.by_course && Array.isArray(financialReport.by_course) && financialReport.by_course.length > 0" class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead class="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 text-xs uppercase text-slate-600 dark:text-slate-400 font-semibold">
               <tr>
@@ -457,6 +460,9 @@
               </tr>
             </tbody>
           </table>
+        </div>
+        <div v-else class="text-center py-8 text-slate-500 dark:text-slate-400">
+          لا توجد بيانات كورسات متاحة
         </div>
       </div>
     </div>
@@ -531,9 +537,26 @@ async function loadFinancialReport() {
     } else {
       financialReport.value = response;
     }
+    
+    // Ensure by_month and by_course are arrays
+    if (financialReport.value) {
+      if (!Array.isArray(financialReport.value.by_month)) {
+        financialReport.value.by_month = [];
+      }
+      if (!Array.isArray(financialReport.value.by_course)) {
+        financialReport.value.by_course = [];
+      }
+    }
   } catch (err) {
     console.error('Error loading financial report:', err);
     toast.error('حدث خطأ أثناء تحميل التقرير المالي');
+    // Initialize with empty arrays to prevent errors
+    financialReport.value = {
+      summary: {},
+      by_status: {},
+      by_month: [],
+      by_course: [],
+    };
   } finally {
     loading.value = false;
   }
@@ -559,6 +582,11 @@ function formatCurrency(value) {
 }
 
 function getPercentage(value, array) {
+  // Safety check: ensure array is actually an array
+  if (!Array.isArray(array) || array.length === 0) {
+    return 0;
+  }
+  
   const max = Math.max(...array.map(m => m.paid_amount || 0));
   if (max === 0) return 0;
   return (value / max) * 100;

@@ -12,8 +12,12 @@
     "test:coverage": "vitest --coverage",
     "test:run": "vitest run",
     "cypress:open": "cypress open",
-    "cypress:run": "cypress run --browser chrome",
-    "cypress:run:headless": "cypress run"
+    "cypress:run": "node scripts/check-server.js && cypress run --browser chrome",
+    "cypress:run:headless": "node scripts/check-server.js && cypress run",
+    "cypress:run:force": "cypress run --browser chrome",
+    "self-heal:generate-page": "node scripts/selfHealNode.js generate-page",
+    "self-heal:add-translation": "node scripts/selfHealNode.js add-translation",
+    "self-heal:generate-test": "node scripts/selfHealNode.js generate-test"
   },
   "dependencies": {
     "axios": "^1.13.2",

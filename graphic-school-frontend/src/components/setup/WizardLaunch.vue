@@ -108,6 +108,7 @@
 </template>
 
 <script setup>
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useSetupWizardStore } from '../../stores/setupWizard';
 import { useToast } from '../../composables/useToast';

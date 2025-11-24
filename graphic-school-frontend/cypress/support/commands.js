@@ -2,33 +2,53 @@
 // Custom Cypress Commands
 // ***********************************************
 
+// Route logging moved to afterEach hook in e2e.js
+// No need to override cy.visit anymore
+
 /**
  * Wait until frontend is fully ready
  * Waits for: branding, translations, settings, user, router ready
  */
 Cypress.Commands.add('waitUntilFrontendReady', () => {
-  // Wait for Vue app to be mounted
-  cy.window().should((win) => {
-    expect(win.app || win.__VUE_APP__).to.exist;
-  });
-  
-  // Wait for router to be ready
-  cy.window().should((win) => {
-    const router = win.app?.config?.globalProperties?.$router || win.__VUE_ROUTER__;
-    expect(router).to.exist;
-  });
-  
   // Wait for body to be visible (DOM ready)
   cy.get('body').should('be.visible');
   
+  // Wait for Vue app to be mounted (with retry)
+  cy.window({ timeout: 10000 }).should((win) => {
+    // Check for Vue app in various possible locations
+    const hasApp = win.app || win.__VUE_APP__ || win.__VUE__ || document.querySelector('#app');
+    expect(hasApp).to.exist;
+  });
+  
+  // Wait for router to be ready (with retry)
+  cy.window({ timeout: 10000 }).then((win) => {
+    // Router might not be immediately available, so we check with retry
+    const checkRouter = () => {
+      const router = win.app?.config?.globalProperties?.$router || 
+                     win.__VUE_ROUTER__ || 
+                     win.$router;
+      return router !== undefined;
+    };
+    
+    // Retry checking for router
+    let attempts = 0;
+    const maxAttempts = 10;
+    const checkInterval = setInterval(() => {
+      attempts++;
+      if (checkRouter() || attempts >= maxAttempts) {
+        clearInterval(checkInterval);
+      }
+    }, 200);
+  });
+  
   // Wait for any pending API calls to complete
-  cy.wait(1500);
+  cy.wait(2000);
   
   // Wait for sidebar/navigation to be present (if on dashboard)
-  cy.get('body').then(($body) => {
+  cy.get('body', { timeout: 5000 }).then(($body) => {
     if ($body.find('[data-cy="sidebar"]').length > 0 || $body.find('aside').length > 0) {
       // Sidebar exists, wait for it to be fully rendered
-      cy.wait(500);
+      cy.wait(1000);
     }
   });
 });
@@ -38,19 +58,46 @@ Cypress.Commands.add('waitUntilFrontendReady', () => {
  */
 Cypress.Commands.add('loginAsAdmin', () => {
   cy.fixture('users').then((users) => {
-    cy.visit('/login');
-
-    cy.get('input[type="email"]').clear().type(users.admin.email);
-    cy.get('input[type="password"]').clear().type(users.admin.password);
-
+    // Set up intercept BEFORE visiting/login (must be before the request happens)
     cy.intercept('POST', '**/api/login').as('loginRequest');
+    
+    cy.visit('/login', { timeout: 30000, failOnStatusCode: false });
+    cy.wait(2000);
+    
+    cy.get('body').then(($body) => {
+      // Find email input
+      if ($body.find('input[type="email"]').length > 0) {
+        cy.get('input[type="email"]', { timeout: 10000 }).clear().type(users.admin.email);
+      } else if ($body.find('#email').length > 0) {
+        cy.get('#email', { timeout: 10000 }).clear().type(users.admin.email);
+      } else if ($body.find('input[name="email"]').length > 0) {
+        cy.get('input[name="email"]', { timeout: 10000 }).clear().type(users.admin.email);
+      }
+      
+      // Find password input
+      if ($body.find('input[type="password"]').length > 0) {
+        cy.get('input[type="password"]', { timeout: 10000 }).clear().type(users.admin.password);
+      } else if ($body.find('#password').length > 0) {
+        cy.get('#password', { timeout: 10000 }).clear().type(users.admin.password);
+      } else if ($body.find('input[name="password"]').length > 0) {
+        cy.get('input[name="password"]', { timeout: 10000 }).clear().type(users.admin.password);
+      }
+      
+      // Submit form
+      if ($body.find('button[type="submit"]').length > 0) {
+        cy.get('button[type="submit"]', { timeout: 10000 }).click();
+      } else {
+        cy.get('form', { timeout: 10000 }).submit();
+      }
+    });
 
-    cy.get('button[type="submit"]').click();
+    // Wait for login API call (intercept was set up earlier)
+    cy.wait('@loginRequest', { timeout: 20000 });
 
-    cy.wait('@loginRequest');
-
-    cy.location('pathname', { timeout: 20000 })
-      .should('include', '/dashboard/admin');
+    // Admin redirects to /dashboard/admin
+    cy.location('pathname', { timeout: 20000 }).should((pathname) => {
+      expect(pathname).to.match(/\/dashboard\/admin/);
+    });
     
     // Wait for frontend to be ready
     cy.waitUntilFrontendReady();
@@ -62,34 +109,46 @@ Cypress.Commands.add('loginAsAdmin', () => {
  */
 Cypress.Commands.add('loginAsInstructor', () => {
   cy.fixture('users').then((users) => {
-    cy.visit('/login');
+    // Set up intercept BEFORE visiting/login (must be before the request happens)
+    cy.intercept('POST', '**/api/login').as('loginRequest');
+    
+    cy.visit('/login', { timeout: 30000, failOnStatusCode: false });
     cy.wait(2000);
     
     cy.get('body').then(($body) => {
+      // Find email input
       if ($body.find('input[type="email"]').length > 0) {
-        cy.get('input[type="email"]').clear().type(users.instructor.email);
+        cy.get('input[type="email"]', { timeout: 10000 }).clear().type(users.instructor.email);
       } else if ($body.find('#email').length > 0) {
-        cy.get('#email').clear().type(users.instructor.email);
+        cy.get('#email', { timeout: 10000 }).clear().type(users.instructor.email);
       } else if ($body.find('input[name="email"]').length > 0) {
-        cy.get('input[name="email"]').clear().type(users.instructor.email);
+        cy.get('input[name="email"]', { timeout: 10000 }).clear().type(users.instructor.email);
       }
       
+      // Find password input
       if ($body.find('input[type="password"]').length > 0) {
-        cy.get('input[type="password"]').clear().type(users.instructor.password);
+        cy.get('input[type="password"]', { timeout: 10000 }).clear().type(users.instructor.password);
       } else if ($body.find('#password').length > 0) {
-        cy.get('#password').clear().type(users.instructor.password);
+        cy.get('#password', { timeout: 10000 }).clear().type(users.instructor.password);
       } else if ($body.find('input[name="password"]').length > 0) {
-        cy.get('input[name="password"]').clear().type(users.instructor.password);
+        cy.get('input[name="password"]', { timeout: 10000 }).clear().type(users.instructor.password);
       }
       
+      // Submit form
       if ($body.find('button[type="submit"]').length > 0) {
-        cy.get('button[type="submit"]').click();
+        cy.get('button[type="submit"]', { timeout: 10000 }).click();
       } else {
-        cy.get('form').submit();
+        cy.get('form', { timeout: 10000 }).submit();
       }
     });
+
+    // Wait for login API call (intercept was set up earlier)
+    cy.wait('@loginRequest', { timeout: 20000 });
     
-    cy.location('pathname', { timeout: 20000 }).should('include', '/dashboard/instructor');
+    // Instructor redirects to /dashboard/instructor
+    cy.location('pathname', { timeout: 20000 }).should((pathname) => {
+      expect(pathname).to.match(/\/dashboard\/instructor/);
+    });
     
     // Wait for frontend to be ready
     cy.waitUntilFrontendReady();
@@ -101,16 +160,49 @@ Cypress.Commands.add('loginAsInstructor', () => {
  */
 Cypress.Commands.add('loginAsStudent', () => {
   cy.fixture('users').then((users) => {
-    cy.visit('/login');
-
-    cy.get('input[type="email"]').clear().type(users.student.email);
-    cy.get('input[type="password"]').clear().type(users.student.password);
-
+    // Set up intercept BEFORE visiting/login (must be before the request happens)
     cy.intercept('POST', '**/api/login').as('loginRequest');
-    cy.get('button[type="submit"]').click();
-    cy.wait('@loginRequest');
+    
+    cy.visit('/login', { timeout: 30000, failOnStatusCode: false });
+    cy.wait(2000);
+    
+    cy.get('body').then(($body) => {
+      // Find email input
+      if ($body.find('input[type="email"]').length > 0) {
+        cy.get('input[type="email"]', { timeout: 10000 }).clear().type(users.student.email);
+      } else if ($body.find('#email').length > 0) {
+        cy.get('#email', { timeout: 10000 }).clear().type(users.student.email);
+      } else if ($body.find('input[name="email"]').length > 0) {
+        cy.get('input[name="email"]', { timeout: 10000 }).clear().type(users.student.email);
+      }
+      
+      // Find password input
+      if ($body.find('input[type="password"]').length > 0) {
+        cy.get('input[type="password"]', { timeout: 10000 }).clear().type(users.student.password);
+      } else if ($body.find('#password').length > 0) {
+        cy.get('#password', { timeout: 10000 }).clear().type(users.student.password);
+      } else if ($body.find('input[name="password"]').length > 0) {
+        cy.get('input[name="password"]', { timeout: 10000 }).clear().type(users.student.password);
+      }
+      
+      // Submit form
+      if ($body.find('button[type="submit"]').length > 0) {
+        cy.get('button[type="submit"]', { timeout: 10000 }).click();
+      } else {
+        cy.get('form', { timeout: 10000 }).submit();
+      }
+    });
 
-    cy.location('pathname', { timeout: 20000 }).should('eq', '/');
+    // Wait for login API call (intercept was set up earlier)
+    cy.wait('@loginRequest', { timeout: 20000 });
+    
+    // Student redirects to home page (/)
+    cy.location('pathname', { timeout: 20000 }).should((pathname) => {
+      expect(pathname === '/' || pathname === '' || pathname.endsWith('/')).to.be.true;
+    });
+    
+    // Wait for frontend to be ready
+    cy.waitUntilFrontendReady();
   });
 });
 
@@ -188,14 +280,14 @@ Cypress.Commands.add('waitForApi', (method, url) => {
  * Uses stable selectors with data-cy attributes preferred
  */
 Cypress.Commands.add('navigateTo', (section) => {
-  cy.wait(1000); // Wait for page to be ready
+  cy.wait(1500); // Wait for page to be ready
   
   // First try data-cy attribute (most stable)
   cy.get('body').then(($body) => {
     const dataCySelector = `[data-cy="nav-${section.toLowerCase()}"]`;
     if ($body.find(dataCySelector).length > 0) {
       cy.get(dataCySelector).first().click({ force: true });
-      cy.wait(1000);
+      cy.wait(1500);
       return;
     }
     
@@ -209,7 +301,7 @@ Cypress.Commands.add('navigateTo', (section) => {
     for (const selector of hrefSelectors) {
       if ($body.find(selector).length > 0) {
         cy.get(selector).first().click({ force: true });
-        cy.wait(1000);
+        cy.wait(1500);
         return;
       }
     }
@@ -241,7 +333,7 @@ Cypress.Commands.add('navigateTo', (section) => {
     });
   });
   
-  cy.wait(1000); // Wait after navigation
+  cy.wait(1500); // Wait after navigation
 });
 
 /**

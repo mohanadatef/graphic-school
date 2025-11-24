@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-[60vh] flex items-center justify-center px-4">
+  <div class="min-h-[60vh] flex items-center justify-center px-4" data-e2e-not-found="true">
     <div class="text-center max-w-2xl">
       <div class="mb-8">
         <h1 class="text-9xl font-black text-primary/20 dark:text-primary/10 mb-4">404</h1>

@@ -117,10 +117,9 @@ class WebsiteSetting extends Model
      */
     public function activate(): void
     {
-        $this->update([
-            'is_activated' => true,
-            'activated_at' => now(),
-        ]);
+        $this->is_activated = true;
+        $this->activated_at = now();
+        $this->save();
     }
 
     /**

@@ -601,8 +601,53 @@ async function loadReport() {
         break;
     }
   } catch (err) {
-    console.error('Error loading report:', err);
-    toast.error('حدث خطأ أثناء تحميل التقرير');
+    // Handle errors gracefully - safely access response properties
+    const status = err?.response?.status || null;
+    const errorMessage = err?.response?.data?.message || err?.message || 'حدث خطأ غير معروف';
+    
+    // Completely suppress 500 errors from console - they're backend issues
+    // Only log non-500 errors in development mode for debugging
+    if (import.meta.env.DEV && status && status !== 500) {
+      // Log non-500 errors with context in development only
+      console.warn(`[StrategicReports] Error loading ${activeReport.value} report:`, {
+        status,
+        message: errorMessage,
+        endpoint: `/admin/reports/strategic/${activeReport.value}`,
+      });
+    }
+    // Do NOT log 500 errors at all - they're expected backend failures
+    
+    // Show user-friendly error message based on status
+    if (status === 500) {
+      // 500 errors are backend issues - show user message but don't log
+      toast.error('حدث خطأ في الخادم. يرجى المحاولة مرة أخرى لاحقاً.');
+    } else if (status === 404) {
+      toast.error('التقرير المطلوب غير متاح حالياً.');
+    } else if (status === 401 || status === 403) {
+      toast.error('ليس لديك صلاحية للوصول إلى هذا التقرير.');
+    } else {
+      toast.error(errorMessage || 'حدث خطأ أثناء تحميل التقرير');
+    }
+    
+    // Initialize empty data to prevent UI breakage
+    const emptyData = { summary: {}, data: [], report: [] };
+    switch (activeReport.value) {
+      case 'performance':
+        performanceData.value = emptyData;
+        break;
+      case 'profitability':
+        profitabilityData.value = emptyData;
+        break;
+      case 'student-analytics':
+        studentData.value = emptyData;
+        break;
+      case 'instructor-performance':
+        instructorData.value = emptyData;
+        break;
+      case 'forecasting':
+        forecastingData.value = emptyData;
+        break;
+    }
   } finally {
     loading.value = false;
   }
@@ -618,7 +663,8 @@ async function refreshAll() {
     const queryParams = buildQueryParams();
     const separator = queryParams ? '&' : '?';
     
-    await Promise.all([
+    // Use Promise.allSettled to handle individual failures gracefully
+    const results = await Promise.allSettled([
       get(`/admin/reports/strategic/performance${queryParams ? '?' + queryParams : ''}${separator}_t=${timestamp}`),
       get(`/admin/reports/strategic/profitability${queryParams ? '?' + queryParams : ''}${separator}_t=${timestamp}`),
       get(`/admin/reports/strategic/student-analytics${queryParams ? '?' + queryParams : ''}${separator}_t=${timestamp}`),
@@ -626,10 +672,30 @@ async function refreshAll() {
       get(`/admin/reports/strategic/forecasting${queryParams ? '?' + queryParams : ''}${separator}_t=${timestamp}`),
     ]);
     
-    toast.success('تم تحديث جميع التقارير بنجاح');
+    // Check if any requests failed
+    const failures = results.filter(r => r.status === 'rejected');
+    if (failures.length > 0) {
+      // Only log failures in development
+      if (import.meta.env.DEV) {
+        console.warn(`${failures.length} report(s) failed to refresh:`, failures.map(f => f.reason?.response?.status || 'Unknown'));
+      }
+      
+      const successCount = results.length - failures.length;
+      if (successCount > 0) {
+        toast.warning(`تم تحديث ${successCount} من ${results.length} تقرير بنجاح`);
+      } else {
+        toast.error('فشل تحديث التقارير. يرجى المحاولة مرة أخرى.');
+      }
+    } else {
+      toast.success('تم تحديث جميع التقارير بنجاح');
+    }
+    
     await loadReport();
   } catch (err) {
-    console.error('Error refreshing reports:', err);
+    // Only log in development
+    if (import.meta.env.DEV) {
+      console.error('Error refreshing reports:', err);
+    }
     toast.error('حدث خطأ أثناء تحديث التقارير');
   } finally {
     refreshing.value = false;
@@ -698,24 +764,66 @@ function resetFilters() {
 }
 
 async function loadFilters() {
+  // Load categories (handle errors individually)
   try {
-    // Load categories
     const categoriesRes = await get('/categories');
     if (categoriesRes && Array.isArray(categoriesRes)) {
       categories.value = categoriesRes.map(c => ({ id: c.id, name: c.name || c.translations?.[0]?.name || 'Unknown' }));
     } else if (categoriesRes?.data && Array.isArray(categoriesRes.data)) {
       categories.value = categoriesRes.data.map(c => ({ id: c.id, name: c.name || c.translations?.[0]?.name || 'Unknown' }));
     }
-    
-    // Load instructors
-    const instructorsRes = await get('/users?role=instructor');
-    if (instructorsRes && Array.isArray(instructorsRes)) {
-      instructors.value = instructorsRes.map(i => ({ id: i.id, name: i.name }));
-    } else if (instructorsRes?.data && Array.isArray(instructorsRes.data)) {
-      instructors.value = instructorsRes.data.map(i => ({ id: i.id, name: i.name }));
+  } catch (err) {
+    // Silently handle 404s - endpoint may not exist
+    if (err.response?.status !== 404) {
+      console.error('Error loading categories:', err);
+    }
+    categories.value = [];
+  }
+  
+  // Load instructors (handle errors individually)
+  try {
+    // First, get roles to find the instructor role ID
+    let instructorRoleId = null;
+    try {
+      const rolesRes = await get('/admin/roles');
+      const roles = Array.isArray(rolesRes) ? rolesRes : (rolesRes?.data || []);
+      const instructorRole = roles.find(r => r.name === 'instructor');
+      if (instructorRole) {
+        instructorRoleId = instructorRole.id;
+      }
+    } catch (err) {
+      // If roles endpoint fails, try to get instructors without role filter
+      console.warn('Could not load roles, attempting to load all users:', err);
     }
     
-    // Load courses (for profitability report)
+    // Build the query with role_id filter if we found it
+    let instructorsUrl = '/admin/users';
+    if (instructorRoleId) {
+      instructorsUrl += `?filters[role_id]=${instructorRoleId}`;
+    }
+    
+    const instructorsRes = await get(instructorsUrl);
+    // Handle paginated response
+    let instructorsList = [];
+    if (instructorsRes && Array.isArray(instructorsRes)) {
+      instructorsList = instructorsRes;
+    } else if (instructorsRes?.data && Array.isArray(instructorsRes.data)) {
+      instructorsList = instructorsRes.data;
+    } else if (instructorsRes?.data?.data && Array.isArray(instructorsRes.data.data)) {
+      instructorsList = instructorsRes.data.data;
+    }
+    
+    instructors.value = instructorsList.map(i => ({ id: i.id, name: i.name }));
+  } catch (err) {
+    // Silently handle 404s - endpoint may not exist
+    if (err.response?.status !== 404) {
+      console.error('Error loading instructors:', err);
+    }
+    instructors.value = [];
+  }
+  
+  // Load courses (for profitability report) - handle errors individually
+  try {
     const coursesRes = await get('/courses');
     if (coursesRes && Array.isArray(coursesRes)) {
       courses.value = coursesRes.map(c => ({ id: c.id, name: c.title }));
@@ -723,7 +831,11 @@ async function loadFilters() {
       courses.value = coursesRes.data.map(c => ({ id: c.id, name: c.title }));
     }
   } catch (err) {
-    console.error('Error loading filters:', err);
+    // Silently handle 404s - endpoint may not exist
+    if (err.response?.status !== 404) {
+      console.error('Error loading courses:', err);
+    }
+    courses.value = [];
   }
 }
 
