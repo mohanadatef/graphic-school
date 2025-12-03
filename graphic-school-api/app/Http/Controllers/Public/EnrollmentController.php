@@ -7,6 +7,7 @@ use App\Services\EnrollmentService;
 use App\Http\Responses\ApiResponse;
 use Modules\ACL\Users\Models\User;
 use Modules\ACL\Roles\Models\Role;
+use Modules\LMS\Courses\Models\Course;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Http\JsonResponse;
@@ -25,13 +26,28 @@ class EnrollmentController extends Controller
     public function enroll(Request $request): JsonResponse
     {
         $request->validate([
-            'program_id' => 'required|exists:programs,id',
+            'course_id' => 'required|exists:courses,id',
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'phone' => 'required|string|max:20',
-            'batch_id' => 'nullable|exists:batches,id',
             'group_id' => 'nullable|exists:groups,id',
         ]);
+
+        // Verify course exists and is published
+        $course = Course::findOrFail($request->course_id);
+        if (!$course->is_published) {
+            return ApiResponse::error('Course is not available for enrollment', 403);
+        }
+
+        // Verify group belongs to course if provided
+        if ($request->group_id) {
+            $group = \App\Models\Group::where('id', $request->group_id)
+                ->where('course_id', $course->id)
+                ->first();
+            if (!$group) {
+                return ApiResponse::error('Invalid group for this course', 422);
+            }
+        }
 
         // Create student user
         $studentRole = Role::where('name', 'student')->firstOrFail();
@@ -47,15 +63,13 @@ class EnrollmentController extends Controller
         // Create enrollment
         $enrollment = $this->enrollmentService->createEnrollment(
             $student->id,
-            $request->program_id,
-            $request->batch_id,
+            $request->course_id,
             $request->group_id
         );
 
         return ApiResponse::success([
             'student' => $student,
-            'enrollment' => $enrollment->load(['program']),
+            'enrollment' => $enrollment->load(['course', 'group']),
         ], 'Enrollment request submitted successfully');
     }
 }
-

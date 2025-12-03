@@ -9,10 +9,7 @@ use App\Models\CommunityReply;
 use App\Models\CommunityLike;
 use App\Models\CommunityTag;
 use App\Models\CommunityReport;
-use App\Services\GamificationService;
 use Modules\ACL\Users\Models\User;
-use App\Models\Program;
-use App\Models\Batch;
 use App\Models\Group;
 use Illuminate\Support\Str;
 
@@ -59,12 +56,10 @@ class CommunitySeeder extends Seeder
             ->take(10)
             ->get();
 
-        $programs = Program::take(3)->get();
-        $batches = Batch::take(5)->get();
         $groups = Group::take(5)->get();
         
-        if ($programs->isEmpty() || $batches->isEmpty() || $groups->isEmpty()) {
-            $this->command->warn('Programs, batches, or groups not found. Creating posts without program/batch/group associations.');
+        if ($groups->isEmpty()) {
+            $this->command->warn('Groups not found. Creating posts without group associations.');
         }
 
         $titles = [
@@ -114,8 +109,6 @@ class CommunitySeeder extends Seeder
             
             $post = CommunityPost::create([
                 'user_id' => $student->id,
-                'program_id' => $programs->isNotEmpty() ? $programs->random()->id : null,
-                'batch_id' => $batches->isNotEmpty() ? $batches->random()->id : null,
                 'group_id' => $groups->isNotEmpty() ? $groups->random()->id : null,
                 'title' => $title,
                 'body' => $bodies[$index % count($bodies)],
@@ -128,20 +121,6 @@ class CommunitySeeder extends Seeder
             $post->tags()->attach($tags->pluck('id'));
 
             $posts[] = $post;
-
-            // Award gamification points (simulate)
-            try {
-                $gamificationService = app(GamificationService::class);
-                $gamificationService->awardPointsForEvent(
-                    $student,
-                    'community_post',
-                    'community_posts',
-                    $post->id,
-                    ['title' => $post->title]
-                );
-            } catch (\Exception $e) {
-                // Skip if already awarded
-            }
         }
 
         $this->command->info('Community posts seeded successfully!');
@@ -180,20 +159,6 @@ class CommunitySeeder extends Seeder
                 ]);
 
                 $comments[] = $comment;
-
-                // Award gamification points
-                try {
-                    $gamificationService = app(GamificationService::class);
-                    $gamificationService->awardPointsForEvent(
-                        $student,
-                        'community_comment',
-                        'community_comments',
-                        $comment->id,
-                        ['post_id' => $post->id]
-                    );
-                } catch (\Exception $e) {
-                    // Skip if already awarded
-                }
             }
         }
 
@@ -229,20 +194,6 @@ class CommunitySeeder extends Seeder
                     'user_id' => $student->id,
                     'body' => $replyBodies[array_rand($replyBodies)],
                 ]);
-
-                // Award gamification points
-                try {
-                    $gamificationService = app(GamificationService::class);
-                    $gamificationService->awardPointsForEvent(
-                        $student,
-                        'community_reply',
-                        'community_replies',
-                        $reply->id,
-                        ['comment_id' => $comment->id]
-                    );
-                } catch (\Exception $e) {
-                    // Skip if already awarded
-                }
             }
         }
 

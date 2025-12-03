@@ -1,0 +1,35 @@
+{
+  "testPost": {
+    "id": 1,
+    "user_id": 1,
+    "group_id": 1,
+    "title": "Welcome to the Group!",
+    "body": "This is a test post created during E2E testing.",
+    "attachments": null,
+    "is_pinned": false,
+    "is_locked": false,
+    "created_at": "2025-01-28T10:00:00Z",
+    "user": {
+      "id": 1,
+      "name": "John Instructor",
+      "email": "instructor1@graphicschool.com"
+    },
+    "group": {
+      "id": 1,
+      "name": "Group A - Morning"
+    },
+    "comments": []
+  },
+  "testComment": {
+    "id": 1,
+    "post_id": 1,
+    "user_id": 2,
+    "body": "Thank you for the welcome!",
+    "created_at": "2025-01-28T10:05:00Z",
+    "user": {
+      "id": 2,
+      "name": "Test Student"
+    }
+  }
+}
+

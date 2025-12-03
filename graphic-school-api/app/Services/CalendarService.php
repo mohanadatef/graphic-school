@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\CalendarEvent;
 use Modules\LMS\Sessions\Models\Session;
-use App\Models\Assignment;
 use Illuminate\Support\Carbon;
 
 class CalendarService
@@ -64,30 +63,6 @@ class CalendarService
         }
     }
 
-    /**
-     * Sync events from assignments
-     */
-    public function syncAssignmentEvents(): void
-    {
-        $assignments = Assignment::where('is_active', true)->get();
-
-        foreach ($assignments as $assignment) {
-            CalendarEvent::updateOrCreate(
-                [
-                    'event_type' => 'assignment',
-                    'reference_id' => $assignment->id,
-                ],
-                [
-                    'user_id' => null,
-                    'title' => $assignment->title,
-                    'description' => $assignment->description,
-                    'start_datetime' => $assignment->due_date,
-                    'end_datetime' => $assignment->due_date,
-                    'color' => '#ef4444', // Red for deadlines
-                ]
-            );
-        }
-    }
 
     /**
      * Create custom event

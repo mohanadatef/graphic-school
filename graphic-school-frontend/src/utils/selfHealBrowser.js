@@ -68,6 +68,7 @@ let apiAvailable = null;
 
 /**
  * Check if self-heal API is available (only check once per session)
+ * Silently checks without logging errors to console
  */
 async function checkApiAvailability() {
   // Return cached result if available
@@ -92,24 +93,59 @@ async function checkApiAvailability() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 200); // 200ms timeout
       
-      const response = await fetch('/api/self-heal/add-translation', {
-        method: 'HEAD', // Use HEAD to check if endpoint exists without sending data
-        signal: controller.signal,
-      }).catch(() => null);
+      // Use OPTIONS method to check if endpoint exists (less likely to cause console errors)
+      // If OPTIONS fails, try a minimal POST request with very short timeout
+      let response = null;
+      
+      try {
+        response = await fetch('/api/self-heal/add-translation', {
+          method: 'OPTIONS',
+          signal: controller.signal,
+        });
+      } catch (e) {
+        // OPTIONS failed, try POST with minimal data
+        try {
+          const postController = new AbortController();
+          const postTimeoutId = setTimeout(() => postController.abort(), 100);
+          
+          response = await fetch('/api/self-heal/add-translation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ _check: true }), // Minimal check payload
+            signal: postController.signal,
+          }).catch(() => null);
+          
+          clearTimeout(postTimeoutId);
+        } catch (e2) {
+          // Both methods failed
+          response = null;
+        }
+      }
       
       clearTimeout(timeoutId);
       
-      if (response && (response.ok || response.status === 405)) {
-        // 405 Method Not Allowed means endpoint exists but HEAD isn't allowed, which is fine
-        apiAvailable = true;
-        sessionStorage.setItem('selfHealApiAvailable', 'true');
-        return true;
-      } else {
-        apiAvailable = false;
-        sessionStorage.setItem('selfHealApiAvailable', 'false');
-        return false;
+      // If we got a response (even 404), check the status
+      if (response) {
+        // 200-299, 405 (Method Not Allowed), or 400 (Bad Request) means endpoint exists
+        if (response.ok || response.status === 405 || response.status === 400) {
+          apiAvailable = true;
+          sessionStorage.setItem('selfHealApiAvailable', 'true');
+          return true;
+        }
+        // 404 means endpoint doesn't exist
+        if (response.status === 404) {
+          apiAvailable = false;
+          sessionStorage.setItem('selfHealApiAvailable', 'false');
+          return false;
+        }
       }
+      
+      // No response or unexpected status - assume unavailable
+      apiAvailable = false;
+      sessionStorage.setItem('selfHealApiAvailable', 'false');
+      return false;
     } catch (error) {
+      // Silently handle errors - endpoint doesn't exist
       apiAvailable = false;
       sessionStorage.setItem('selfHealApiAvailable', 'false');
       return false;
@@ -148,11 +184,12 @@ export async function requestTranslation(locale, key, value = null) {
     return false;
   }
   
-  // Try to send to backend API
+  // Try to send to backend API (only if available)
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 300);
     
+    // Use a silent fetch that won't log errors to console
     const response = await fetch('/api/self-heal/add-translation', {
       method: 'POST',
       headers: {
@@ -160,8 +197,9 @@ export async function requestTranslation(locale, key, value = null) {
       },
       body: JSON.stringify({ locale, key, value }),
       signal: controller.signal,
-    }).catch(() => {
-      // If request fails, mark API as unavailable
+    }).catch((error) => {
+      // Silently handle fetch errors (network issues, CORS, etc.)
+      // Mark API as unavailable
       apiAvailable = false;
       sessionStorage.setItem('selfHealApiAvailable', 'false');
       return null;
@@ -175,13 +213,13 @@ export async function requestTranslation(locale, key, value = null) {
         logSelfHeal('TRANSLATION_SUCCESS', data);
       }
       return true;
-    } else if (response && response.status === 404) {
-      // Mark API as unavailable
+    } else if (response) {
+      // Any non-ok response (404, 500, etc.) means API is unavailable
       apiAvailable = false;
       sessionStorage.setItem('selfHealApiAvailable', 'false');
     }
   } catch (error) {
-    // Mark API as unavailable if we get any error
+    // Silently handle any errors - mark API as unavailable
     apiAvailable = false;
     sessionStorage.setItem('selfHealApiAvailable', 'false');
   }

@@ -1,0 +1,26 @@
+{
+  "testGroup": {
+    "id": 1,
+    "course_id": 1,
+    "code": "GD101-A",
+    "name": "Group A - Morning",
+    "start_date": "2025-02-01",
+    "end_date": "2025-06-30",
+    "notes": "Morning batch for Graphic Design Fundamentals",
+    "capacity": 20,
+    "room": "Room 101",
+    "is_active": true,
+    "course": {
+      "id": 1,
+      "title": "Graphic Design Fundamentals"
+    },
+    "instructors": [
+      {
+        "id": 1,
+        "name": "John Instructor"
+      }
+    ],
+    "students": []
+  }
+}
+

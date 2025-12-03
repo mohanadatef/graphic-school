@@ -1,8 +1,12 @@
 <template>
   <div class="space-y-6">
     <div>
-      <h2 class="text-2xl font-bold text-slate-900 dark:text-white">{{ $t('student.certificates.title') || 'My Certificates' }}</h2>
-      <p class="text-sm text-slate-500 dark:text-slate-400">{{ $t('student.certificates.subtitle') || 'View your issued certificates' }}</p>
+      <h2 class="text-2xl font-bold text-slate-900 dark:text-white">
+        {{ $t('student.certificates.title') || 'My Certificates' }}
+      </h2>
+      <p class="text-sm text-slate-500 dark:text-slate-400">
+        {{ $t('student.certificates.subtitle') || 'View and download your certificates' }}
+      </p>
     </div>
 
     <div v-if="loading" class="text-center py-20">
@@ -10,24 +14,67 @@
       <p class="text-slate-500 dark:text-slate-400">{{ $t('common.loading') || 'Loading...' }}</p>
     </div>
 
-    <div v-else-if="certificates.length === 0" class="text-center py-20">
-      <p class="text-slate-500 dark:text-slate-400 text-lg">{{ $t('student.certificates.noCertificates') || 'No certificates found' }}</p>
+    <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4">
+      <p class="text-red-800">{{ error }}</p>
     </div>
 
-    <div v-else class="space-y-4">
-      <div v-for="cert in certificates" :key="cert.id" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-        <div class="flex items-start justify-between">
-          <div class="flex-1">
-            <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">{{ cert.program?.title || cert.program?.name }}</h3>
-            <p class="text-sm text-slate-600 dark:text-slate-400 mb-2">{{ $t('student.certificates.issuedAt') || 'Issued At' }}: {{ formatDate(cert.issued_at) }}</p>
-            <p class="text-xs text-slate-500 dark:text-slate-400 font-mono">{{ $t('student.certificates.verificationCode') || 'Verification Code' }}: {{ cert.verification_code }}</p>
+    <div v-else-if="items.length === 0" class="text-center py-20">
+      <p class="text-slate-500 dark:text-slate-400 text-lg">
+        {{ $t('student.certificates.noCertificates') || 'No certificates issued yet' }}
+      </p>
+    </div>
+
+    <div v-else class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div
+        v-for="cert in items"
+        :key="cert.id"
+        class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-md transition-shadow"
+      >
+        <div class="p-6">
+          <div class="flex items-start justify-between mb-4">
+            <div class="flex-1">
+              <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-1">
+                {{ cert.course?.title }}
+              </h3>
+              <p v-if="cert.group" class="text-sm text-slate-600 dark:text-slate-400">
+                {{ cert.group.name }}
+              </p>
+            </div>
+            <div class="text-right">
+              <div class="text-xs text-slate-500 dark:text-slate-400">
+                {{ formatDate(cert.issued_date) }}
+              </div>
+            </div>
           </div>
-          <button
-            @click="downloadCertificate(cert.id)"
-            class="btn-primary"
-          >
-            {{ $t('student.certificates.download') || 'Download' }}
-          </button>
+
+          <div class="space-y-2 mb-4">
+            <div class="text-sm">
+              <span class="text-slate-500 dark:text-slate-400">Certificate #:</span>
+              <span class="font-mono text-xs bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded ml-2">
+                {{ cert.certificate_number }}
+              </span>
+            </div>
+            <div v-if="cert.instructor" class="text-sm">
+              <span class="text-slate-500 dark:text-slate-400">Instructor:</span>
+              <span class="ml-2">{{ cert.instructor.name }}</span>
+            </div>
+          </div>
+
+          <div class="flex gap-2">
+            <button
+              @click="viewCertificate(cert.id)"
+              class="flex-1 px-4 py-2 bg-primary text-white rounded-md text-sm hover:bg-primary/90"
+            >
+              {{ $t('student.certificates.view') || 'View' }}
+            </button>
+            <button
+              @click="copyVerificationLink(cert.verification_code)"
+              class="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-md text-sm hover:bg-slate-50 dark:hover:bg-slate-700"
+              :title="$t('student.certificates.copyLink') || 'Copy verification link'"
+            >
+              🔗
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -35,49 +82,31 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import api from '../../../services/api/client';
-import { useToast } from '../../../composables/useToast';
+import { onMounted } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useCertificateStore } from '@/stores/certificate';
+import { useRouter } from 'vue-router';
 
-const toast = useToast();
-const loading = ref(false);
-const certificates = ref([]);
+const router = useRouter();
+const certificateStore = useCertificateStore();
+const { items, loading, error } = storeToRefs(certificateStore);
 
-async function loadCertificates() {
-  loading.value = true;
-  try {
-    const response = await api.get('/student/certificates');
-    certificates.value = response.data || [];
-  } catch (error) {
-    console.error('Error loading certificates:', error);
-    toast.error('Failed to load certificates');
-  } finally {
-    loading.value = false;
-  }
+onMounted(async () => {
+  await certificateStore.fetchStudentCertificates();
+});
+
+function viewCertificate(id) {
+  router.push(`/dashboard/student/certificates/${id}`);
 }
 
-async function downloadCertificate(id) {
-  try {
-    const response = await api.get(`/student/certificates/${id}/download`, { responseType: 'blob' });
-    const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `certificate-${id}.pdf`);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    toast.success('Certificate downloaded');
-  } catch (error) {
-    toast.error('Failed to download certificate');
-  }
+function copyVerificationLink(code) {
+  const url = `${window.location.origin}/certificate/verify?code=${code}`;
+  navigator.clipboard.writeText(url);
+  alert('Verification link copied to clipboard!');
 }
 
 function formatDate(date) {
   if (!date) return '-';
   return new Date(date).toLocaleDateString();
 }
-
-onMounted(() => {
-  loadCertificates();
-});
 </script>

@@ -182,45 +182,33 @@ const adminLinks = computed(() => [
   { labelKey: 'admin.dashboard', to: '/dashboard/admin', icon: 'dashboard' },
   { labelKey: 'admin.users', to: '/dashboard/admin/users', icon: 'users' },
   { labelKey: 'admin.roles', to: '/dashboard/admin/roles', icon: 'roles' },
-  { labelKey: 'admin.categories', to: '/dashboard/admin/categories', icon: 'courses' },
   { labelKey: 'admin.courses', to: '/dashboard/admin/courses', icon: 'courses' },
-  { labelKey: 'admin.programs', to: '/dashboard/admin/programs', icon: 'programs' },
-  { labelKey: 'admin.batches', to: '/dashboard/admin/batches', icon: 'batches' },
   { labelKey: 'admin.groups', to: '/dashboard/admin/groups', icon: 'groups' },
   { labelKey: 'admin.sessions', to: '/dashboard/admin/sessions', icon: 'sessions' },
   { labelKey: 'admin.enrollments', to: '/dashboard/admin/enrollments', icon: 'enrollments' },
   { labelKey: 'admin.attendance', to: '/dashboard/admin/attendance', icon: 'attendance' },
-  { labelKey: 'admin.payments', to: '/dashboard/admin/payments', icon: 'payments' },
-  { labelKey: 'admin.tickets', to: '/dashboard/admin/tickets', icon: 'tickets' },
   { labelKey: 'admin.pages', to: '/dashboard/admin/pages', icon: 'pages' },
-  { labelKey: 'admin.faqs', to: '/dashboard/admin/faqs', icon: 'faqs' },
-  { labelKey: 'admin.media', to: '/dashboard/admin/media', icon: 'media' },
-  { labelKey: 'admin.sliders', to: '/dashboard/admin/sliders', icon: 'sliders' },
-  { labelKey: 'admin.auditLogs', to: '/dashboard/admin/audit-logs', icon: 'logs' },
   { labelKey: 'admin.settings', to: '/dashboard/admin/settings', icon: 'settings' },
-  { labelKey: 'admin.branding.title', to: '/dashboard/admin/branding', icon: 'branding' },
-  { labelKey: 'admin.contacts', to: '/dashboard/admin/contacts', icon: 'contacts' },
+  { labelKey: 'admin.languages.title', to: '/dashboard/admin/languages', icon: 'languages' },
+  { labelKey: 'admin.currencies.title', to: '/dashboard/admin/currencies', icon: 'currencies' },
+  { labelKey: 'admin.countries.title', to: '/dashboard/admin/countries', icon: 'countries' },
+  { labelKey: 'admin.calendar', to: '/dashboard/admin/calendar', icon: 'calendar' },
 ]);
 
-const instructorLinks = computed(() => [
-  { labelKey: 'instructor.myCourses', to: '/dashboard/instructor/courses' },
-  { labelKey: 'instructor.sessions', to: '/dashboard/instructor/sessions' },
-  { labelKey: 'instructor.attendance', to: '/dashboard/instructor/attendance' },
-  { labelKey: 'instructor.assignments', to: '/dashboard/instructor/assignments' },
-  { labelKey: 'instructor.calendar', to: '/dashboard/instructor/calendar' },
-  { labelKey: 'instructor.notes', to: '/dashboard/instructor/notes' },
-  { labelKey: 'instructor.messaging', to: '/dashboard/instructor/messaging' },
-  { labelKey: 'instructor.community', to: '/dashboard/instructor/community' },
-]);
+        const instructorLinks = computed(() => [
+          { labelKey: 'instructor.myGroups', to: '/dashboard/instructor/my-groups' },
+          { labelKey: 'instructor.sessions', to: '/dashboard/instructor/sessions' },
+          { labelKey: 'instructor.calendar', to: '/dashboard/instructor/calendar' },
+        ]);
 
-const studentLinks = computed(() => [
-  { labelKey: 'student.myCourses', to: '/dashboard/student/courses' },
-  { labelKey: 'student.schedule', to: '/dashboard/student/sessions' },
-  { labelKey: 'student.attendance', to: '/dashboard/student/attendance' },
-  { labelKey: 'student.payments', to: '/dashboard/student/payments' },
-  { labelKey: 'student.messaging', to: '/dashboard/student/messaging' },
-  { labelKey: 'student.profile', to: '/dashboard/student/profile' },
-]);
+        const studentLinks = computed(() => [
+          { labelKey: 'student.myCourses', to: '/dashboard/student/my-courses' },
+          { labelKey: 'student.myGroup', to: '/dashboard/student/my-group' },
+          { labelKey: 'student.mySessions', to: '/dashboard/student/my-sessions' },
+          { labelKey: 'student.attendanceHistory', to: '/dashboard/student/attendance-history' },
+          { labelKey: 'student.profile', to: '/dashboard/student/profile' },
+          { labelKey: 'student.calendar', to: '/dashboard/student/calendar' },
+        ]);
 
 async function handleLogout() {
   try {

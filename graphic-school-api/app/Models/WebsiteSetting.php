@@ -17,12 +17,13 @@ class WebsiteSetting extends Model
         'branding',
         'default_language',
         'default_currency',
+        'default_country',
         'timezone',
         'homepage_id',
         'enabled_pages',
         'general_info',
         'email_settings',
-        'payment_settings',
+        'contact_settings',
         'activated_at',
     ];
 
@@ -32,7 +33,7 @@ class WebsiteSetting extends Model
         'enabled_pages' => 'array',
         'general_info' => 'array',
         'email_settings' => 'array',
-        'payment_settings' => 'array',
+        'contact_settings' => 'array',
         'activated_at' => 'datetime',
     ];
 
@@ -132,9 +133,11 @@ class WebsiteSetting extends Model
             'branding' => $this->branding ?? [],
             'default_language' => $this->default_language,
             'default_currency' => $this->default_currency,
+            'default_country' => $this->default_country,
             'timezone' => $this->timezone,
             'enabled_pages' => $this->enabled_pages ?? [],
             'general_info' => $this->general_info ?? [],
+            'contact_settings' => $this->contact_settings ?? [],
         ];
     }
 }

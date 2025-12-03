@@ -1,13 +1,18 @@
+/**
+ * Admin E2E Tests - Updated for Course → Group → Session Flow
+ * 
+ * Removed: Programs, Batches, Subscriptions, QR Attendance
+ * Updated: Course → Group → Session flow
+ */
+
 describe('Admin E2E Tests', () => {
   beforeEach(() => {
-    // Clear localStorage and cookies before each test
     cy.clearLocalStorage();
     cy.clearCookies();
   });
 
   it('1. Admin login flow', () => {
     cy.loginAsAdmin();
-    // Login command already checks redirect, just verify dashboard loaded
     cy.waitUntilFrontendReady();
     cy.get('[data-cy="sidebar"]', { timeout: 10000 }).should('exist');
     cy.get('body', { timeout: 10000 }).should(($body) => {
@@ -17,92 +22,70 @@ describe('Admin E2E Tests', () => {
     cy.screenshot('admin-dashboard');
   });
 
-  it('2. Admin → Programs → Create program', () => {
+  it('2. Admin → Courses → Create course', () => {
     cy.loginAsAdmin();
     cy.waitUntilFrontendReady();
     
-    // Navigate to Programs
-    cy.navigateTo('programs');
+    cy.navigateTo('courses');
     cy.wait(2000);
-    cy.screenshot('admin-programs-list');
+    cy.screenshot('admin-courses-list');
     
-    // Click create button - try direct navigation first
-    cy.visit('/dashboard/admin/programs/new', { timeout: 30000, failOnStatusCode: false });
-    cy.wait(2000);
-    cy.screenshot('admin-program-create-form');
-    
-    // Fill form if fields exist
-    cy.get('body', { timeout: 10000 }).then(($body) => {
-      if ($body.find('input[name="title"], input[type="text"]').length > 0) {
-        cy.get('input[name="title"], input[type="text"]').first().clear().type('Test Program E2E');
-      }
-      if ($body.find('textarea[name="description"], textarea').length > 0) {
-        cy.get('textarea[name="description"], textarea').first().clear().type('This is a test program created by E2E tests');
-      }
-      
-      // Submit form if button exists
-      if ($body.find('button[type="submit"], [data-cy="submit-btn"]').length > 0) {
-        cy.get('button[type="submit"], [data-cy="submit-btn"]').first().click({ force: true });
-        cy.wait(3000);
-        cy.screenshot('admin-program-created');
-      }
-    });
-  });
-
-  it('3. Admin → Programs → Edit + Delete', () => {
-    cy.loginAsAdmin();
-    cy.navigateTo('programs');
-    cy.wait(2000);
-    
-    // Find first program and edit
-    cy.get('body').then(($body) => {
-      const editBtn = $body.find('[data-cy="edit-btn"], a[href*="/edit"]').first();
-      if (editBtn.length > 0) {
-        cy.wrap(editBtn).click({ force: true });
-        cy.wait(2000);
-        cy.screenshot('admin-program-edit');
-        
-        // Update title
-        cy.get('input[name="title"], input[type="text"]').first().clear().type('Updated Program Title');
-        cy.clickSubmit();
-        cy.wait(2000);
-        cy.screenshot('admin-program-updated');
-      }
-    });
-  });
-
-  it('4. Admin → Batches → Create + Assign instructor', () => {
-    cy.loginAsAdmin();
-    cy.navigateTo('batches');
-    cy.wait(2000);
-    cy.screenshot('admin-batches-list');
-    
-    // Create batch
     cy.get('body').then(($body) => {
       const createBtn = $body.find('[data-cy="create-btn"], a[href*="/new"], a[href*="/create"]').first();
       if (createBtn.length > 0) {
         cy.wrap(createBtn).click({ force: true });
         cy.wait(2000);
+        cy.screenshot('admin-course-create-form');
         
-        // Fill batch form
-        cy.fillField('Name', 'E2E Test Batch');
-        cy.fillField('Start Date', '2025-02-01');
-        
-        // Submit
-        cy.clickSubmit();
-        cy.wait(2000);
-        cy.screenshot('admin-batch-created');
+        // Fill form if fields exist
+        cy.get('body', { timeout: 10000 }).then(($formBody) => {
+          if ($formBody.find('input[name="title"], input[type="text"]').length > 0) {
+            cy.get('input[name="title"]').first().clear().type('Test Course E2E');
+          }
+          if ($formBody.find('textarea[name="description"], textarea').length > 0) {
+            cy.get('textarea[name="description"]').first().clear().type('This is a test course created by E2E tests');
+          }
+          if ($formBody.find('input[name="price"]').length > 0) {
+            cy.get('input[name="price"]').first().clear().type('5000');
+          }
+          
+          // Submit form if button exists
+          if ($formBody.find('button[type="submit"], [data-cy="submit-btn"]').length > 0) {
+            cy.get('button[type="submit"]').first().click({ force: true });
+            cy.wait(3000);
+            cy.screenshot('admin-course-created');
+          }
+        });
       }
     });
   });
 
-  it('5. Admin → Groups → Create group', () => {
+  it('3. Admin → Courses → Edit + Delete', () => {
+    cy.loginAsAdmin();
+    cy.navigateTo('courses');
+    cy.wait(2000);
+    
+    cy.get('body').then(($body) => {
+      const editBtn = $body.find('[data-cy="edit-btn"], a[href*="/edit"]').first();
+      if (editBtn.length > 0) {
+        cy.wrap(editBtn).click({ force: true });
+        cy.wait(2000);
+        cy.screenshot('admin-course-edit');
+        
+        cy.get('input[name="title"]').first().clear().type('Updated Course Title');
+        cy.clickSubmit();
+        cy.wait(2000);
+        cy.screenshot('admin-course-updated');
+      }
+    });
+  });
+
+  it('4. Admin → Groups → Create group', () => {
     cy.loginAsAdmin();
     cy.navigateTo('groups');
     cy.wait(2000);
     cy.screenshot('admin-groups-list');
     
-    // Create group
     cy.get('body').then(($body) => {
       const createBtn = $body.find('[data-cy="create-btn"], a[href*="/new"], a[href*="/create"]').first();
       if (createBtn.length > 0) {
@@ -110,6 +93,8 @@ describe('Admin E2E Tests', () => {
         cy.wait(2000);
         
         cy.fillField('Name', 'E2E Test Group');
+        cy.fillField('Start Date', '2025-02-01');
+        cy.fillField('End Date', '2025-06-30');
         cy.clickSubmit();
         cy.wait(2000);
         cy.screenshot('admin-group-created');
@@ -117,74 +102,57 @@ describe('Admin E2E Tests', () => {
     });
   });
 
-  it('6. Admin → Page Builder → Create page + Add blocks + Publish', () => {
+  it('5. Admin → Sessions → Create session', () => {
     cy.loginAsAdmin();
-    cy.navigateTo('page-builder');
+    cy.navigateTo('sessions');
     cy.wait(2000);
-    cy.screenshot('admin-page-builder-list');
+    cy.screenshot('admin-sessions-list');
     
-    // Create new page
     cy.get('body').then(($body) => {
-      const createBtn = $body.find('[data-cy="create-btn"], a[href*="/new"], a[href*="/create"]').first();
+      const createBtn = $body.find('[data-cy="create-btn"], a[href*="/new"]').first();
       if (createBtn.length > 0) {
         cy.wrap(createBtn).click({ force: true });
         cy.wait(2000);
         
-        // Fill page form
-        cy.fillField('Title', 'E2E Test Page');
-        cy.fillField('Slug', 'e2e-test-page');
+        cy.fillField('Title', 'E2E Test Session');
+        cy.fillField('Date', '2025-02-01');
+        cy.fillField('Start Time', '10:00');
+        cy.fillField('End Time', '12:00');
         cy.clickSubmit();
-        cy.wait(3000);
-        cy.screenshot('admin-page-created');
-        
-        // Should be in editor now
-        cy.url().should('include', 'editor');
-        
-        // Add hero block
-        cy.get('body').then(($body) => {
-          const heroBtn = $body.find('[data-cy="hero-block-btn"], button[aria-label*="hero"], button[aria-label*="Hero"]').first();
-          if (heroBtn.length > 0) {
-            cy.wrap(heroBtn).click({ force: true });
-            cy.wait(1000);
-            cy.screenshot('admin-page-hero-added');
-          }
-        });
-        
-        // Add features block
-        cy.get('body').then(($body) => {
-          const featuresBtn = $body.find('[data-cy="features-block-btn"], button[aria-label*="features"], button[aria-label*="Features"]').first();
-          if (featuresBtn.length > 0) {
-            cy.wrap(featuresBtn).click({ force: true });
-            cy.wait(1000);
-            cy.screenshot('admin-page-features-added');
-          }
-        });
-        
-        // Save structure
-        cy.get('button[type="button"][aria-label*="save"], button[type="button"][aria-label*="Save"], [data-cy="save-btn"]').first().click({ force: true });
         cy.wait(2000);
-        
-        // Publish page
-        cy.get('button[type="button"][aria-label*="publish"], button[type="button"][aria-label*="Publish"], [data-cy="publish-btn"]').first().click({ force: true });
-        cy.wait(2000);
-        cy.screenshot('admin-page-published');
+        cy.screenshot('admin-session-created');
       }
     });
   });
 
-  it('7. Admin → Subscriptions → View plan + Check usage', () => {
+  it('6. Admin → Enrollments → View and approve', () => {
     cy.loginAsAdmin();
-    cy.navigateTo('subscription');
+    cy.navigateTo('enrollments');
     cy.wait(2000);
-    cy.screenshot('admin-subscription-overview');
+    cy.screenshot('admin-enrollments-list');
     
-    // Check usage
     cy.get('body').then(($body) => {
-      const usageLink = $body.find('a[href*="usage"], [data-cy="usage-link"]').first();
-      if (usageLink.length > 0) {
-        cy.wrap(usageLink).click({ force: true });
+      const approveBtn = $body.find('[data-cy="approve-btn"], button:contains("Approve")').first();
+      if (approveBtn.length > 0) {
+        cy.wrap(approveBtn).click({ force: true });
         cy.wait(2000);
-        cy.screenshot('admin-subscription-usage');
+        cy.screenshot('admin-enrollment-approved');
+      }
+    });
+  });
+
+  it('7. Admin → Certificates → Issue certificate', () => {
+    cy.loginAsAdmin();
+    cy.navigateTo('certificates');
+    cy.wait(2000);
+    cy.screenshot('admin-certificates-list');
+    
+    cy.get('body').then(($body) => {
+      const issueBtn = $body.find('[data-cy="issue-certificate-btn"], button:contains("Issue")').first();
+      if (issueBtn.length > 0) {
+        cy.wrap(issueBtn).click({ force: true });
+        cy.wait(2000);
+        cy.screenshot('admin-certificate-issue-form');
       }
     });
   });
@@ -195,7 +163,6 @@ describe('Admin E2E Tests', () => {
     cy.wait(2000);
     cy.screenshot('admin-community-posts');
     
-    // Find first post and pin it
     cy.get('body').then(($body) => {
       const pinBtn = $body.find('button[aria-label*="pin"], button[aria-label*="Pin"], [data-cy="pin-btn"]').first();
       if (pinBtn.length > 0) {
@@ -209,7 +176,6 @@ describe('Admin E2E Tests', () => {
   it('9. Admin → Notifications', () => {
     cy.loginAsAdmin();
     
-    // Open notifications
     cy.get('body').then(($body) => {
       if ($body.find('[data-cy="notifications"], button[aria-label*="notification"], .notification').length > 0) {
         cy.get('[data-cy="notifications"], button[aria-label*="notification"], .notification').first().click();
@@ -229,4 +195,3 @@ describe('Admin E2E Tests', () => {
     cy.screenshot('admin-logout-success');
   });
 });
-

@@ -14,11 +14,7 @@ class Enrollment extends Model
     protected $fillable = [
         'student_id',
         'course_id',
-        'program_id',
-        'batch_id',
         'group_id',
-        'payment_status',
-        'paid_amount',
         'status',
         'can_attend',
         'approved_by',
@@ -27,11 +23,13 @@ class Enrollment extends Model
     ];
 
     protected $casts = [
-        'paid_amount' => 'decimal:2',
         'can_attend' => 'bool',
         'approved_at' => 'datetime',
     ];
 
+    /**
+     * Relationships
+     */
     public function student()
     {
         return $this->belongsTo(User::class, 'student_id');
@@ -42,34 +40,10 @@ class Enrollment extends Model
         return $this->belongsTo(Course::class);
     }
 
-    public function program()
-    {
-        return $this->belongsTo(\App\Models\Program::class);
-    }
-
-    public function batch()
-    {
-        return $this->belongsTo(\App\Models\Batch::class);
-    }
-
     public function group()
     {
         return $this->belongsTo(\App\Models\Group::class);
     }
 
-    public function logs()
-    {
-        return $this->hasMany(\App\Models\EnrollmentLog::class);
-    }
-
-    public function invoices()
-    {
-        return $this->hasMany(\App\Models\Invoice::class);
-    }
-
-    public function enrollmentLogs()
-    {
-        return $this->hasMany(\App\Models\EnrollmentLog::class);
-    }
 }
 

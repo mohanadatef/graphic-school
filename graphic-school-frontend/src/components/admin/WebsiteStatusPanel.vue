@@ -4,12 +4,6 @@
       <h2 class="text-xl font-bold text-slate-900 dark:text-white">
         {{ $t('admin.websiteStatus') || 'Website Status' }}
       </h2>
-      <RouterLink
-        to="/setup"
-        class="text-sm text-primary hover:text-primary/80 font-medium"
-      >
-        {{ $t('admin.editSetup') || 'Edit Setup' }} →
-      </RouterLink>
     </div>
 
     <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -97,12 +91,6 @@
 
     <!-- Actions -->
     <div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 flex gap-3">
-      <RouterLink
-        to="/setup"
-        class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
-      >
-        {{ $t('admin.runSetupWizard') || 'Run Setup Wizard' }}
-      </RouterLink>
       <button
         @click="handleReset"
         :disabled="resetting"

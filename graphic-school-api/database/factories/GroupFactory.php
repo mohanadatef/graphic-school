@@ -3,7 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Group;
-use App\Models\Batch;
+use Modules\LMS\Courses\Models\Course;
 use Modules\ACL\Users\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -14,12 +14,14 @@ class GroupFactory extends Factory
     public function definition(): array
     {
         return [
-            'batch_id' => Batch::factory(),
-            'code' => 'GROUP-' . $this->faker->randomLetter(),
-            'capacity' => $this->faker->numberBetween(15, 25),
-            'room' => 'Room ' . $this->faker->numberBetween(101, 205),
+            'course_id' => Course::factory(),
+            'code' => 'GROUP-' . strtoupper(fake()->unique()->bothify('####')),
+            'name' => fake()->words(2, true) . ' Group',
+            'capacity' => fake()->numberBetween(15, 25),
+            'room' => 'Room ' . fake()->numberBetween(101, 205),
             'instructor_id' => null,
             'is_active' => true,
+            'extras' => null,
         ];
     }
 }

@@ -18,11 +18,14 @@ return new class extends Migration
             $table->string('native_name'); // English, العربية, etc.
             $table->string('image_path')->nullable(); // Path to language flag/image
             $table->boolean('is_active')->default(true);
+            $table->boolean('is_default')->default(false);
+            $table->boolean('is_rtl')->default(false);
             $table->integer('sort_order')->default(0);
             $table->timestamps();
             
             $table->index('code');
             $table->index('is_active');
+            $table->index('is_default');
         });
     }
 

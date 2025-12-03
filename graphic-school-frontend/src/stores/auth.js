@@ -140,7 +140,48 @@ export const useAuthStore = defineStore('auth', () => {
         throw new Error('Invalid response format from server');
       }
     } catch (err) {
-      error.value = err.response?.data?.message || err.message || translate('auth.loginError');
+      // Extract error message from unified API response format
+      let errorMessage = translate('auth.loginError');
+      
+      // Log full error for debugging
+      console.error('[Auth Store] Login error:', {
+        status: err.response?.status,
+        data: err.response?.data,
+        message: err.message,
+        url: err.config?.url,
+      });
+      
+      if (err.response?.data) {
+        // Check for unified format: { success, message, errors }
+        if (typeof err.response.data === 'object' && 'message' in err.response.data) {
+          errorMessage = err.response.data.message || errorMessage;
+          
+          // If there are specific field errors, use the first one
+          if (err.response.data.errors && typeof err.response.data.errors === 'object') {
+            const firstError = Object.values(err.response.data.errors)[0];
+            if (firstError && typeof firstError === 'string') {
+              errorMessage = firstError;
+            } else if (Array.isArray(firstError) && firstError.length > 0) {
+              errorMessage = firstError[0];
+            }
+          }
+        } else if (typeof err.response.data === 'string') {
+          errorMessage = err.response.data;
+        } else if (err.response.data?.message) {
+          errorMessage = err.response.data.message;
+        }
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      // For 401 errors, provide more helpful message
+      if (err.response?.status === 401) {
+        if (!errorMessage || errorMessage === translate('auth.loginError')) {
+          errorMessage = 'البريد الإلكتروني أو كلمة المرور غير صحيحة. يرجى المحاولة مرة أخرى.';
+        }
+      }
+      
+      error.value = errorMessage;
       throw err;
     } finally {
       loading.value = false;
@@ -202,10 +243,47 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true;
     try {
       const userData = await authService.getCurrentUser();
+      
+      // Normalize role to string (same as in setSession)
+      if (userData) {
+        // Normalize role to string
+        if (userData.role && typeof userData.role === 'object' && userData.role.name) {
+          // If role is an object, extract the name
+          userData.role = userData.role.name;
+          userData.role_name = userData.role;
+        } else if (userData.role && typeof userData.role !== 'string') {
+          // Convert to string if not already
+          userData.role = String(userData.role);
+        }
+        
+        // Ensure role_name is set if role exists
+        if (userData.role && !userData.role_name) {
+          userData.role_name = userData.role;
+        }
+      }
+      
       user.value = userData;
       localStorage.setItem('gs_user', JSON.stringify(userData));
     } catch (err) {
-      clearSession();
+      // If 404, endpoint doesn't exist - don't clear session, just throw error
+      // The caller will handle loading from localStorage
+      if (err.response?.status === 404) {
+        console.warn('User endpoint not available (404), will use localStorage data');
+        // Don't clear session for 404 - endpoint might not be implemented
+        // Don't throw error - let caller handle it
+        return;
+      }
+      
+      // If 401, token is invalid - clear session silently
+      // This is expected when token expires or is invalid
+      if (err.response?.status === 401) {
+        // Clear session but don't log as error (expected behavior)
+        clearSession();
+        // Return silently instead of throwing - caller can check if user is null
+        return;
+      }
+      
+      // For other errors, don't clear session (might be network issue)
       throw err;
     } finally {
       loading.value = false;

@@ -13,7 +13,9 @@ class Certificate extends Model
 {
     protected $fillable = [
         'course_id',
+        'group_id',
         'student_id',
+        'instructor_id',
         'enrollment_id',
         'certificate_number',
         'template_path',
@@ -22,6 +24,7 @@ class Certificate extends Model
         'expiry_date',
         'is_verified',
         'verification_code',
+        'qr_code',
     ];
 
     protected $casts = [
@@ -60,6 +63,16 @@ class Certificate extends Model
     public function enrollment(): BelongsTo
     {
         return $this->belongsTo(Enrollment::class);
+    }
+
+    public function group(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Group::class);
+    }
+
+    public function instructor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'instructor_id');
     }
 
     protected static function generateCertificateNumber(): string

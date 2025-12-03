@@ -3,40 +3,35 @@
 namespace App\Services;
 
 use Modules\LMS\Enrollments\Models\Enrollment;
-use App\Models\EnrollmentLog;
-use App\Models\Invoice;
-use App\Models\InvoiceItem;
-use App\Models\Attendance;
-use Modules\LMS\Sessions\Models\Session;
+use Modules\LMS\Courses\Models\Course;
+use Modules\LMS\Sessions\Models\GroupSession;
+use Modules\LMS\Attendance\Models\Attendance;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class EnrollmentService
 {
-
     /**
-     * Create enrollment for a program
+     * Create enrollment for a course
      */
-    public function createEnrollment(int $studentId, int $programId, ?int $batchId = null, ?int $groupId = null): Enrollment
+    public function createEnrollment(int $studentId, int $courseId, ?int $groupId = null): Enrollment
     {
-        return DB::transaction(function () use ($studentId, $programId, $batchId, $groupId) {
+        return DB::transaction(function () use ($studentId, $courseId, $groupId) {
+            // Verify course exists
+            $course = Course::findOrFail($courseId);
+            
+            // Verify group belongs to course if provided
+            if ($groupId) {
+                $group = \App\Models\Group::where('id', $groupId)
+                    ->where('course_id', $courseId)
+                    ->firstOrFail();
+            }
+            
             $enrollment = Enrollment::create([
                 'student_id' => $studentId,
-                'program_id' => $programId,
-                'batch_id' => $batchId,
+                'course_id' => $courseId,
                 'group_id' => $groupId,
                 'status' => 'pending',
-                'payment_status' => 'not_paid',
-            ]);
-
-            // Log enrollment creation
-            EnrollmentLog::create([
-                'enrollment_id' => $enrollment->id,
-                'action' => 'created',
-                'metadata' => [
-                    'program_id' => $programId,
-                    'batch_id' => $batchId,
-                    'group_id' => $groupId,
-                ],
             ]);
 
             return $enrollment;
@@ -44,18 +39,26 @@ class EnrollmentService
     }
 
     /**
-     * Approve enrollment
+     * Approve enrollment and assign to group
      */
-    public function approveEnrollment(int $enrollmentId, ?int $adminId = null, ?int $batchId = null, ?int $groupId = null): Enrollment
+    public function approveEnrollment(int $enrollmentId, ?int $adminId = null, ?int $groupId = null): Enrollment
     {
-        return DB::transaction(function () use ($enrollmentId, $adminId, $batchId, $groupId) {
+        return DB::transaction(function () use ($enrollmentId, $adminId, $groupId) {
             $enrollment = Enrollment::findOrFail($enrollmentId);
+            $enrollment->load(['course', 'student']);
 
-            // Auto-assign batch/group if not set
-            if (!$enrollment->batch_id && $batchId) {
-                $enrollment->batch_id = $batchId;
-            }
-            if (!$enrollment->group_id && $groupId) {
+            // Assign group if provided
+            if ($groupId) {
+                // Verify group belongs to the course
+                $group = \App\Models\Group::where('id', $groupId)
+                    ->where('course_id', $enrollment->course_id)
+                    ->firstOrFail();
+                
+                // Check group capacity
+                if (!$group->hasCapacity()) {
+                    throw new \Exception('Group has reached maximum capacity');
+                }
+                
                 $enrollment->group_id = $groupId;
             }
 
@@ -65,49 +68,18 @@ class EnrollmentService
             $enrollment->approved_at = now();
             $enrollment->save();
 
-            // Log approval
-            EnrollmentLog::create([
-                'enrollment_id' => $enrollment->id,
-                'action' => 'approved',
-                'admin_id' => $adminId,
-                'metadata' => [
-                    'batch_id' => $enrollment->batch_id,
-                    'group_id' => $enrollment->group_id,
-                ],
-            ]);
-
-            // Create invoice
-            $this->createInvoiceForEnrollment($enrollment);
-
-            // Create attendance slots for all sessions in the group
+            // Add student to group if group is assigned
             if ($enrollment->group_id) {
-                $this->createAttendanceSlots($enrollment);
+                $group = \App\Models\Group::find($enrollment->group_id);
+                if ($group) {
+                    $group->students()->syncWithoutDetaching([$enrollment->student_id => ['enrolled_at' => now()]]);
+                    
+                    // Create attendance slots for all existing sessions in the group
+                    $this->createAttendanceSlots($enrollment);
+                }
             }
 
-            // Award gamification points for enrollment
-            try {
-                $gamificationService = app(\App\Services\GamificationService::class);
-                $student = $enrollment->student;
-                $gamificationService->awardPointsForEvent(
-                    $student,
-                    'enrollment_first_program',
-                    'enrollments',
-                    $enrollment->id,
-                    [
-                        'program_id' => $enrollment->program_id,
-                        'batch_id' => $enrollment->batch_id,
-                        'group_id' => $enrollment->group_id,
-                    ]
-                );
-            } catch (\Exception $e) {
-                // Log but don't fail enrollment if gamification fails
-                \Illuminate\Support\Facades\Log::warning('Gamification failed for enrollment', [
-                    'enrollment_id' => $enrollment->id,
-                    'error' => $e->getMessage(),
-                ]);
-            }
-
-            return $enrollment;
+            return $enrollment->load(['course', 'group', 'student']);
         });
     }
 
@@ -119,16 +91,12 @@ class EnrollmentService
         return DB::transaction(function () use ($enrollmentId, $adminId, $reason) {
             $enrollment = Enrollment::findOrFail($enrollmentId);
             $enrollment->status = 'rejected';
+            if ($reason) {
+                $enrollment->note = $reason;
+            }
             $enrollment->save();
 
-            EnrollmentLog::create([
-                'enrollment_id' => $enrollment->id,
-                'action' => 'rejected',
-                'admin_id' => $adminId,
-                'metadata' => ['reason' => $reason],
-            ]);
-
-            return $enrollment;
+            return $enrollment->load(['course', 'student']);
         });
     }
 
@@ -143,45 +111,16 @@ class EnrollmentService
             $enrollment->can_attend = false;
             $enrollment->save();
 
-            EnrollmentLog::create([
-                'enrollment_id' => $enrollment->id,
-                'action' => 'withdrawn',
-                'admin_id' => $adminId,
-            ]);
+            // Remove student from group if assigned
+            if ($enrollment->group_id) {
+                $group = \App\Models\Group::find($enrollment->group_id);
+                if ($group) {
+                    $group->students()->detach($enrollment->student_id);
+                }
+            }
 
-            return $enrollment;
+            return $enrollment->load(['course', 'group', 'student']);
         });
-    }
-
-    /**
-     * Create invoice for approved enrollment
-     */
-    protected function createInvoiceForEnrollment(Enrollment $enrollment): Invoice
-    {
-        $program = $enrollment->program;
-        $totalAmount = $program ? $program->price : 0;
-
-        $invoice = Invoice::create([
-            'enrollment_id' => $enrollment->id,
-            'total_amount' => $totalAmount,
-            'due_date' => now()->addDays(30),
-            'status' => 'unpaid',
-        ]);
-
-        InvoiceItem::create([
-            'invoice_id' => $invoice->id,
-            'title' => $program ? $program->getTranslated('title') : 'Program Fee',
-            'amount' => $totalAmount,
-            'quantity' => 1,
-        ]);
-
-        EnrollmentLog::create([
-            'enrollment_id' => $enrollment->id,
-            'action' => 'payment-created',
-            'metadata' => ['invoice_id' => $invoice->id],
-        ]);
-
-        return $invoice;
     }
 
     /**
@@ -193,12 +132,12 @@ class EnrollmentService
             return;
         }
 
-        $sessions = Session::where('group_id', $enrollment->group_id)->get();
+        $sessions = GroupSession::where('group_id', $enrollment->group_id)->get();
 
         foreach ($sessions as $session) {
             Attendance::firstOrCreate(
                 [
-                    'session_id' => $session->id,
+                    'group_session_id' => $session->id,
                     'student_id' => $enrollment->student_id,
                 ],
                 [
@@ -208,4 +147,3 @@ class EnrollmentService
         }
     }
 }
-

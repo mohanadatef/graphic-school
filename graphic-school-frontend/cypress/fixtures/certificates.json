@@ -1,0 +1,36 @@
+{
+  "testCertificate": {
+    "id": 1,
+    "course_id": 1,
+    "group_id": 1,
+    "student_id": 2,
+    "instructor_id": 1,
+    "enrollment_id": 2,
+    "certificate_number": "CERT-ABC123-2025",
+    "verification_code": "abc123def456ghi789",
+    "qr_code": "/storage/certificates/qr/abc123def456ghi789.png",
+    "template_path": "/storage/certificates/templates/default.png",
+    "pdf_path": "/storage/certificates/pdf/cert_1.pdf",
+    "issued_date": "2025-01-28",
+    "expiry_date": null,
+    "is_verified": true,
+    "course": {
+      "id": 1,
+      "title": "Graphic Design Fundamentals"
+    },
+    "group": {
+      "id": 1,
+      "name": "Group A - Morning"
+    },
+    "student": {
+      "id": 2,
+      "name": "Test Student",
+      "email": "student1@graphicschool.com"
+    },
+    "instructor": {
+      "id": 1,
+      "name": "John Instructor"
+    }
+  }
+}
+

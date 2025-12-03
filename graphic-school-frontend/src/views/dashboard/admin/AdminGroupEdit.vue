@@ -2,126 +2,87 @@
   <div class="space-y-6">
     <div class="flex items-center justify-between">
       <div>
-        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">{{ $t('admin.groups.edit') || 'Edit Group' }}</h2>
-        <p class="text-sm text-slate-500 dark:text-slate-400">{{ $t('admin.groups.editSubtitle') || 'Update group information' }}</p>
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">
+          {{ $t('admin.groups.edit') || 'Edit Group' }}
+        </h2>
+        <p class="text-sm text-slate-500 dark:text-slate-400">
+          {{ $t('admin.groups.editDescription') || 'Update group information' }}
+        </p>
       </div>
       <RouterLink
         to="/dashboard/admin/groups"
-        class="btn-secondary inline-flex items-center gap-2"
+        class="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-md hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
       >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-        </svg>
         {{ $t('common.back') || 'Back' }}
       </RouterLink>
     </div>
 
-    <div v-if="loading" class="text-center py-20">
+    <div v-if="loading && !group" class="text-center py-20">
       <div class="spinner-lg mx-auto mb-4"></div>
       <p class="text-slate-500 dark:text-slate-400">{{ $t('common.loading') || 'Loading...' }}</p>
     </div>
 
-    <div v-else class="bg-white dark:bg-slate-800 rounded-2xl shadow border border-slate-200 dark:border-slate-700 p-8">
+    <div v-else-if="group" class="bg-white dark:bg-slate-800 rounded-2xl shadow border border-slate-200 dark:border-slate-700 p-6">
       <form @submit.prevent="submit" class="space-y-6">
-        <!-- Batch Selection -->
-        <div>
-          <label class="label">{{ $t('admin.groups.batch') || 'Batch' }} *</label>
-          <select v-model="form.batch_id" class="input" required>
-            <option value="">{{ $t('common.select') || 'Select Batch' }}</option>
-            <option v-for="batch in batches" :key="batch.id" :value="batch.id">
-              {{ batch.name || batch.code }} ({{ batch.program?.title || batch.program_id }})
-            </option>
-          </select>
-        </div>
-
-        <!-- Basic Fields -->
         <div class="grid md:grid-cols-2 gap-6">
+          <div>
+            <label class="label">{{ $t('admin.groups.course') || 'Course' }}</label>
+            <select v-model="form.course_id" class="input" required>
+              <option value="">{{ $t('common.select') || 'Select...' }}</option>
+              <option v-for="course in courses" :key="course.id" :value="course.id">
+                {{ course.title }}
+              </option>
+            </select>
+          </div>
+
+          <div>
+            <label class="label">{{ $t('admin.groups.code') || 'Code' }}</label>
+            <input v-model="form.code" class="input" required />
+          </div>
+
           <div>
             <label class="label">{{ $t('admin.groups.name') || 'Name' }}</label>
             <input v-model="form.name" class="input" />
           </div>
+
           <div>
-            <label class="label">{{ $t('admin.groups.code') || 'Code' }}</label>
-            <input v-model="form.code" class="input" />
-          </div>
-          <div>
-            <label class="label">{{ $t('admin.groups.capacity') || 'Capacity' }} *</label>
+            <label class="label">{{ $t('admin.groups.capacity') || 'Capacity' }}</label>
             <input v-model.number="form.capacity" type="number" min="1" class="input" required />
           </div>
+
           <div>
             <label class="label">{{ $t('admin.groups.room') || 'Room' }}</label>
             <input v-model="form.room" class="input" />
           </div>
+
           <div>
             <label class="label">{{ $t('admin.groups.instructor') || 'Instructor' }}</label>
             <select v-model="form.instructor_id" class="input">
-              <option value="">{{ $t('common.select') || 'Select Instructor' }}</option>
+              <option value="">{{ $t('common.select') || 'Select...' }}</option>
               <option v-for="instructor in instructors" :key="instructor.id" :value="instructor.id">
                 {{ instructor.name }}
               </option>
             </select>
           </div>
-        </div>
 
-        <div>
-          <label class="flex items-center gap-3 cursor-pointer">
-            <input type="checkbox" v-model="form.is_active" class="w-5 h-5 text-primary border-slate-300 rounded focus:ring-primary focus:ring-2" />
-            <span class="text-sm font-medium text-slate-700 dark:text-slate-300">{{ $t('common.active') || 'Active' }}</span>
-          </label>
-        </div>
-
-        <!-- Translations -->
-        <div>
-          <label class="label mb-4 block">{{ $t('admin.groups.translations') || 'Translations' }}</label>
-          <div class="space-y-4">
-            <div
-              v-for="lang in availableLanguages"
-              :key="lang.code"
-              class="p-4 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50"
-            >
-              <div class="flex items-center gap-3 mb-3">
-                <span class="font-semibold text-slate-700 dark:text-slate-300">{{ lang.native_name }}</span>
-              </div>
-              <div class="space-y-3">
-                <div>
-                  <label class="label text-sm">{{ $t('admin.groups.name') || 'Name' }} *</label>
-                  <input
-                    v-model="form.translations[lang.code].name"
-                    class="input"
-                    :required="lang.code === 'ar'"
-                    :placeholder="`${$t('admin.groups.name') || 'Name'} (${lang.native_name})`"
-                  />
-                </div>
-                <div>
-                  <label class="label text-sm">{{ $t('admin.groups.description') || 'Description' }}</label>
-                  <textarea
-                    v-model="form.translations[lang.code].description"
-                    class="input"
-                    rows="3"
-                    :placeholder="`${$t('admin.groups.description') || 'Description'} (${lang.native_name})`"
-                  ></textarea>
-                </div>
-              </div>
-            </div>
+          <div class="md:col-span-2">
+            <label class="flex items-center gap-2">
+              <input v-model="form.is_active" type="checkbox" class="w-4 h-4" />
+              <span>{{ $t('common.active') || 'Active' }}</span>
+            </label>
           </div>
         </div>
 
-        <!-- Actions -->
-        <div class="flex items-center gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
-          <button
-            type="submit"
-            :disabled="saving"
-            class="btn-primary inline-flex items-center gap-2"
+        <div class="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+          <RouterLink
+            to="/dashboard/admin/groups"
+            class="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-md hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
           >
-            <svg v-if="saving" class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span>{{ saving ? ($t('common.saving') || 'Saving...') : ($t('common.save') || 'Save') }}</span>
-          </button>
-          <RouterLink to="/dashboard/admin/groups" class="btn-secondary">
             {{ $t('common.cancel') || 'Cancel' }}
           </RouterLink>
+          <button type="submit" class="px-4 py-2 bg-primary text-white rounded-md" :disabled="loading">
+            {{ loading ? ($t('common.saving') || 'Saving...') : ($t('common.save') || 'Save') }}
+          </button>
         </div>
       </form>
     </div>
@@ -130,10 +91,17 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { RouterLink, useRouter, useRoute } from 'vue-router';
+import { useRouter, useRoute, RouterLink } from 'vue-router';
 import { useApi } from '../../../composables/useApi';
 import { useToast } from '../../../composables/useToast';
-import { useI18n } from 'vue-i18n';
+import { useI18n } from '../../../composables/useI18n';
+
+const props = defineProps({
+  id: {
+    type: [String, Number],
+    required: true,
+  },
+});
 
 const router = useRouter();
 const route = useRoute();
@@ -141,107 +109,109 @@ const { get, put } = useApi();
 const toast = useToast();
 const { t } = useI18n();
 
-const loading = ref(true);
-const saving = ref(false);
-const batches = ref([]);
+const loading = ref(false);
+const group = ref(null);
+const courses = ref([]);
 const instructors = ref([]);
-const availableLanguages = ref([
-  { code: 'ar', native_name: 'العربية' },
-  { code: 'en', native_name: 'English' },
-]);
 
 const form = ref({
-  batch_id: '',
-  name: '',
+  course_id: '',
   code: '',
+  name: '',
   capacity: 20,
   room: '',
-  instructor_id: null,
+  instructor_id: '',
   is_active: true,
-  translations: {
-    ar: { locale: 'ar', name: '', description: '' },
-    en: { locale: 'en', name: '', description: '' },
-  },
 });
-
-async function loadBatches() {
-  try {
-    const response = await get('/admin/batches?per_page=1000');
-    batches.value = response?.data || response || [];
-  } catch (err) {
-    console.error('Error loading batches:', err);
-  }
-}
-
-async function loadInstructors() {
-  try {
-    const response = await get('/admin/users?role=instructor&per_page=1000');
-    instructors.value = response?.data || response || [];
-  } catch (err) {
-    console.error('Error loading instructors:', err);
-  }
-}
 
 async function loadGroup() {
   try {
     loading.value = true;
-    const response = await get(`/admin/groups/${route.params.id}?include_translations=true`);
+    const groupId = props.id || route.params.id;
+    const response = await get(`/admin/groups/${groupId}`);
+    group.value = response?.data || response;
     
-    if (response && response.data) {
-      const group = response.data;
-      form.value = {
-        batch_id: group.batch_id || '',
-        name: group.name || '',
-        code: group.code || '',
-        capacity: group.capacity || group.max_students || 20,
-        room: group.room || '',
-        instructor_id: group.instructor_id || null,
-        is_active: group.is_active !== undefined ? group.is_active : true,
-        translations: {
-          ar: group.translations?.find(t => t.locale === 'ar') || { locale: 'ar', name: '', description: '' },
-          en: group.translations?.find(t => t.locale === 'en') || { locale: 'en', name: '', description: '' },
-        },
-      };
-    }
+    // Populate form
+    form.value = {
+      course_id: group.value.course_id || '',
+      code: group.value.code || '',
+      name: group.value.name || '',
+      capacity: group.value.capacity || 20,
+      room: group.value.room || '',
+      instructor_id: group.value.instructor_id || '',
+      is_active: group.value.is_active !== undefined ? group.value.is_active : true,
+    };
   } catch (err) {
-    console.error('Error loading group:', err);
-    toast.error(err.response?.data?.message || err.message || t('errors.loadDataError') || 'Failed to load group');
-    router.push({ name: 'admin-groups' });
+    toast.error(t('errors.loadError') || 'Failed to load group');
+    console.error(err);
   } finally {
     loading.value = false;
   }
 }
 
-async function submit() {
+async function loadOptions() {
   try {
-    saving.value = true;
+    const [coursesRes, instructorsRes] = await Promise.allSettled([
+      get('/admin/courses'),
+      get('/admin/users?filters[role]=instructor'),
+    ]);
 
-    // Prepare translations array
-    const translations = Object.values(form.value.translations).filter(t => t.name);
+    if (coursesRes.status === 'fulfilled') {
+      const data = coursesRes.value?.data || coursesRes.value;
+      courses.value = Array.isArray(data) ? data : [];
+    }
 
-    const payload = {
-      ...form.value,
-      translations,
-    };
-
-    const response = await put(`/admin/groups/${route.params.id}`, payload);
-
-    if (response && response.success) {
-      toast.success(response.message || t('admin.groups.updated') || 'Group updated successfully');
-      router.push({ name: 'admin-groups' });
+    if (instructorsRes.status === 'fulfilled') {
+      const data = instructorsRes.value?.data || instructorsRes.value;
+      instructors.value = Array.isArray(data) ? data : [];
     }
   } catch (err) {
-    console.error('Error updating group:', err);
-    toast.error(err.response?.data?.message || err.message || t('errors.saveError') || 'Failed to update group');
+    console.error('Error loading options:', err);
+  }
+}
+
+async function submit() {
+  try {
+    loading.value = true;
+    const groupId = props.id || route.params.id;
+    await put(`/admin/groups/${groupId}`, form.value);
+    toast.success(t('admin.groups.updated') || 'Group updated successfully');
+    router.push('/dashboard/admin/groups');
+  } catch (err) {
+    toast.error(err.response?.data?.message || t('errors.saveError') || 'Failed to update group');
   } finally {
-    saving.value = false;
+    loading.value = false;
   }
 }
 
 onMounted(async () => {
-  await loadBatches();
-  await loadInstructors();
+  await loadOptions();
   await loadGroup();
 });
 </script>
 
+<style scoped>
+.input {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 0.65rem 0.9rem;
+  font-size: 0.95rem;
+  background: white;
+}
+.dark .input {
+  background: #1e293b;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+.label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #475569;
+  margin-bottom: 0.5rem;
+}
+.dark .label {
+  color: #cbd5e1;
+}
+</style>

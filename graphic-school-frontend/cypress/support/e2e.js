@@ -19,6 +19,8 @@ import './commands';
 // import './login-simple';
 // Import self-healing support
 import './selfHeal';
+// Import error interceptor
+import { setupErrorInterceptor, checkFor404Page } from './errorInterceptor';
 
 // Log routes and i18n missing keys after each test
 // Completely optional - won't break tests if it fails

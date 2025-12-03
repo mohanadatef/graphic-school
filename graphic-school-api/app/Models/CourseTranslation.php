@@ -2,11 +2,16 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Modules\LMS\Courses\Models\Course;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class CourseTranslation extends Model
 {
+    use HasFactory;
+
+    protected $table = 'course_translations';
+
     protected $fillable = [
         'course_id',
         'locale',
@@ -14,13 +19,16 @@ class CourseTranslation extends Model
         'description',
         'meta_title',
         'meta_description',
-        'extras',
     ];
 
     protected $casts = [
-        'extras' => 'array',
+        'meta_title' => 'string',
+        'meta_description' => 'string',
     ];
 
+    /**
+     * Get the course that owns this translation
+     */
     public function course()
     {
         return $this->belongsTo(Course::class);

@@ -19,7 +19,7 @@ class GroupController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $filters = $request->only(['batch_id', 'instructor_id', 'is_active']);
+        $filters = $request->only(['course_id', 'instructor_id', 'is_active', 'search']);
         $perPage = $request->integer('per_page', 15);
         
         $groups = $this->groupRepository->paginateWithFilters($filters, $perPage);
@@ -54,7 +54,7 @@ class GroupController extends Controller
 
     public function show(Group $group, Request $request): JsonResponse
     {
-        $group = $this->groupRepository->loadRelations($group, ['translations', 'batch.program', 'instructor', 'students', 'instructors', 'sessions']);
+        $group = $this->groupRepository->loadRelations($group, ['translations', 'course', 'instructor', 'students', 'instructors', 'groupSessions']);
         
         $locale = app()->getLocale();
         $groupData = $group->toArray();
@@ -74,17 +74,18 @@ class GroupController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'batch_id' => 'required|exists:batches,id',
-            'code' => 'nullable|string|max:50',
-            'capacity' => 'nullable|integer|min:1',
+            'course_id' => 'required|exists:courses,id',
+            'code' => 'required|string|max:50',
+            'name' => 'nullable|string|max:255',
+            'capacity' => 'required|integer|min:1',
             'room' => 'nullable|string|max:255',
             'instructor_id' => 'nullable|exists:users,id',
-            'is_active' => 'boolean',
+            'is_active' => 'nullable|boolean',
             'student_ids' => 'nullable|array',
             'student_ids.*' => 'exists:users,id',
             'instructor_ids' => 'nullable|array',
             'instructor_ids.*' => 'exists:users,id',
-            'translations' => 'required|array',
+            'translations' => 'nullable|array',
             'translations.*.locale' => 'required|string|in:en,ar',
             'translations.*.name' => 'required|string|max:255',
             'translations.*.description' => 'nullable|string',

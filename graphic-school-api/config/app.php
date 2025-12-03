@@ -196,38 +196,31 @@ return [
         App\Providers\RouteServiceProvider::class,
         App\Providers\RepositoryServiceProvider::class,
 
-        // Module Service Providers
-        Modules\Core\FileStorage\Providers\ModuleServiceProvider::class,
-        Modules\Core\Notification\Providers\ModuleServiceProvider::class,
-        Modules\Core\ExportImport\Providers\ModuleServiceProvider::class,
+        // Module Service Providers - BUSINESS APPROVED ONLY
+        // ACL Modules
         Modules\ACL\Auth\Providers\ModuleServiceProvider::class,
         Modules\ACL\Users\Providers\ModuleServiceProvider::class,
         Modules\ACL\Roles\Providers\ModuleServiceProvider::class,
+        Modules\ACL\Permissions\Providers\ModuleServiceProvider::class,
+        // LMS Modules
         Modules\LMS\Categories\Providers\ModuleServiceProvider::class,
         Modules\LMS\Courses\Providers\ModuleServiceProvider::class,
         Modules\LMS\Sessions\Providers\ModuleServiceProvider::class,
         Modules\LMS\Enrollments\Providers\ModuleServiceProvider::class,
         Modules\LMS\Attendance\Providers\ModuleServiceProvider::class,
         Modules\LMS\CourseReviews\Providers\ModuleServiceProvider::class,
-        Modules\LMS\Curriculum\Providers\ModuleServiceProvider::class,
-        Modules\LMS\Progress\Providers\ModuleServiceProvider::class,
-        Modules\LMS\Assessments\Providers\ModuleServiceProvider::class,
         Modules\LMS\Certificates\Providers\ModuleServiceProvider::class,
-        Modules\CMS\Settings\Providers\ModuleServiceProvider::class,
-        Modules\CMS\Sliders\Providers\ModuleServiceProvider::class,
-        Modules\CMS\Testimonials\Providers\ModuleServiceProvider::class,
-        Modules\CMS\Contacts\Providers\ModuleServiceProvider::class,
+        // CMS Modules
         Modules\CMS\PublicSite\Providers\ModuleServiceProvider::class,
+        Modules\CMS\Settings\Providers\ModuleServiceProvider::class,
+        Modules\CMS\Contacts\Providers\ModuleServiceProvider::class,
+        // Core Modules
+        Modules\Core\FileStorage\Providers\ModuleServiceProvider::class,
+        Modules\Core\Notification\Providers\ModuleServiceProvider::class,
         Modules\Core\Localization\Providers\ModuleServiceProvider::class,
-        Modules\Core\Versioning\Providers\ModuleServiceProvider::class,
+        // Operations Modules
         Modules\Operations\Dashboard\Providers\ModuleServiceProvider::class,
-        Modules\Operations\Reports\Providers\ModuleServiceProvider::class,
         Modules\Operations\Logging\Providers\ModuleServiceProvider::class,
-        Modules\Operations\Analytics\Providers\ModuleServiceProvider::class,
-        Modules\Operations\Backup\Providers\ModuleServiceProvider::class,
-        Modules\Support\Tickets\Providers\ModuleServiceProvider::class,
-        Modules\Support\SystemHealth\Providers\ModuleServiceProvider::class,
-        Modules\ACL\Permissions\Providers\ModuleServiceProvider::class,
 
     ],
 

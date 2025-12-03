@@ -28,6 +28,19 @@ api.interceptors.request.use(
       method: config.method,
     };
     
+    // Log request in development mode (for debugging)
+    if (import.meta.env.DEV && (config.url?.includes('/login') || config.url?.includes('/register'))) {
+      console.log('[API Request]', {
+        method: config.method?.toUpperCase(),
+        url: config.baseURL + config.url,
+        data: config.data,
+        headers: {
+          'Content-Type': config.headers['Content-Type'],
+          'Accept-Language': config.headers['Accept-Language'],
+        },
+      });
+    }
+    
     return config;
   },
   (error) => {
@@ -85,26 +98,56 @@ api.interceptors.response.use(
       );
     }
 
-    // Log error for monitoring
-    logError(error, {
-      type: 'api_error',
-      url: error.config?.url,
-      method: error.config?.method,
-      status: error.response?.status,
-    });
+    // Don't log expected errors (these are handled gracefully)
+    const isPublicEndpoint = error.config?.url?.includes('/public/');
+    const is404 = error.response?.status === 404;
+    const is401 = error.response?.status === 401;
+    const isUserEndpoint = error.config?.url === '/user' || error.config?.url?.endsWith('/user');
+    const isGetUserRequest = isUserEndpoint && error.config?.method === 'get';
+    
+    // Skip logging for:
+    // 1. 404 errors on public endpoints (expected behavior)
+    // 2. 401 errors on GET /user (expected when token is invalid/expired - app handles this gracefully)
+    const shouldSkipLogging = (isPublicEndpoint && is404) || (isGetUserRequest && is401);
+    
+    if (!shouldSkipLogging) {
+      // Log error for monitoring (skip expected errors)
+      logError(error, {
+        type: 'api_error',
+        url: error.config?.url,
+        method: error.config?.method,
+        status: error.response?.status,
+      });
+    }
     
     // Handle unified error format
     if (error.response?.data && typeof error.response.data === 'object' && 'success' in error.response.data) {
       // This is a unified error response
+      // Preserve the original structure but make it easier to access
       const errorData = error.response.data;
+      // Keep the original data but also add direct access to message
       error.response.data = {
+        ...errorData, // Preserve all original fields
         message: errorData.message || 'An error occurred',
         errors: errorData.errors || null,
       };
+      // Also attach message directly to error for easier access
+      error.message = errorData.message || error.message || 'An error occurred';
     }
     
     // Handle 401 - Unauthorized
     if (error.response?.status === 401) {
+      // Log detailed error in development mode
+      if (import.meta.env.DEV) {
+        console.error('[API 401 Error]', {
+          url: error.config?.baseURL + error.config?.url,
+          method: error.config?.method?.toUpperCase(),
+          requestData: error.config?.data,
+          responseData: error.response?.data,
+          status: error.response?.status,
+        });
+      }
+      
       // Don't call logout API if we're already getting 401 (to avoid infinite loop)
       // Just clear the session locally
       if (authStore.token) {
@@ -119,9 +162,13 @@ api.interceptors.response.use(
     // Handle 403 - Forbidden
     if (error.response?.status === 403) {
       // Redirect to appropriate dashboard based on role
-      const role = authStore.user?.role_name || authStore.user?.role?.name;
-      if (role) {
+      const role = authStore.roleName || authStore.user?.role_name || authStore.user?.role?.name;
+      const validRoles = ['admin', 'super_admin', 'instructor', 'student'];
+      if (role && validRoles.includes(role)) {
         window.location.href = `/dashboard/${role}`;
+      } else {
+        // If role is invalid or missing, redirect to login
+        window.location.href = '/login';
       }
     }
     

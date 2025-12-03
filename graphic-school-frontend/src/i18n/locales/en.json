@@ -52,7 +52,8 @@
     "registerSuccess": "Registered successfully",
     "logoutSuccess": "Logged out successfully",
     "invalidCredentials": "Invalid credentials",
-    "accountDisabled": "Account disabled"
+    "accountDisabled": "Account disabled",
+    "loginError": "An error occurred during login. Please try again."
   },
   "navigation": {
     "home": "Home",
@@ -155,16 +156,13 @@
     "sessionsDescription": "Manage session schedules",
     "attendance": "Attendance",
     "payments": "Payments",
-    "tickets": "Tickets",
     "auditLogs": "Audit Logs",
     "media": "Media Library",
     "faqs": "FAQs",
     "settings": "Settings",
     "roles": "Roles & Permissions",
     "contacts": "Messages",
-    "sliders": "Sliders",
     "pages": "Pages",
-    "testimonials": "Testimonials",
     "translations": "Translations",
     "translation": "Translation",
     "translationsDescription": "Manage application translations",
@@ -179,24 +177,17 @@
     "groupHint": "Default: messages",
     "valuePlaceholder": "Enter translation text",
     "websiteStatus": "Website Status",
-    "editSetup": "Edit Setup",
     "activated": "Activated",
-    "yes": "Yes",
-    "no": "No",
     "defaultLanguage": "Default Language",
     "defaultCurrency": "Default Currency",
     "homepageTemplate": "Homepage Template",
     "enabledPages": "Enabled Pages",
     "brandingPreview": "Branding Preview",
-    "runSetupWizard": "Run Setup Wizard",
     "resetting": "Resetting...",
     "resetToDefault": "Reset to Default",
     "resetConfirm": "Are you sure you want to reset the website to default? This will reset all branding and page settings.",
     "resetSuccess": "Website reset to default successfully",
     "resetError": "Failed to reset website",
-    "websiteSetup": "Website Setup",
-    "comprehensiveReports": "Comprehensive Reports",
-    "strategicReports": "Strategic Reports",
     "sessionsStatus": {
       "scheduled": "Scheduled",
       "completed": "Completed",
@@ -332,19 +323,6 @@
     "hoursAgo": "hours ago",
     "daysAgo": "days ago"
   },
-  "payments": {
-    "title": "Payments",
-    "timeline": "Payment Timeline",
-    "amount": "Amount",
-    "remaining": "Remaining",
-    "paymentDate": "Payment Date",
-    "paymentMethod": "Payment Method",
-    "status": "Status",
-    "totalPaid": "Total Paid",
-    "totalRemaining": "Total Remaining",
-    "addPayment": "Add Payment",
-    "editPayment": "Edit Payment"
-  },
   "messaging": {
     "title": "Messages",
     "conversations": "Conversations",
@@ -362,26 +340,6 @@
     "seo": "SEO",
     "sections": "Sections"
   },
-  "reports": {
-    "title": "Reports",
-    "topStudents": "Top Students",
-    "averageGrades": "Average Grades",
-    "attendanceRate": "Attendance Rate",
-    "engagement": "Engagement Quality",
-    "byCourse": "By Course",
-    "byInstructor": "By Instructor",
-    "byStudent": "By Student"
-  },
-  "tickets": {
-    "title": "Support Tickets",
-    "create": "Create Ticket",
-    "type": "Type",
-    "status": "Status",
-    "priority": "Priority",
-    "bug": "Bug",
-    "changeRequest": "Change Request",
-    "newFeature": "New Feature"
-  },
   "auditLog": {
     "title": "Audit Log",
     "action": "Action",
@@ -396,72 +354,6 @@
     "rowsPerPage": "Rows per page",
     "previous": "Previous",
     "next": "Next"
-  },
-  "setup": {
-    "welcome": "Welcome to Graphic School",
-    "description": "Let's set up your academy in a few simple steps",
-    "activateDefault": "Activate Default Website",
-    "skip": "Skip Setup",
-    "next": "Next",
-    "back": "Back",
-    "saving": "Saving...",
-    "general": {
-      "title": "General Information",
-      "description": "Tell us about your academy",
-      "academyName": "Academy Name",
-      "academyNamePlaceholder": "Enter your academy name",
-      "country": "Country",
-      "selectCountry": "Select Country",
-      "defaultLanguage": "Default Language",
-      "timezone": "Timezone",
-      "defaultCurrency": "Default Currency"
-    },
-    "branding": {
-      "title": "Branding & Appearance",
-      "description": "Customize your academy's look and feel",
-      "logo": "Logo",
-      "logoHint": "PNG, JPG up to 4MB",
-      "primaryColor": "Primary Color",
-      "secondaryColor": "Secondary Color",
-      "mainFont": "Main Font",
-      "headingsFont": "Headings Font",
-      "defaultTheme": "Default Theme",
-      "light": "Light",
-      "dark": "Dark"
-    },
-    "pages": {
-      "title": "Website Pages",
-      "description": "Choose your homepage template and enable pages",
-      "homepageTemplate": "Homepage Template",
-      "enabledPages": "Enabled Pages"
-    },
-    "email": {
-      "title": "Email Configuration",
-      "description": "Configure SMTP settings for sending emails (optional)",
-      "smtpHost": "SMTP Host",
-      "smtpPort": "SMTP Port",
-      "smtpUsername": "SMTP Username",
-      "smtpPassword": "SMTP Password",
-      "smtpEncryption": "Encryption",
-      "testEmail": "Test Email",
-      "sending": "Sending...",
-      "sendTest": "Send Test"
-    },
-    "payment": {
-      "title": "Payment Configuration",
-      "description": "Configure payment gateways (optional)",
-      "stripeKey": "Publishable Key",
-      "stripeSecret": "Secret Key",
-      "paymobKey": "API Key",
-      "paytabsSecret": "Secret Key"
-    },
-    "launch": {
-      "title": "Launch Your Website",
-      "description": "Review your settings and launch your website",
-      "launching": "Launching...",
-      "launchWebsite": "🚀 Launch Website",
-      "activateDefault": "Activate Default Website Instead"
-    }
   },
   "errors": {
     "somethingWentWrong": "Something went wrong",
@@ -513,4 +405,3 @@
     "completed": "Completed"
   }
 }
-

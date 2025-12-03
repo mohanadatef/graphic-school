@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Attendance;
-use App\Models\GradebookEntry;
 use Modules\LMS\Sessions\Models\Session;
 use Modules\ACL\Users\Models\User;
 
@@ -29,58 +28,9 @@ class AttendanceService
 
         $attendance->save();
 
-        // Update gradebook
-        $this->updateGradebookForAttendance($attendance);
-
-        // Award gamification points for attendance
-        if ($status === 'present') {
-            try {
-                $gamificationService = app(\App\Services\GamificationService::class);
-                $student = User::findOrFail($studentId);
-                $gamificationService->awardPointsForEvent(
-                    $student,
-                    'attendance_present',
-                    'attendance',
-                    $attendance->id,
-                    [
-                        'session_id' => $sessionId,
-                        'status' => $status,
-                    ]
-                );
-            } catch (\Exception $e) {
-                // Log but don't fail attendance if gamification fails
-                \Illuminate\Support\Facades\Log::warning('Gamification failed for attendance', [
-                    'attendance_id' => $attendance->id,
-                    'error' => $e->getMessage(),
-                ]);
-            }
-        }
-
         return $attendance;
     }
 
-    /**
-     * Update gradebook after attendance change
-     */
-    protected function updateGradebookForAttendance(Attendance $attendance): void
-    {
-        $session = $attendance->session;
-        if (!$session->group_id) {
-            return;
-        }
-
-        $group = $session->group;
-        if (!$group->batch || !$group->batch->program_id) {
-            return;
-        }
-
-        $gradebookService = app(\App\Services\GradebookService::class);
-        $gradebookService->updateForStudent(
-            $attendance->student_id,
-            $group->batch->program_id,
-            $group->batch_id
-        );
-    }
 
     /**
      * Bulk update attendance for a session

@@ -4,10 +4,11 @@ namespace Modules\LMS\Courses\Models;
 
 use Modules\LMS\Categories\Models\Category;
 use Modules\ACL\Users\Models\User;
-use Modules\LMS\Sessions\Models\Session;
+use Modules\LMS\Sessions\Models\GroupSession;
 use Modules\LMS\Enrollments\Models\Enrollment;
 use Modules\LMS\CourseReviews\Models\CourseReview;
-use Modules\LMS\Curriculum\Models\CourseModule;
+use App\Models\Group;
+use App\Models\SessionTemplate;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Database\Factories\CourseFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -69,9 +70,28 @@ class Course extends Model
             ->withTimestamps();
     }
 
-    public function sessions()
+    /**
+     * Groups that belong to this course
+     */
+    public function groups()
     {
-        return $this->hasMany(Session::class);
+        return $this->hasMany(Group::class);
+    }
+
+    /**
+     * Session templates for this course
+     */
+    public function sessionTemplates()
+    {
+        return $this->hasMany(SessionTemplate::class);
+    }
+
+    /**
+     * Group sessions through groups (for backward compatibility)
+     */
+    public function groupSessions()
+    {
+        return $this->hasManyThrough(GroupSession::class, Group::class);
     }
 
     public function enrollments()
@@ -89,23 +109,20 @@ class Course extends Model
         return $this->hasMany(CourseReview::class);
     }
 
-    public function modules(): HasMany
-    {
-        return $this->hasMany(CourseModule::class)->orderBy('order');
-    }
 
     /**
      * Translation relationships
+     * Note: CourseTranslation model must exist in app/Models/CourseTranslation.php
      */
     public function translations()
     {
-        return $this->hasMany(\App\Models\CourseTranslation::class);
+        return $this->hasMany(\App\Models\CourseTranslation::class, 'course_id');
     }
 
     public function translation(?string $locale = null)
     {
         $locale = $locale ?? app()->getLocale();
-        return $this->hasOne(\App\Models\CourseTranslation::class)
+        return $this->hasOne(\App\Models\CourseTranslation::class, 'course_id')
             ->where('locale', $locale);
     }
 
@@ -115,8 +132,13 @@ class Course extends Model
     public function getTranslatedTitleAttribute(?string $locale = null): ?string
     {
         $locale = $locale ?? app()->getLocale();
-        $translation = $this->translations()->where('locale', $locale)->first();
-        return $translation?->title ?? $this->title ?? $this->translations()->first()?->title;
+        try {
+            $translation = $this->translations()->where('locale', $locale)->first();
+            return $translation?->title ?? $this->title ?? $this->translations()->first()?->title;
+        } catch (\Exception $e) {
+            // If translations table doesn't exist or model has issues, return default title
+            return $this->title;
+        }
     }
 
     /**
@@ -125,16 +147,21 @@ class Course extends Model
     public function getTranslatedDescriptionAttribute(?string $locale = null): ?string
     {
         $locale = $locale ?? app()->getLocale();
-        $translation = $this->translations()->where('locale', $locale)->first();
-        return $translation?->description ?? $this->description ?? $this->translations()->first()?->description;
+        try {
+            $translation = $this->translations()->where('locale', $locale)->first();
+            return $translation?->description ?? $this->description ?? $this->translations()->first()?->description;
+        } catch (\Exception $e) {
+            // If translations table doesn't exist or model has issues, return default description
+            return $this->description;
+        }
     }
 
     /**
-     * Get the next upcoming session for this course
+     * Get the next upcoming group session for this course
      */
-    public function nextSession()
+    public function nextGroupSession()
     {
-        return $this->sessions()
+        return $this->groupSessions()
             ->where('session_date', '>=', now()->toDateString())
             ->where('status', 'scheduled')
             ->orderBy('session_date')

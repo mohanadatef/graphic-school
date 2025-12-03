@@ -9,10 +9,22 @@
 
     <div class="bg-white border border-slate-100 rounded-2xl shadow p-3">
       <div class="flex flex-wrap gap-2 items-center">
+        <input
+          v-model="filters.search"
+          class="text-xs px-3 py-1.5 border border-slate-200 rounded-lg w-40"
+          :placeholder="$t('common.search') || 'Search...'"
+          @input="handleSearch"
+        />
+        <FilterDropdown
+          v-model="filters.group_id"
+          :options="groups"
+          :placeholder="$t('admin.sessions.filterByGroup') || 'Filter by Group'"
+          @update:modelValue="handleFilterChange"
+        />
         <FilterDropdown
           v-model="filters.course_id"
           :options="courses"
-          :placeholder="$t('dashboard.allCategories') || 'All Courses'"
+          :placeholder="$t('admin.sessions.filterByCourse') || 'Filter by Course'"
           label-key="title"
           @update:modelValue="handleFilterChange"
         />
@@ -39,18 +51,22 @@
       <table class="w-full text-sm">
         <thead class="bg-slate-50 text-xs uppercase">
           <tr>
-            <th class="px-4 py-3 text-left">{{ $t('course.courses') || 'Course' }}</th>
+            <th class="px-4 py-3 text-left">{{ $t('admin.groups.title') || 'Group' }}</th>
             <th class="px-4 py-3 text-left">{{ $t('courses.title') || 'Title' }}</th>
             <th class="px-4 py-3 text-left">{{ $t('course.startDate') || 'Date' }}</th>
+            <th class="px-4 py-3 text-left">{{ $t('course.time') || 'Time' }}</th>
             <th class="px-4 py-3 text-left">{{ $t('course.status') || 'Status' }}</th>
             <th class="px-4 py-3"></th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="session in sessions" :key="session.id" class="border-t border-slate-100">
-            <td class="px-4 py-3">{{ session.course?.title }}</td>
+            <td class="px-4 py-3">{{ session.group?.name || session.group?.code || 'N/A' }}</td>
             <td class="px-4 py-3">{{ session.title }}</td>
             <td class="px-4 py-3">{{ formatDate(session.session_date) }}</td>
+            <td class="px-4 py-3 text-xs">
+              {{ formatTime(session.start_time) }} - {{ formatTime(session.end_time) }}
+            </td>
             <td class="px-4 py-3 text-xs uppercase">{{ session.status }}</td>
             <td class="px-4 py-3 text-right">
               <RouterLink
@@ -87,7 +103,9 @@ import PaginationControls from '../../../components/common/PaginationControls.vu
 import FilterDropdown from '../../../components/common/FilterDropdown.vue';
 
 const { t } = useI18n();
+const { get } = useApi();
 const courses = ref([]);
+const groups = ref([]);
 
 const statusOptions = computed(() => [
   { id: 'scheduled', name: t('admin.sessionsStatus.scheduled') || 'Scheduled' },
@@ -105,41 +123,45 @@ const {
   changePage,
   changePerPage,
   loadItems,
+  loadItemsDebounced,
   applyFilters,
   updateItem,
 } = useListPage({
   endpoint: '/admin/sessions',
   initialFilters: {
+    group_id: '',
     course_id: '',
     status: '',
+    search: '',
   },
   perPage: 10,
   debounceMs: 500,
   autoApplyFilters: false, // Manual filter application
 });
 
-const { get } = useApi();
-
 async function loadCourses() {
   try {
-    // Try with a reasonable per_page value first, or without it if backend doesn't support it
-    // Some backends have max per_page limits (e.g., 100)
     const data = await get('/admin/courses', { params: { per_page: 100 } });
-    courses.value = Array.isArray(data) ? data : (data.data || []);
+    courses.value = Array.isArray(data) ? data : (data?.data || []);
   } catch (err) {
-    // If 422 error (validation), try without per_page parameter
-    if (err.response?.status === 422) {
-      try {
-        const data = await get('/admin/courses');
-        courses.value = Array.isArray(data) ? data : (data.data || []);
-      } catch (retryErr) {
-        console.error('Error loading courses:', retryErr);
-        courses.value = [];
-      }
-    } else {
-      console.error('Error loading courses:', err);
+    try {
+      const data = await get('/admin/courses');
+      courses.value = Array.isArray(data) ? data : (data?.data || []);
+    } catch (retryErr) {
+      console.error('Error loading courses:', retryErr);
       courses.value = [];
     }
+  }
+}
+
+async function loadGroups() {
+  try {
+    const data = await get('/admin/groups', { params: { per_page: 100 } });
+    const groupsData = Array.isArray(data) ? data : (data?.data || []);
+    groups.value = groupsData.map(g => ({ id: g.id, name: g.name || g.code }));
+  } catch (err) {
+    console.error('Error loading groups:', err);
+    groups.value = [];
   }
 }
 
@@ -148,13 +170,23 @@ function formatDate(date) {
   return new Date(date).toLocaleDateString('ar-EG');
 }
 
+function formatTime(time) {
+  if (!time) return '--:--';
+  return time.slice(0, 5);
+}
+
+function handleSearch() {
+  loadItemsDebounced();
+}
+
 // Handle filter change - manual apply
 function handleFilterChange() {
   applyFilters();
 }
 
 onMounted(async () => {
-  await loadCourses();
+  await Promise.all([loadCourses(), loadGroups()]);
+  await loadItems();
 });
 </script>
 

@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import api from '../api';
+import api from '../services/api/client';
 import { translate } from '../i18n';
 
 // Cache for failed endpoints (to prevent repeated requests to non-existent endpoints)
@@ -51,9 +51,15 @@ export function useApi() {
       error.value = err.response?.data?.message || err.message || translate('errors.loadDataError');
       
       // Cache failed endpoints (404/500) to prevent repeated requests
+      // BUT don't cache 404s for public endpoints (pages might be created later)
       const status = err?.response?.status;
+      const isPublicEndpoint = url.includes('/public/');
+      
       if (status === 404 || status === 500) {
-        markEndpointFailed(url);
+        // Don't cache 404s for public endpoints (they might be created later)
+        if (!(isPublicEndpoint && status === 404)) {
+          markEndpointFailed(url);
+        }
         // Silently handle - don't log to console, but still throw for error handling
         // The calling code will handle the error appropriately
       } else if (import.meta.env.DEV) {

@@ -1,0 +1,27 @@
+{
+  "sessionAttendance": {
+    "session": {
+      "id": 1,
+      "title": "Introduction to Design Principles",
+      "session_date": "2025-02-01",
+      "start_time": "10:00",
+      "end_time": "12:00"
+    },
+    "attendance": [
+      {
+        "id": 1,
+        "group_session_id": 1,
+        "student_id": 2,
+        "status": "absent",
+        "marked_by": null,
+        "marked_at": null,
+        "student": {
+          "id": 2,
+          "name": "Test Student",
+          "email": "student1@graphicschool.com"
+        }
+      }
+    ]
+  }
+}
+

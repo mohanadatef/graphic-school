@@ -2,108 +2,81 @@
 
 namespace App\Models;
 
-use Database\Factories\PageFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-/**
- * CHANGE-002: CMS Page Builder
- */
 class Page extends Model
 {
     use HasFactory;
-
-    protected static function newFactory()
-    {
-        return PageFactory::new();
-    }
 
     protected $fillable = [
         'slug',
         'title',
         'content',
-        'template',
-        'sections',
-        'meta_title',
         'meta_description',
         'is_active',
         'sort_order',
     ];
 
     protected $casts = [
-        'sections' => 'array',
-        'seo' => 'array',
-        'settings' => 'array',
-        'is_active' => 'bool',
+        'title' => 'array',
+        'content' => 'array',
+        'meta_description' => 'array',
+        'is_active' => 'boolean',
         'sort_order' => 'integer',
     ];
 
     /**
-     * Get page by slug
+     * Get page blocks (sections)
      */
-    public static function findBySlug(string $slug): ?self
+    public function blocks()
     {
-        return self::where('slug', $slug)->where('is_active', true)->first();
+        return $this->hasMany(PageBlock::class)->orderBy('sort_order');
     }
 
     /**
-     * Scope: Active pages
+     * Get enabled blocks only
+     */
+    public function enabledBlocks()
+    {
+        return $this->blocks()->where('is_enabled', true);
+    }
+
+    /**
+     * Get title for specific language
+     */
+    public function getTitle(?string $locale = null): ?string
+    {
+        $locale = $locale ?? app()->getLocale();
+        $titles = $this->title ?? [];
+        return $titles[$locale] ?? $titles['en'] ?? $titles[array_key_first($titles)] ?? null;
+    }
+
+    /**
+     * Get content for specific language
+     */
+    public function getContent(?string $locale = null): ?string
+    {
+        $locale = $locale ?? app()->getLocale();
+        $contents = $this->content ?? [];
+        return $contents[$locale] ?? $contents['en'] ?? $contents[array_key_first($contents)] ?? null;
+    }
+
+    /**
+     * Get meta description for specific language
+     */
+    public function getMetaDescription(?string $locale = null): ?string
+    {
+        $locale = $locale ?? app()->getLocale();
+        $descriptions = $this->meta_description ?? [];
+        return $descriptions[$locale] ?? $descriptions['en'] ?? $descriptions[array_key_first($descriptions)] ?? null;
+    }
+
+    /**
+     * Scope to get active pages
      */
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
-    }
-
-    /**
-     * Scope: Ordered by sort_order
-     */
-    public function scopeOrdered($query)
-    {
-        return $query->orderBy('sort_order', 'asc');
-    }
-
-    /**
-     * Translation relationships
-     */
-    public function translations()
-    {
-        return $this->hasMany(PageTranslation::class);
-    }
-
-    public function translation(?string $locale = null)
-    {
-        $locale = $locale ?? app()->getLocale();
-        return $this->hasOne(PageTranslation::class)
-            ->where('locale', $locale);
-    }
-
-    /**
-     * Get translated title
-     */
-    public function getTranslatedTitleAttribute(?string $locale = null): ?string
-    {
-        $locale = $locale ?? app()->getLocale();
-        $translation = $this->translations()->where('locale', $locale)->first();
-        return $translation?->title ?? $this->title ?? $this->translations()->first()?->title;
-    }
-
-    /**
-     * Get translated content
-     */
-    public function getTranslatedContentAttribute(?string $locale = null): ?string
-    {
-        $locale = $locale ?? app()->getLocale();
-        $translation = $this->translations()->where('locale', $locale)->first();
-        return $translation?->content ?? $this->content ?? $this->translations()->first()?->content;
-    }
-
-    /**
-     * Get translated sections (for page builder)
-     */
-    public function getTranslatedSectionsAttribute(?string $locale = null): ?array
-    {
-        $locale = $locale ?? app()->getLocale();
-        $translation = $this->translations()->where('locale', $locale)->first();
-        return $translation?->sections ?? $this->sections ?? $this->translations()->first()?->sections;
     }
 }

@@ -1,0 +1,48 @@
+{
+  "pendingEnrollment": {
+    "id": 1,
+    "student_id": 2,
+    "course_id": 1,
+    "group_id": null,
+    "status": "pending",
+    "payment_status": "not_paid",
+    "can_attend": false,
+    "approved_by": null,
+    "approved_at": null,
+    "student": {
+      "id": 2,
+      "name": "Test Student",
+      "email": "student1@graphicschool.com"
+    },
+    "course": {
+      "id": 1,
+      "title": "Graphic Design Fundamentals"
+    },
+    "group": null
+  },
+  "approvedEnrollment": {
+    "id": 2,
+    "student_id": 2,
+    "course_id": 1,
+    "group_id": 1,
+    "status": "approved",
+    "payment_status": "not_paid",
+    "can_attend": true,
+    "approved_by": 1,
+    "approved_at": "2025-01-28T10:00:00Z",
+    "student": {
+      "id": 2,
+      "name": "Test Student",
+      "email": "student1@graphicschool.com"
+    },
+    "course": {
+      "id": 1,
+      "title": "Graphic Design Fundamentals"
+    },
+    "group": {
+      "id": 1,
+      "name": "Group A - Morning"
+    }
+  }
+}
+

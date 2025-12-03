@@ -23,6 +23,7 @@
               </svg>
               <input
                 id="email"
+                data-e2e="login-email"
                 v-model="email"
                 type="email"
                 required
@@ -42,6 +43,7 @@
               </svg>
               <input
                 id="password"
+                data-e2e="login-password"
                 v-model="password"
                 type="password"
                 required
@@ -53,6 +55,7 @@
           </div>
           <button
             type="submit"
+            data-e2e="login-submit"
             class="w-full btn-primary py-4 text-lg"
             :disabled="authStore.loading"
           >
@@ -67,12 +70,12 @@
               {{ $t('auth.login') }}
             </span>
           </button>
-          <div v-if="authStore.error" class="p-4 rounded-xl bg-red-50 border-2 border-red-200">
-            <p class="text-sm font-medium text-red-700 text-center">{{ authStore.error }}</p>
+          <div v-if="authStore.error" class="p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800">
+            <p class="text-sm font-medium text-red-700 dark:text-red-400 text-center">{{ authStore.error }}</p>
           </div>
         </form>
         
-        <div class="mt-8 pt-6 border-t border-slate-200 space-y-4">
+        <div class="mt-8 pt-6 border-t border-slate-200 dark:border-slate-700 space-y-4">
           <p class="text-center text-sm text-slate-600">
             {{ $t('auth.noAccount') }}
             <RouterLink to="/register" class="font-semibold text-primary hover:underline">

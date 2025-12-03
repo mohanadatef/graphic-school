@@ -196,7 +196,6 @@ class PrepareProductionCommand extends Command
 
             $this->newLine();
             $this->info('✓ System prepared for first client!');
-            $this->info('Website is now in setup mode. Visit the site to start the setup wizard.');
             $this->newLine();
 
         } catch (\Exception $e) {

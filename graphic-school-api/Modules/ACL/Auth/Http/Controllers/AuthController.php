@@ -95,7 +95,10 @@ class AuthController extends BaseController
 
     public function logout(LogoutRequest $request, LogoutUserUseCase $useCase)
     {
-        $useCase->execute($request->user());
+        $user = $request->user();
+        $token = $user->currentAccessToken();
+        
+        $useCase->execute($user, $token);
 
         return $this->success(null, 'Logged out successfully');
     }

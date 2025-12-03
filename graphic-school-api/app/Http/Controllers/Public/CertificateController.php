@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
-use App\Services\CertificateService;
+use Modules\LMS\Certificates\Services\CertificateService;
 use App\Http\Responses\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,21 +16,18 @@ class CertificateController extends Controller
     }
 
     /**
-     * Verify certificate
+     * Verify certificate by verification code (public route)
      */
-    public function verify(Request $request): JsonResponse
+    public function verify(string $code): JsonResponse
     {
-        $request->validate([
-            'verification_code' => 'required|string',
-        ]);
-
-        $certificate = $this->certificateService->verifyCertificate($request->input('verification_code'));
-
+        $certificate = $this->certificateService->verifyCertificate($code);
+        
         if (!$certificate) {
-            return ApiResponse::error('Certificate not found', 404);
+            return ApiResponse::error('Certificate not found or invalid', [], 404);
         }
 
-        return ApiResponse::success($certificate->load(['student', 'program', 'template']), 'Certificate verified successfully');
+        return ApiResponse::success($certificate->load(['course', 'group', 'student', 'instructor']), 'Certificate verified successfully');
     }
 }
+
 

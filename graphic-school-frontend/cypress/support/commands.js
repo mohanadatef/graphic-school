@@ -55,6 +55,7 @@ Cypress.Commands.add('waitUntilFrontendReady', () => {
 
 /**
  * Login as Admin user
+ * Uses data-e2e selectors for reliability
  */
 Cypress.Commands.add('loginAsAdmin', () => {
   cy.fixture('users').then((users) => {
@@ -64,32 +65,20 @@ Cypress.Commands.add('loginAsAdmin', () => {
     cy.visit('/login', { timeout: 30000, failOnStatusCode: false });
     cy.wait(2000);
     
-    cy.get('body').then(($body) => {
-      // Find email input
-      if ($body.find('input[type="email"]').length > 0) {
-        cy.get('input[type="email"]', { timeout: 10000 }).clear().type(users.admin.email);
-      } else if ($body.find('#email').length > 0) {
-        cy.get('#email', { timeout: 10000 }).clear().type(users.admin.email);
-      } else if ($body.find('input[name="email"]').length > 0) {
-        cy.get('input[name="email"]', { timeout: 10000 }).clear().type(users.admin.email);
-      }
-      
-      // Find password input
-      if ($body.find('input[type="password"]').length > 0) {
-        cy.get('input[type="password"]', { timeout: 10000 }).clear().type(users.admin.password);
-      } else if ($body.find('#password').length > 0) {
-        cy.get('#password', { timeout: 10000 }).clear().type(users.admin.password);
-      } else if ($body.find('input[name="password"]').length > 0) {
-        cy.get('input[name="password"]', { timeout: 10000 }).clear().type(users.admin.password);
-      }
-      
-      // Submit form
-      if ($body.find('button[type="submit"]').length > 0) {
-        cy.get('button[type="submit"]', { timeout: 10000 }).click();
-      } else {
-        cy.get('form', { timeout: 10000 }).submit();
-      }
-    });
+    // Use data-e2e selectors first, fallback to other selectors
+    cy.get('[data-e2e="login-email"], #email, input[type="email"]', { timeout: 10000 })
+      .first()
+      .clear()
+      .type(users.admin.email);
+    
+    cy.get('[data-e2e="login-password"], #password, input[type="password"]', { timeout: 10000 })
+      .first()
+      .clear()
+      .type(users.admin.password);
+    
+    cy.get('[data-e2e="login-submit"], button[type="submit"]', { timeout: 10000 })
+      .first()
+      .click();
 
     // Wait for login API call (intercept was set up earlier)
     cy.wait('@loginRequest', { timeout: 20000 });
@@ -106,6 +95,7 @@ Cypress.Commands.add('loginAsAdmin', () => {
 
 /**
  * Login as Instructor user
+ * Uses data-e2e selectors for reliability
  */
 Cypress.Commands.add('loginAsInstructor', () => {
   cy.fixture('users').then((users) => {
@@ -115,32 +105,20 @@ Cypress.Commands.add('loginAsInstructor', () => {
     cy.visit('/login', { timeout: 30000, failOnStatusCode: false });
     cy.wait(2000);
     
-    cy.get('body').then(($body) => {
-      // Find email input
-      if ($body.find('input[type="email"]').length > 0) {
-        cy.get('input[type="email"]', { timeout: 10000 }).clear().type(users.instructor.email);
-      } else if ($body.find('#email').length > 0) {
-        cy.get('#email', { timeout: 10000 }).clear().type(users.instructor.email);
-      } else if ($body.find('input[name="email"]').length > 0) {
-        cy.get('input[name="email"]', { timeout: 10000 }).clear().type(users.instructor.email);
-      }
-      
-      // Find password input
-      if ($body.find('input[type="password"]').length > 0) {
-        cy.get('input[type="password"]', { timeout: 10000 }).clear().type(users.instructor.password);
-      } else if ($body.find('#password').length > 0) {
-        cy.get('#password', { timeout: 10000 }).clear().type(users.instructor.password);
-      } else if ($body.find('input[name="password"]').length > 0) {
-        cy.get('input[name="password"]', { timeout: 10000 }).clear().type(users.instructor.password);
-      }
-      
-      // Submit form
-      if ($body.find('button[type="submit"]').length > 0) {
-        cy.get('button[type="submit"]', { timeout: 10000 }).click();
-      } else {
-        cy.get('form', { timeout: 10000 }).submit();
-      }
-    });
+    // Use data-e2e selectors first, fallback to other selectors
+    cy.get('[data-e2e="login-email"], #email, input[type="email"]', { timeout: 10000 })
+      .first()
+      .clear()
+      .type(users.instructor.email);
+    
+    cy.get('[data-e2e="login-password"], #password, input[type="password"]', { timeout: 10000 })
+      .first()
+      .clear()
+      .type(users.instructor.password);
+    
+    cy.get('[data-e2e="login-submit"], button[type="submit"]', { timeout: 10000 })
+      .first()
+      .click();
 
     // Wait for login API call (intercept was set up earlier)
     cy.wait('@loginRequest', { timeout: 20000 });
@@ -157,6 +135,7 @@ Cypress.Commands.add('loginAsInstructor', () => {
 
 /**
  * Login as Student user
+ * Uses data-e2e selectors for reliability
  */
 Cypress.Commands.add('loginAsStudent', () => {
   cy.fixture('users').then((users) => {
@@ -166,39 +145,27 @@ Cypress.Commands.add('loginAsStudent', () => {
     cy.visit('/login', { timeout: 30000, failOnStatusCode: false });
     cy.wait(2000);
     
-    cy.get('body').then(($body) => {
-      // Find email input
-      if ($body.find('input[type="email"]').length > 0) {
-        cy.get('input[type="email"]', { timeout: 10000 }).clear().type(users.student.email);
-      } else if ($body.find('#email').length > 0) {
-        cy.get('#email', { timeout: 10000 }).clear().type(users.student.email);
-      } else if ($body.find('input[name="email"]').length > 0) {
-        cy.get('input[name="email"]', { timeout: 10000 }).clear().type(users.student.email);
-      }
-      
-      // Find password input
-      if ($body.find('input[type="password"]').length > 0) {
-        cy.get('input[type="password"]', { timeout: 10000 }).clear().type(users.student.password);
-      } else if ($body.find('#password').length > 0) {
-        cy.get('#password', { timeout: 10000 }).clear().type(users.student.password);
-      } else if ($body.find('input[name="password"]').length > 0) {
-        cy.get('input[name="password"]', { timeout: 10000 }).clear().type(users.student.password);
-      }
-      
-      // Submit form
-      if ($body.find('button[type="submit"]').length > 0) {
-        cy.get('button[type="submit"]', { timeout: 10000 }).click();
-      } else {
-        cy.get('form', { timeout: 10000 }).submit();
-      }
-    });
+    // Use data-e2e selectors first, fallback to other selectors
+    cy.get('[data-e2e="login-email"], #email, input[type="email"]', { timeout: 10000 })
+      .first()
+      .clear()
+      .type(users.student.email);
+    
+    cy.get('[data-e2e="login-password"], #password, input[type="password"]', { timeout: 10000 })
+      .first()
+      .clear()
+      .type(users.student.password);
+    
+    cy.get('[data-e2e="login-submit"], button[type="submit"]', { timeout: 10000 })
+      .first()
+      .click();
 
     // Wait for login API call (intercept was set up earlier)
     cy.wait('@loginRequest', { timeout: 20000 });
     
-    // Student redirects to home page (/)
+    // Student redirects to student dashboard
     cy.location('pathname', { timeout: 20000 }).should((pathname) => {
-      expect(pathname === '/' || pathname === '' || pathname.endsWith('/')).to.be.true;
+      expect(pathname === '/' || pathname === '' || pathname.endsWith('/') || pathname.includes('/dashboard/student')).to.be.true;
     });
     
     // Wait for frontend to be ready

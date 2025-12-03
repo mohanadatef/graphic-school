@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Modules\LMS\Sessions\Models\Session;
+use Modules\LMS\Sessions\Models\GroupSession;
 use Database\Factories\GroupFactory;
 
 class Group extends Model
@@ -12,10 +12,13 @@ class Group extends Model
     use HasFactory;
 
     protected $fillable = [
-        'batch_id',
+        'course_id',
         'code',
         'name',
         'capacity', // This is max_students
+        'start_date',
+        'end_date',
+        'notes',
         'room',
         'instructor_id',
         'is_active',
@@ -25,6 +28,8 @@ class Group extends Model
     protected $casts = [
         'is_active' => 'boolean',
         'capacity' => 'integer',
+        'start_date' => 'date',
+        'end_date' => 'date',
         'extras' => 'array',
     ];
 
@@ -52,9 +57,9 @@ class Group extends Model
     /**
      * Relationships
      */
-    public function batch()
+    public function course()
     {
-        return $this->belongsTo(Batch::class);
+        return $this->belongsTo(\Modules\LMS\Courses\Models\Course::class);
     }
 
     public function instructor()
@@ -82,47 +87,23 @@ class Group extends Model
         )->withTimestamps()->withPivot('assigned_at');
     }
 
+    /**
+     * Group sessions for this group
+     */
+    public function groupSessions()
+    {
+        return $this->hasMany(GroupSession::class);
+    }
+
+    /**
+     * Alias for backward compatibility
+     */
     public function sessions()
     {
-        return $this->hasMany(Session::class);
+        return $this->groupSessions();
     }
 
-    public function translations()
-    {
-        return $this->hasMany(GroupTranslation::class);
-    }
 
-    public function translation(?string $locale = null)
-    {
-        $locale = $locale ?? app()->getLocale();
-        return $this->hasOne(GroupTranslation::class)
-            ->where('locale', $locale);
-    }
-
-    /**
-     * Get translated attribute
-     */
-    public function getTranslated(string $key, ?string $locale = null): ?string
-    {
-        $locale = $locale ?? app()->getLocale();
-        $translation = $this->translations->firstWhere('locale', $locale);
-        
-        if ($translation && $translation->$key) {
-            return $translation->$key;
-        }
-        
-        // Fallback to default locale (en)
-        $fallbackTranslation = $this->translations->firstWhere('locale', config('app.fallback_locale', 'en'));
-        return $fallbackTranslation->$key ?? null;
-    }
-
-    /**
-     * Get program through batch
-     */
-    public function program()
-    {
-        return $this->hasOneThrough(Program::class, Batch::class, 'id', 'id', 'batch_id', 'program_id');
-    }
 
     /**
      * Boot method - Business logic
@@ -141,49 +122,29 @@ class Group extends Model
             }
         });
 
-        // Validate: Instructor cannot be assigned to two groups at the same time
+        // Validate: Instructor cannot be assigned to two groups at the same time (for same course)
         static::saving(function ($group) {
-            // Skip validation if batch_id is missing or if group is being created without batch loaded
-            if (!$group->instructor_id || !$group->batch_id) {
+            if (!$group->instructor_id || !$group->course_id) {
                 return;
             }
             
-            // Load batch if not already loaded
-            if (!$group->relationLoaded('batch')) {
-                $group->load('batch');
+            // Load course if not already loaded
+            if (!$group->relationLoaded('course')) {
+                $group->load('course');
             }
             
-            if (!$group->batch || !$group->batch->start_date) {
-                return; // Skip validation if batch data is missing
+            if (!$group->course) {
+                return;
             }
             
-            $batchStartDate = $group->batch->start_date;
-            $batchEndDate = $group->batch->end_date ?? '9999-12-31';
-            
+            // Check for conflicting groups in the same course
             $conflictingGroups = static::where('id', '!=', $group->id ?? 0)
                 ->where('instructor_id', $group->instructor_id)
-                ->whereHas('batch', function ($query) use ($batchStartDate, $batchEndDate) {
-                    $query->where(function ($q) use ($batchStartDate, $batchEndDate) {
-                        $q->whereBetween('start_date', [$batchStartDate, $batchEndDate])
-                            ->orWhereBetween('end_date', [$batchStartDate, $batchEndDate])
-                            ->orWhere(function ($subQ) use ($batchStartDate, $batchEndDate) {
-                                $subQ->where('start_date', '<=', $batchStartDate)
-                                     ->where('end_date', '>=', $batchEndDate);
-                            });
-                    });
-                })
+                ->where('course_id', $group->course_id)
                 ->exists();
 
             if ($conflictingGroups) {
-                throw new \Exception('Instructor cannot be assigned to two groups at the same time.');
-            }
-        });
-
-        // Group sessions inherit dates from Batch schedule
-        static::created(function ($group) {
-            if ($group->batch && $group->batch->schedules->isNotEmpty()) {
-                // Sessions will be created based on batch schedule
-                // This is handled in the SessionController or a service
+                throw new \Exception('Instructor cannot be assigned to two groups in the same course.');
             }
         });
     }

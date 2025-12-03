@@ -3,7 +3,7 @@
     <div class="flex items-center justify-between">
       <div>
         <h2 class="text-2xl font-bold text-slate-900">تعديل التسجيل</h2>
-        <p class="text-sm text-slate-500">تعديل بيانات التسجيل والدفع</p>
+        <p class="text-sm text-slate-500">تعديل بيانات التسجيل</p>
       </div>
       <RouterLink
         to="/dashboard/admin/enrollments"
@@ -17,23 +17,12 @@
       <form @submit.prevent="submit" class="space-y-4">
         <div class="grid md:grid-cols-2 gap-4">
           <div>
-            <label class="label">حالة الدفع</label>
-            <select v-model="form.payment_status" class="input">
-              <option value="not_paid">لم يدفع</option>
-              <option value="partial">دفع جزئي</option>
-              <option value="paid">مدفوع بالكامل</option>
-            </select>
-          </div>
-          <div>
-            <label class="label">المبلغ المدفوع</label>
-            <input v-model.number="form.paid_amount" type="number" class="input" />
-          </div>
-          <div>
             <label class="label">حالة الطلب</label>
             <select v-model="form.status" class="input">
               <option value="pending">معلق</option>
               <option value="approved">مقبول</option>
               <option value="rejected">مرفوض</option>
+              <option value="cancelled">ملغي</option>
             </select>
           </div>
           <div>
@@ -73,10 +62,9 @@ const { get, put } = useApi();
 
 const loading = ref(false);
 const form = reactive({
-  payment_status: 'not_paid',
-  paid_amount: 0,
   status: 'pending',
   can_attend: false,
+  note: '',
 });
 
 onMounted(async () => {
@@ -92,10 +80,9 @@ async function loadEnrollment(id) {
     loading.value = true;
     const data = await get(`/admin/enrollments/${id}`);
     const enrollment = Array.isArray(data) ? data[0] : (data.data || data);
-    form.payment_status = enrollment.payment_status || 'not_paid';
-    form.paid_amount = enrollment.paid_amount || 0;
     form.status = enrollment.status || 'pending';
     form.can_attend = enrollment.can_attend ?? false;
+    form.note = enrollment.note || '';
   } catch (err) {
     console.error('Error loading enrollment:', err);
     toast.error('حدث خطأ أثناء تحميل بيانات التسجيل');
@@ -109,10 +96,9 @@ async function submit() {
   try {
     loading.value = true;
     await put(`/admin/enrollments/${route.params.id}`, {
-      payment_status: form.payment_status,
-      paid_amount: form.paid_amount,
       status: form.status,
       can_attend: form.can_attend,
+      note: form.note,
     });
     toast.success('تم تحديث التسجيل بنجاح');
     router.push('/dashboard/admin/enrollments');

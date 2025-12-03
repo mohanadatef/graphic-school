@@ -34,6 +34,12 @@ return new class extends Migration
             $table->enum('status', ['draft', 'upcoming', 'running', 'completed', 'archived'])->default('draft');
             $table->enum('delivery_type', ['on-site', 'online', 'hybrid'])->default('on-site');
             $table->timestamps();
+            
+            // Performance indexes
+            $table->index('category_id');
+            $table->index('status');
+            $table->index('is_published');
+            $table->index('start_date');
         });
     }
 

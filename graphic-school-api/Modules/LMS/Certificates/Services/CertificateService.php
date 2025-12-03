@@ -6,97 +6,118 @@ use Modules\LMS\Certificates\Models\Certificate;
 use Modules\LMS\Enrollments\Models\Enrollment;
 use Modules\LMS\Courses\Models\Course;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class CertificateService
 {
-    public function issueCertificate(int $enrollmentId): Certificate
-    {
-        return DB::transaction(function () use ($enrollmentId) {
-            $enrollment = Enrollment::with('course', 'student')->findOrFail($enrollmentId);
+    /**
+     * Issue certificate for a student/course/group
+     * Admin or Instructor can issue certificates
+     */
+    public function issueCertificate(
+        int $studentId,
+        int $courseId,
+        ?int $groupId = null,
+        ?int $instructorId = null
+    ): Certificate {
+        return DB::transaction(function () use ($studentId, $courseId, $groupId, $instructorId) {
+            // Verify enrollment exists and is approved
+            $enrollment = Enrollment::where('student_id', $studentId)
+                ->where('course_id', $courseId)
+                ->where('status', 'approved')
+                ->firstOrFail();
 
-            // Check if enrollment is completed
-            if ($enrollment->progress_percentage < 100) {
-                throw new \Exception('يجب إكمال الكورس بنسبة 100% للحصول على الشهادة');
+            // Use enrollment's group if group_id not provided
+            if (!$groupId && $enrollment->group_id) {
+                $groupId = $enrollment->group_id;
             }
 
             // Check if certificate already exists
-            $existingCertificate = Certificate::where('enrollment_id', $enrollmentId)->first();
+            $existingCertificate = Certificate::where('student_id', $studentId)
+                ->where('course_id', $courseId)
+                ->where('group_id', $groupId)
+                ->first();
+
             if ($existingCertificate) {
                 return $existingCertificate;
             }
 
-            // Check if course has certificate enabled
-            if (!$enrollment->course->has_certificate) {
-                throw new \Exception('هذا الكورس لا يوفر شهادة');
-            }
-
             // Create certificate
             $certificate = Certificate::create([
-                'course_id' => $enrollment->course_id,
-                'student_id' => $enrollment->student_id,
-                'enrollment_id' => $enrollmentId,
+                'course_id' => $courseId,
+                'group_id' => $groupId,
+                'student_id' => $studentId,
+                'instructor_id' => $instructorId,
+                'enrollment_id' => $enrollment->id,
                 'issued_date' => now(),
             ]);
 
-            // Mark enrollment as certificate issued
-            $enrollment->update(['certificate_issued' => true]);
+            // Generate QR code for verification
+            $this->generateQrCode($certificate);
 
-            // Update course completion count
-            Course::where('id', $enrollment->course_id)
-                ->increment('completion_count');
-
-            // Award gamification points for certificate
-            try {
-                $gamificationService = app(\App\Services\GamificationService::class);
-                $student = $enrollment->student;
-                $gamificationService->awardPointsForEvent(
-                    $student,
-                    'certificate_issued',
-                    'certificates',
-                    $certificate->id,
-                    [
-                        'course_id' => $enrollment->course_id,
-                        'enrollment_id' => $enrollmentId,
-                    ]
-                );
-            } catch (\Exception $e) {
-                // Log but don't fail certificate if gamification fails
-                \Illuminate\Support\Facades\Log::warning('Gamification failed for certificate', [
-                    'certificate_id' => $certificate->id,
-                    'error' => $e->getMessage(),
-                ]);
-            }
-
-            return $certificate;
+            return $certificate->load(['course', 'group', 'student', 'instructor']);
         });
     }
 
+    /**
+     * Generate QR code for certificate verification
+     */
+    protected function generateQrCode(Certificate $certificate): void
+    {
+        $verificationUrl = route('certificate.verify', ['code' => $certificate->verification_code]);
+        
+        // Generate QR code as base64
+        $qrCode = QrCode::format('png')
+            ->size(200)
+            ->generate($verificationUrl);
+        
+        // Store QR code (as base64 or save to file)
+        $certificate->qr_code = base64_encode($qrCode);
+        $certificate->save();
+    }
+
+    /**
+     * Verify certificate by verification code
+     */
     public function verifyCertificate(string $verificationCode): ?Certificate
     {
         return Certificate::where('verification_code', $verificationCode)
             ->where('is_verified', true)
-            ->with(['course', 'student'])
+            ->with(['course', 'group', 'student', 'instructor'])
             ->first();
     }
 
-    public function getStudentCertificates(int $studentId): array
+    /**
+     * Get all certificates for a student
+     */
+    public function getStudentCertificates(int $studentId)
     {
-        $certificates = Certificate::where('student_id', $studentId)
-            ->with(['course', 'enrollment'])
+        return Certificate::where('student_id', $studentId)
+            ->with(['course', 'group', 'instructor'])
             ->orderBy('issued_date', 'desc')
             ->get();
+    }
 
-        return $certificates->map(function ($certificate) {
-            return [
-                'id' => $certificate->id,
-                'certificate_number' => $certificate->certificate_number,
-                'course_title' => $certificate->course->title,
-                'issued_date' => $certificate->issued_date->format('Y-m-d'),
-                'verification_code' => $certificate->verification_code,
-                'verification_url' => $certificate->getVerificationUrl(),
-                'pdf_path' => $certificate->pdf_path,
-            ];
-        })->toArray();
+    /**
+     * Get all certificates (Admin view)
+     */
+    public function getAllCertificates(array $filters = [])
+    {
+        $query = Certificate::with(['course', 'group', 'student', 'instructor']);
+
+        if (isset($filters['course_id'])) {
+            $query->where('course_id', $filters['course_id']);
+        }
+
+        if (isset($filters['student_id'])) {
+            $query->where('student_id', $filters['student_id']);
+        }
+
+        if (isset($filters['group_id'])) {
+            $query->where('group_id', $filters['group_id']);
+        }
+
+        return $query->orderBy('issued_date', 'desc')->paginate($filters['per_page'] ?? 15);
     }
 }
-

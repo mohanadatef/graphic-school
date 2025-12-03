@@ -51,10 +51,7 @@
                 {{ $t('admin.enrollments.student') || 'Student' }}
               </th>
               <th class="px-4 py-3 text-right text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
-                {{ $t('admin.enrollments.program') || 'Program' }}
-              </th>
-              <th class="px-4 py-3 text-right text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
-                {{ $t('admin.enrollments.batch') || 'Batch' }}
+                {{ $t('admin.enrollments.course') || 'Course' }}
               </th>
               <th class="px-4 py-3 text-right text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
                 {{ $t('admin.enrollments.group') || 'Group' }}
@@ -74,13 +71,10 @@
                 <div class="text-xs text-slate-500 dark:text-slate-400">{{ enrollment.student?.email }}</div>
               </td>
               <td class="px-4 py-3 text-slate-900 dark:text-white">
-                {{ enrollment.program?.title || enrollment.program?.name || '-' }}
+                {{ enrollment.course?.title || '-' }}
               </td>
               <td class="px-4 py-3 text-slate-600 dark:text-slate-400">
-                {{ enrollment.batch?.code || '-' }}
-              </td>
-              <td class="px-4 py-3 text-slate-600 dark:text-slate-400">
-                {{ enrollment.group?.code || enrollment.group?.name || '-' }}
+                {{ enrollment.group?.name || enrollment.group?.code || '-' }}
               </td>
               <td class="px-4 py-3">
                 <span
@@ -158,100 +152,85 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import api from '../../../services/api/client';
+import { useListPage } from '../../../composables/useListPage';
+import { useApi } from '../../../composables/useApi';
 import { useToast } from '../../../composables/useToast';
+import { useI18n } from '../../../composables/useI18n';
+import PaginationControls from '../../../components/common/PaginationControls.vue';
 
 const router = useRouter();
 const toast = useToast();
-const loading = ref(false);
-const enrollments = ref([]);
-const filters = reactive({
-  search: '',
-  status: '',
-});
-const pagination = reactive({
-  current_page: 1,
-  last_page: 1,
-  per_page: 15,
-  total: 0,
-  from: 0,
-  to: 0,
+const { t } = useI18n();
+const { post } = useApi();
+
+// Use unified list page composable
+const {
+  items: enrollments,
+  loading,
+  error,
+  filters,
+  pagination,
+  changePage,
+  changePerPage,
+  loadItems,
+  loadItemsDebounced,
+  applyFilters,
+} = useListPage({
+  endpoint: '/admin/enrollments',
+  initialFilters: {
+    search: '',
+    status: '',
+  },
+  perPage: 15,
+  debounceMs: 500,
+  autoApplyFilters: false,
 });
 
-async function loadEnrollments() {
-  loading.value = true;
-  try {
-    const params = {
-      page: pagination.current_page,
-      per_page: pagination.per_page,
-      ...filters,
-    };
-    const response = await api.get('/admin/enrollments', { params });
-    enrollments.value = response.data.data || response.data;
-    
-    if (response.data.meta) {
-      Object.assign(pagination, response.data.meta);
-    } else if (response.meta) {
-      Object.assign(pagination, response.meta);
-    }
-  } catch (error) {
-    console.error('Error loading enrollments:', error);
-    toast.error(error.response?.data?.message || 'Failed to load enrollments');
-  } finally {
-    loading.value = false;
-  }
+function handleSearch() {
+  loadItemsDebounced();
+}
+
+function handleFilterChange() {
+  applyFilters();
 }
 
 async function approveEnrollment(id) {
   try {
-    await api.post(`/admin/enrollments/${id}/approve`);
-    toast.success('Enrollment approved successfully');
-    loadEnrollments();
+    await post(`/admin/enrollments/${id}/approve`);
+    toast.success(t('admin.enrollments.approvedSuccess') || 'Enrollment approved successfully');
+    await loadItems();
   } catch (error) {
-    toast.error(error.response?.data?.message || 'Failed to approve enrollment');
+    toast.error(error.response?.data?.message || t('errors.approveError') || 'Failed to approve enrollment');
   }
 }
 
 async function rejectEnrollment(id) {
-  if (!confirm('Are you sure you want to reject this enrollment?')) return;
+  const confirmMessage = t('admin.enrollments.confirmReject') || 'Are you sure you want to reject this enrollment?';
+  if (!confirm(confirmMessage)) return;
   try {
-    await api.post(`/admin/enrollments/${id}/reject`);
-    toast.success('Enrollment rejected successfully');
-    loadEnrollments();
+    await post(`/admin/enrollments/${id}/reject`);
+    toast.success(t('admin.enrollments.rejectedSuccess') || 'Enrollment rejected successfully');
+    await loadItems();
   } catch (error) {
-    toast.error(error.response?.data?.message || 'Failed to reject enrollment');
+    toast.error(error.response?.data?.message || t('errors.rejectError') || 'Failed to reject enrollment');
   }
 }
 
 async function withdrawEnrollment(id) {
-  if (!confirm('Are you sure you want to withdraw this enrollment?')) return;
+  const confirmMessage = t('admin.enrollments.confirmWithdraw') || 'Are you sure you want to withdraw this enrollment?';
+  if (!confirm(confirmMessage)) return;
   try {
-    await api.post(`/admin/enrollments/${id}/withdraw`);
-    toast.success('Enrollment withdrawn successfully');
-    loadEnrollments();
+    await post(`/admin/enrollments/${id}/withdraw`);
+    toast.success(t('admin.enrollments.withdrawnSuccess') || 'Enrollment withdrawn successfully');
+    await loadItems();
   } catch (error) {
-    toast.error(error.response?.data?.message || 'Failed to withdraw enrollment');
+    toast.error(error.response?.data?.message || t('errors.withdrawError') || 'Failed to withdraw enrollment');
   }
 }
 
-function handleSearch() {
-  pagination.current_page = 1;
-  loadEnrollments();
-}
-
-function handleFilterChange() {
-  pagination.current_page = 1;
-  loadEnrollments();
-}
-
-function changePage(page) {
-  pagination.current_page = page;
-  loadEnrollments();
-}
-
-onMounted(() => {
-  loadEnrollments();
+onMounted(async () => {
+  await loadItems();
 });
 </script>

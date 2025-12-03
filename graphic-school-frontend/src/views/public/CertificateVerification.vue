@@ -32,8 +32,8 @@
               <p class="font-medium text-green-900 dark:text-green-200">{{ certificate.student?.name }}</p>
             </div>
             <div>
-              <p class="text-sm text-green-700 dark:text-green-300">{{ $t('public.certificate.program') || 'Program' }}</p>
-              <p class="font-medium text-green-900 dark:text-green-200">{{ certificate.program?.title || certificate.program?.name }}</p>
+              <p class="text-sm text-green-700 dark:text-green-300">{{ $t('public.certificate.course') || 'Course' }}</p>
+              <p class="font-medium text-green-900 dark:text-green-200">{{ certificate.course?.title }}</p>
             </div>
             <div>
               <p class="text-sm text-green-700 dark:text-green-300">{{ $t('public.certificate.issuedAt') || 'Issued At' }}</p>
@@ -53,8 +53,8 @@
 
 <script setup>
 import { ref } from 'vue';
-import api from '../../../services/api/client';
-import { useToast } from '../../../composables/useToast';
+import api from '../../services/api/client';
+import { useToast } from '../../composables/useToast';
 
 const toast = useToast();
 const verifying = ref(false);

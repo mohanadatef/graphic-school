@@ -1,0 +1,22 @@
+{
+  "testSession": {
+    "id": 1,
+    "group_id": 1,
+    "title": "Introduction to Design Principles",
+    "session_date": "2025-02-01",
+    "start_time": "10:00",
+    "end_time": "12:00",
+    "instructor_id": 1,
+    "notes": "Bring laptops and sketchbooks",
+    "status": "scheduled",
+    "group": {
+      "id": 1,
+      "name": "Group A - Morning"
+    },
+    "instructor": {
+      "id": 1,
+      "name": "John Instructor"
+    }
+  }
+}
+

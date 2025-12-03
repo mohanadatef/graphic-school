@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { authMiddleware, guestMiddleware, roleMiddleware, setupCheckMiddleware } from '../middleware';
+import { authMiddleware, guestMiddleware, roleMiddleware } from '../middleware';
 
 // Lazy load layouts
 const PublicLayout = () => import('../components/layouts/PublicLayout.vue');
@@ -11,28 +11,20 @@ const publicChildren = [
     path: '',
     name: 'home',
     component: () => import('../views/public/HomePage.vue'),
+    meta: { middleware: [] },
   },
   {
     path: 'courses',
     name: 'courses',
     component: () => import('../views/public/CoursesPage.vue'),
+    meta: { middleware: [] },
   },
   {
     path: 'courses/:id',
     name: 'course-details',
     component: () => import('../views/public/CourseDetailsPage.vue'),
     props: true,
-  },
-  {
-    path: 'programs',
-    name: 'public-programs',
-    component: () => import('../views/public/PublicPrograms.vue'),
-  },
-  {
-    path: 'programs/:slug',
-    name: 'public-programs-details',
-    component: () => import('../views/public/PublicProgramDetails.vue'),
-    props: true,
+    meta: { middleware: [] },
   },
   // Phase 3: Public Enrollment and Certificate Verification
   {
@@ -48,7 +40,19 @@ const publicChildren = [
   {
     path: 'instructors',
     name: 'instructors',
-    component: () => import('../views/public/InstructorsPage.vue'),
+    component: () => import('../views/public/TrainersPage.vue'),
+    meta: { middleware: [] },
+  },
+  {
+    path: 'trainers',
+    name: 'trainers',
+    redirect: { name: 'instructors' },
+  },
+  {
+    path: 'faq',
+    name: 'faq',
+    component: () => import('../views/public/FAQPage.vue'),
+    meta: { middleware: [] },
   },
   {
     path: 'instructors/:id',
@@ -60,23 +64,19 @@ const publicChildren = [
     path: 'about',
     name: 'about',
     component: () => import('../views/public/AboutPage.vue'),
+    meta: { middleware: [] },
   },
   {
     path: 'contact',
     name: 'contact',
     component: () => import('../views/public/ContactPage.vue'),
+    meta: { middleware: [] },
   },
   {
     path: 'login',
     name: 'login',
     component: () => import('../views/public/LoginPage.vue'),
     meta: { middleware: [guestMiddleware] },
-  },
-  {
-    path: 'setup',
-    name: 'setup',
-    component: () => import('../views/public/SetupWizard.vue'),
-    meta: { middleware: [] }, // No auth required for setup
   },
   {
     path: 'register',
@@ -143,37 +143,6 @@ const dashboardChildren = [
     meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
   },
   {
-    path: 'admin/reports',
-    name: 'admin-reports',
-    component: () => import('../views/dashboard/admin/ReportsPage.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
-    path: 'admin/strategic-reports',
-    name: 'admin-strategic-reports',
-    component: () => import('../views/dashboard/admin/StrategicReportsPage.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
-    path: 'admin/categories',
-    name: 'admin-categories',
-    component: () => import('../views/dashboard/admin/AdminCategories.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
-    path: 'admin/categories/new',
-    name: 'admin-categories-new',
-    component: () => import('../views/dashboard/admin/CategoryForm.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
-    path: 'admin/categories/:id/edit',
-    name: 'admin-categories-edit',
-    component: () => import('../views/dashboard/admin/CategoryForm.vue'),
-    props: true,
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
     path: 'admin/courses',
     name: 'admin-courses',
     component: () => import('../views/dashboard/admin/AdminCourses.vue'),
@@ -225,22 +194,15 @@ const dashboardChildren = [
     meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
   },
   {
-    path: 'admin/sliders',
-    name: 'admin-sliders',
-    component: () => import('../views/dashboard/admin/AdminSliders.vue'),
+    path: 'admin/certificates',
+    name: 'admin-certificates',
+    component: () => import('../views/dashboard/admin/AdminCertificates.vue'),
     meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
   },
   {
-    path: 'admin/sliders/new',
-    name: 'admin-sliders-new',
-    component: () => import('../views/dashboard/admin/SliderForm.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
-    path: 'admin/sliders/:id/edit',
-    name: 'admin-sliders-edit',
-    component: () => import('../views/dashboard/admin/SliderForm.vue'),
-    props: true,
+    path: 'admin/community',
+    name: 'admin-community',
+    component: () => import('../views/dashboard/admin/AdminCommunity.vue'),
     meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
   },
   {
@@ -268,100 +230,7 @@ const dashboardChildren = [
     component: () => import('../views/dashboard/admin/AdminSettings.vue'),
     meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
   },
-  {
-    path: 'admin/branding',
-    name: 'admin-branding',
-    component: () => import('../views/dashboard/admin/BrandingEditor.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
-    path: 'admin/contacts',
-    name: 'admin-contacts',
-    component: () => import('../views/dashboard/admin/AdminContacts.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
-    path: 'admin/translations',
-    name: 'admin-translations',
-    component: () => import('../views/dashboard/admin/AdminTranslations.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
-    path: 'admin/translations/new',
-    name: 'admin-translations-new',
-    component: () => import('../views/dashboard/admin/TranslationForm.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
-    path: 'admin/translations/:id/edit',
-    name: 'admin-translations-edit',
-    component: () => import('../views/dashboard/admin/TranslationForm.vue'),
-    props: true,
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
-    path: 'admin/payments',
-    name: 'admin-payments',
-    component: () => import('../views/dashboard/admin/AdminPayments.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
-    path: 'admin/tickets',
-    name: 'admin-tickets',
-    component: () => import('../views/dashboard/admin/AdminTickets.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
-    path: 'admin/audit-logs',
-    name: 'admin-audit-logs',
-    component: () => import('../views/dashboard/admin/AdminAuditLogs.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
-    path: 'admin/media',
-    name: 'admin-media',
-    component: () => import('../views/dashboard/admin/AdminMedia.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
-    path: 'admin/faqs',
-    name: 'admin-faqs',
-    component: () => import('../views/dashboard/admin/AdminFAQs.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  // Phase 2: Programs, Batches, Groups
-  {
-    path: 'admin/programs',
-    name: 'admin-programs',
-    component: () => import('../views/dashboard/admin/AdminPrograms.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
-    path: 'admin/programs/new',
-    name: 'admin-programs-new',
-    component: () => import('../views/dashboard/admin/AdminProgramCreate.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
-    path: 'admin/programs/:id/edit',
-    name: 'admin-programs-edit',
-    component: () => import('../views/dashboard/admin/AdminProgramEdit.vue'),
-    props: true,
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
-    path: 'admin/batches',
-    name: 'admin-batches',
-    component: () => import('../views/dashboard/admin/AdminBatches.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
-    path: 'admin/programs/:programId/batches',
-    name: 'admin-programs-batches',
-    component: () => import('../views/dashboard/admin/AdminBatches.vue'),
-    props: true,
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
+  // Groups Management
   // Redirect /dashboard/groups to /dashboard/admin/groups for admins
   {
     path: 'groups',
@@ -372,26 +241,6 @@ const dashboardChildren = [
     path: 'admin/groups',
     name: 'admin-groups',
     component: () => import('../views/dashboard/admin/AdminGroups.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
-    path: 'admin/batches/:batchId/groups',
-    name: 'admin-batches-groups',
-    component: () => import('../views/dashboard/admin/AdminGroups.vue'),
-    props: true,
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
-    path: 'admin/batches/new',
-    name: 'admin-batches-new',
-    component: () => import('../views/dashboard/admin/AdminBatchCreate.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
-    path: 'admin/batches/:id/edit',
-    name: 'admin-batches-edit',
-    component: () => import('../views/dashboard/admin/AdminBatchEdit.vue'),
-    props: true,
     meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
   },
   {
@@ -408,9 +257,27 @@ const dashboardChildren = [
     meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
   },
   {
-    path: 'admin/language',
-    name: 'admin-language',
+    path: 'admin/languages',
+    name: 'admin-languages',
     component: () => import('../views/dashboard/admin/AdminLanguages.vue'),
+    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
+  },
+  {
+    path: 'admin/currencies',
+    name: 'admin-currencies',
+    component: () => import('../views/dashboard/admin/AdminCurrencies.vue'),
+    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
+  },
+  {
+    path: 'admin/countries',
+    name: 'admin-countries',
+    component: () => import('../views/dashboard/admin/AdminCountries.vue'),
+    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
+  },
+  {
+    path: 'admin/cms',
+    name: 'admin-cms-editor',
+    component: () => import('../views/dashboard/admin/CMSEditor.vue'),
     meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
   },
   {
@@ -428,101 +295,16 @@ const dashboardChildren = [
     meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
   },
   {
-    path: 'admin/enrollments/:id',
-    name: 'admin-enrollment-review',
-    component: () => import('../views/dashboard/admin/AdminEnrollmentReview.vue'),
-    props: true,
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
-    path: 'admin/invoices',
-    name: 'admin-invoices',
-    component: () => import('../views/dashboard/admin/AdminInvoices.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
-    path: 'admin/invoices/:id',
-    name: 'admin-invoice-view',
-    component: () => import('../views/dashboard/admin/AdminInvoiceView.vue'),
-    props: true,
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
-    path: 'admin/attendance',
-    name: 'admin-attendance-overview',
-    component: () => import('../views/dashboard/admin/AdminAttendanceOverview.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
-    path: 'admin/certificates',
-    name: 'admin-certificates',
-    component: () => import('../views/dashboard/admin/AdminCertificates.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
-    path: 'admin/certificates/issue/:enrollmentId',
-    name: 'admin-certificate-issue',
-    component: () => import('../views/dashboard/admin/CertificateIssueForm.vue'),
-    props: true,
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  // Phase 4: QR Attendance, Assignments, Calendar, Gradebook
-  {
-    path: 'admin/attendance/qr',
-    name: 'admin-attendance-qr',
-    component: () => import('../views/dashboard/admin/AdminAttendanceQR.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
-    path: 'admin/assignments',
-    name: 'admin-assignments',
-    component: () => import('../views/dashboard/admin/AdminAssignmentsOverview.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
-    path: 'admin/gradebook',
-    name: 'admin-gradebook',
-    component: () => import('../views/dashboard/admin/AdminGradebookOverview.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
     path: 'admin/calendar',
     name: 'admin-calendar',
     component: () => import('../views/dashboard/admin/AdminCalendar.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  // Phase 5.2: Community Management
-  {
-    path: 'admin/community/posts',
-    name: 'admin-community-posts',
-    component: () => import('../views/dashboard/admin/AdminCommunityPosts.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
-    path: 'admin/community/reports',
-    name: 'admin-community-reports',
-    component: () => import('../views/dashboard/admin/AdminCommunityReports.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  
-  // Phase 5.1: Gamification Management
-  {
-    path: 'admin/gamification/rules',
-    name: 'admin-gamification-rules',
-    component: () => import('../views/dashboard/admin/AdminGamificationRules.vue'),
     meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
   },
 
   // Instructor routes
   {
     path: 'instructor',
-    redirect: { name: 'instructor-courses' },
-    meta: { middleware: [authMiddleware, roleMiddleware('instructor')], requiresAuth: true },
-  },
-  {
-    path: 'instructor/courses',
-    name: 'instructor-courses',
-    component: () => import('../views/dashboard/instructor/InstructorCourses.vue'),
+    redirect: { name: 'instructor-my-groups' },
     meta: { middleware: [authMiddleware, roleMiddleware('instructor')], requiresAuth: true },
   },
   {
@@ -532,33 +314,36 @@ const dashboardChildren = [
     meta: { middleware: [authMiddleware, roleMiddleware('instructor')], requiresAuth: true },
   },
   {
-    path: 'instructor/attendance',
-    name: 'instructor-attendance',
-    component: () => import('../views/dashboard/instructor/InstructorAttendance.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('instructor')], requiresAuth: true },
-  },
-  {
-    path: 'instructor/notes',
-    name: 'instructor-notes',
-    component: () => import('../views/dashboard/instructor/InstructorNotes.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('instructor')], requiresAuth: true },
-  },
-  {
-    path: 'instructor/messaging',
-    name: 'instructor-messaging',
-    component: () => import('../views/dashboard/instructor/InstructorMessaging.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('instructor')], requiresAuth: true },
-  },
-  {
-    path: 'instructor/assignments',
-    name: 'instructor-assignments',
-    component: () => import('../views/dashboard/instructor/InstructorAssignments.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('instructor')], requiresAuth: true },
-  },
-  {
     path: 'instructor/calendar',
     name: 'instructor-calendar',
     component: () => import('../views/dashboard/instructor/InstructorCalendar.vue'),
+    meta: { middleware: [authMiddleware, roleMiddleware('instructor')], requiresAuth: true },
+  },
+  {
+    path: 'instructor/my-groups',
+    name: 'instructor-my-groups',
+    component: () => import('../views/dashboard/instructor/InstructorMyGroups.vue'),
+    meta: { middleware: [authMiddleware, roleMiddleware('instructor')], requiresAuth: true },
+  },
+  {
+    path: 'instructor/groups/:groupId/sessions',
+    name: 'instructor-group-sessions',
+    component: () => import('../views/dashboard/instructor/InstructorGroupSessions.vue'),
+    props: true,
+    meta: { middleware: [authMiddleware, roleMiddleware('instructor')], requiresAuth: true },
+  },
+  {
+    path: 'instructor/groups/:groupId/students',
+    name: 'instructor-group-students',
+    component: () => import('../views/dashboard/instructor/InstructorStudentsList.vue'),
+    props: true,
+    meta: { middleware: [authMiddleware, roleMiddleware('instructor')], requiresAuth: true },
+  },
+  {
+    path: 'instructor/sessions/:sessionId/attendance',
+    name: 'instructor-take-attendance',
+    component: () => import('../views/dashboard/instructor/InstructorTakeAttendance.vue'),
+    props: true,
     meta: { middleware: [authMiddleware, roleMiddleware('instructor')], requiresAuth: true },
   },
   {
@@ -567,34 +352,12 @@ const dashboardChildren = [
     component: () => import('../views/dashboard/instructor/InstructorCommunity.vue'),
     meta: { middleware: [authMiddleware, roleMiddleware('instructor')], requiresAuth: true },
   },
-  {
-    path: 'instructor/groups',
-    name: 'instructor-groups',
-    component: () => import('../views/dashboard/instructor/InstructorGroupSessions.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('instructor')], requiresAuth: true },
-  },
-  // Phase 3: Instructor Attendance
-  {
-    path: 'instructor/attendance',
-    name: 'instructor-attendance',
-    component: () => import('../views/dashboard/instructor/InstructorAttendance.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('instructor')], requiresAuth: true },
-  },
-  {
-    path: 'instructor/sessions/:id/attendance',
-    name: 'instructor-session-attendance',
-    component: () => import('../views/dashboard/instructor/InstructorSessionAttendance.vue'),
-    props: true,
-    meta: { middleware: [authMiddleware, roleMiddleware('instructor')], requiresAuth: true },
-  },
-  // Phase 5.1: Gamification
-  {
-    path: 'instructor/groups/:groupId/leaderboard',
-    name: 'instructor-group-leaderboard',
-    component: () => import('../views/dashboard/instructor/InstructorGroupLeaderboard.vue'),
-    props: true,
-    meta: { middleware: [authMiddleware, roleMiddleware('instructor')], requiresAuth: true },
-  },
+          {
+            path: 'instructor/groups',
+            name: 'instructor-groups',
+            redirect: { name: 'instructor-my-groups' },
+            meta: { middleware: [authMiddleware, roleMiddleware('instructor')], requiresAuth: true },
+          },
 
   // Student routes
   {
@@ -605,39 +368,31 @@ const dashboardChildren = [
   {
     path: 'student/courses',
     name: 'student-courses',
-    component: () => import('../views/dashboard/student/StudentCourses.vue'),
+    component: () => import('../views/dashboard/student/StudentMyCourses.vue'),
     meta: { middleware: [authMiddleware, roleMiddleware('student')], requiresAuth: true },
   },
   {
-    path: 'student/sessions',
-    name: 'student-sessions',
-    component: () => import('../views/dashboard/student/StudentSessions.vue'),
+    path: 'student/my-courses',
+    name: 'student-my-courses',
+    component: () => import('../views/dashboard/student/StudentMyCourses.vue'),
     meta: { middleware: [authMiddleware, roleMiddleware('student')], requiresAuth: true },
   },
   {
-    path: 'student/attendance',
-    name: 'student-attendance',
-    component: () => import('../views/dashboard/student/StudentAttendance.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('student')], requiresAuth: true },
-  },
-  // Phase 3: Student Enrollment, Payments, Certificates
-  {
-    path: 'student/enrollments',
-    name: 'student-enrollments',
-    component: () => import('../views/dashboard/student/StudentEnrollmentStatus.vue'),
+    path: 'student/my-group',
+    name: 'student-my-group',
+    component: () => import('../views/dashboard/student/StudentMyGroup.vue'),
     meta: { middleware: [authMiddleware, roleMiddleware('student')], requiresAuth: true },
   },
   {
-    path: 'student/payments',
-    name: 'student-payments',
-    component: () => import('../views/dashboard/student/StudentPayments.vue'),
+    path: 'student/my-sessions',
+    name: 'student-my-sessions',
+    component: () => import('../views/dashboard/student/StudentMySessions.vue'),
     meta: { middleware: [authMiddleware, roleMiddleware('student')], requiresAuth: true },
   },
   {
-    path: 'student/payments/:id',
-    name: 'student-invoice-view',
-    component: () => import('../views/dashboard/student/StudentInvoiceView.vue'),
-    props: true,
+    path: 'student/attendance-history',
+    name: 'student-attendance-history',
+    component: () => import('../views/dashboard/student/StudentAttendanceHistory.vue'),
     meta: { middleware: [authMiddleware, roleMiddleware('student')], requiresAuth: true },
   },
   {
@@ -646,37 +401,17 @@ const dashboardChildren = [
     component: () => import('../views/dashboard/student/StudentCertificates.vue'),
     meta: { middleware: [authMiddleware, roleMiddleware('student')], requiresAuth: true },
   },
-  // Phase 4: QR Attendance, Assignments, Calendar, Gradebook
   {
-    path: 'student/qr-scanner',
-    name: 'student-qr-scanner',
-    component: () => import('../views/dashboard/student/StudentQRScanner.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('student')], requiresAuth: true },
-  },
-  {
-    path: 'student/assignments',
-    name: 'student-assignments',
-    component: () => import('../views/dashboard/student/StudentAssignments.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('student')], requiresAuth: true },
-  },
-  {
-    path: 'student/assignments/:id',
-    name: 'student-assignment-view',
-    component: () => import('../views/dashboard/student/AssignmentView.vue'),
+    path: 'student/certificates/:id',
+    name: 'student-certificate-detail',
+    component: () => import('../views/dashboard/student/StudentCertificates.vue'),
     props: true,
     meta: { middleware: [authMiddleware, roleMiddleware('student')], requiresAuth: true },
   },
   {
-    path: 'student/assignments/:id/submit',
-    name: 'student-assignment-submit',
-    component: () => import('../views/dashboard/student/AssignmentSubmit.vue'),
-    props: true,
-    meta: { middleware: [authMiddleware, roleMiddleware('student')], requiresAuth: true },
-  },
-  {
-    path: 'student/gradebook',
-    name: 'student-gradebook',
-    component: () => import('../views/dashboard/student/StudentGradebook.vue'),
+    path: 'student/community',
+    name: 'student-community',
+    component: () => import('../views/dashboard/student/StudentCommunity.vue'),
     meta: { middleware: [authMiddleware, roleMiddleware('student')], requiresAuth: true },
   },
   {
@@ -685,130 +420,12 @@ const dashboardChildren = [
     component: () => import('../views/dashboard/student/StudentCalendar.vue'),
     meta: { middleware: [authMiddleware, roleMiddleware('student')], requiresAuth: true },
   },
-  // Phase 5.1: Gamification
-  {
-    path: 'student/gamification',
-    name: 'student-gamification',
-    component: () => import('../views/dashboard/student/StudentGamificationSummary.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('student')], requiresAuth: true },
-  },
-  {
-    path: 'student/leaderboard',
-    name: 'student-leaderboard',
-    component: () => import('../views/dashboard/student/StudentLeaderboard.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('student')], requiresAuth: true },
-  },
-  // Phase 5.2: Community
-  {
-    path: 'student/community',
-    name: 'community-feed',
-    component: () => import('../views/dashboard/student/CommunityFeed.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('student')], requiresAuth: true },
-  },
-  {
-    path: 'student/community/posts/:id',
-    name: 'community-post-view',
-    component: () => import('../views/dashboard/student/CommunityPostView.vue'),
-    props: true,
-    meta: { middleware: [authMiddleware, roleMiddleware('student')], requiresAuth: true },
-  },
-  {
-    path: 'student/community/my-posts',
-    name: 'community-my-posts',
-    component: () => import('../views/dashboard/student/CommunityMyPosts.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('student')], requiresAuth: true },
-  },
-  
-  // Phase 5.3: Academy Subscription Management
-  {
-    path: 'admin/subscription',
-    redirect: '/dashboard/academy/subscription',
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
-    path: 'academy/subscription',
-    name: 'academy-subscription',
-    component: () => import('../views/dashboard/academy/SubscriptionOverview.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
-    path: 'academy/subscription/plans',
-    name: 'academy-plan-selection',
-    component: () => import('../views/dashboard/academy/PlanSelection.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
-    path: 'academy/subscription/usage',
-    name: 'academy-usage',
-    component: () => import('../views/dashboard/academy/UsageOverview.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
-    path: 'academy/subscription/invoices',
-    name: 'academy-invoices',
-    component: () => import('../views/dashboard/academy/SubscriptionInvoices.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  
-  // Phase 5.3: HQ Admin Routes
-  {
-    path: 'hq/plans',
-    name: 'hq-plans',
-    component: () => import('../views/dashboard/hq/HQPlans.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('hq')], requiresAuth: true },
-  },
-  {
-    path: 'hq/subscriptions',
-    name: 'hq-subscriptions',
-    component: () => import('../views/dashboard/hq/HQSubscriptions.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('hq')], requiresAuth: true },
-  },
-  
-  // Phase 6: Page Builder
-  {
-    path: 'admin/page-builder',
-    name: 'page-builder-pages',
-    component: () => import('../views/dashboard/admin/PageBuilderPages.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
-    path: 'admin/page-builder/editor/:id',
-    name: 'page-builder-editor',
-    component: () => import('../views/dashboard/admin/PageBuilderEditor.vue'),
-    props: true,
-    meta: { middleware: [authMiddleware, roleMiddleware('admin')], requiresAuth: true },
-  },
-  {
-    path: 'student/profile',
-    name: 'student-profile',
-    component: () => import('../views/dashboard/student/StudentProfile.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('student')], requiresAuth: true },
-  },
-  {
-    path: 'student/payments',
-    name: 'student-payments',
-    component: () => import('../views/dashboard/student/StudentPayments.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('student')], requiresAuth: true },
-  },
-  {
-    path: 'student/messaging',
-    name: 'student-messaging',
-    component: () => import('../views/dashboard/student/StudentMessaging.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('student')], requiresAuth: true },
-  },
-  {
-    path: 'student/programs',
-    name: 'student-programs',
-    component: () => import('../views/dashboard/student/StudentPrograms.vue'),
-    meta: { middleware: [authMiddleware, roleMiddleware('student')], requiresAuth: true },
-  },
-  {
-    path: 'student/programs/:id',
-    name: 'student-programs-details',
-    component: () => import('../views/dashboard/student/StudentProgramDetails.vue'),
-    props: true,
-    meta: { middleware: [authMiddleware, roleMiddleware('student')], requiresAuth: true },
-  },
+          {
+            path: 'student/profile',
+            name: 'student-profile',
+            component: () => import('../views/dashboard/student/StudentProfile.vue'),
+            meta: { middleware: [authMiddleware, roleMiddleware('student')], requiresAuth: true },
+          },
 ];
 
 const router = createRouter({
@@ -833,61 +450,180 @@ const router = createRouter({
   ],
 });
 
-// Global setup check (runs first, before route-specific middleware)
+// Global router middleware
 router.beforeEach(async (to, from, next) => {
-  // Import auth store here to avoid circular dependencies
+  // Import stores here to avoid circular dependencies
   const { useAuthStore } = await import('../stores/auth');
   const authStore = useAuthStore();
   
   const isAuth = authStore.isAuthenticated;
-  const role = authStore.roleName;
+  
+  // Skip authentication checks for public routes (login, register, etc.)
+  const publicRoutes = ['/login', '/register'];
+  const isPublicRoute = publicRoutes.some(route => to.path === route || to.path.startsWith(route));
+  
+  // If authenticated but user data is missing or role is missing
+  // First, try to load from localStorage if available
+  // Only do this for protected routes, not public routes
+  if (!isPublicRoute && isAuth && (!authStore.user || !authStore.roleName) && 
+      (to.path.startsWith('/dashboard') || to.meta.requiresAuth)) {
+    // First, try to load from localStorage if available
+    const savedUser = localStorage.getItem('gs_user') || localStorage.getItem('user');
+    if (savedUser) {
+      try {
+        const parsedUser = JSON.parse(savedUser);
+        // Normalize role
+        if (parsedUser.role && typeof parsedUser.role === 'object' && parsedUser.role.name) {
+          parsedUser.role = parsedUser.role.name;
+          parsedUser.role_name = parsedUser.role;
+        }
+        if (parsedUser.role && !parsedUser.role_name) {
+          parsedUser.role_name = parsedUser.role;
+        }
+        // Use setSession to properly update the store
+        if (authStore.setSession) {
+          authStore.setSession(parsedUser, authStore.token);
+        }
+      } catch (e) {
+        console.warn('Failed to parse saved user data:', e);
+        // Remove corrupted data
+        localStorage.removeItem('gs_user');
+        localStorage.removeItem('user');
+      }
+    }
+    
+    // Only try to fetch from API if user is still missing after loading from localStorage
+    // Skip fetch if we already have user data from localStorage
+    let hadTokenBeforeFetch = false;
+    if (!authStore.user && authStore.fetchCurrentUser && !authStore.loading) {
+      // Track if we had a token before fetching (to determine if 401 is expected)
+      hadTokenBeforeFetch = !!authStore.token;
+      try {
+        await authStore.fetchCurrentUser();
+        // fetchCurrentUser handles 401 and 404 gracefully:
+        // - 401: clears session silently and returns (expected when token is invalid)
+        // - 404: returns without clearing session (endpoint might not exist)
+        // - Other errors: throws error
+      } catch (error) {
+        // Only handle unexpected errors (not 401 or 404, which are handled by fetchCurrentUser)
+        if (error.response?.status !== 401 && error.response?.status !== 404) {
+          console.warn('Failed to fetch user data:', error);
+          // For unexpected errors, don't clear session (might be network issue)
+        }
+      }
+    }
+    
+    // If still no user data after all attempts, redirect to login
+    if (!authStore.user && (to.path.startsWith('/dashboard') || to.meta.requiresAuth)) {
+      // Only warn if we had a token before fetch attempt (meaning we expected user data)
+      // If no token existed, it's expected that there's no user, so don't warn
+      if (hadTokenBeforeFetch) {
+        // Had token but no user data after fetch - token was likely invalid (expected)
+        // This is normal when token expires, so we don't need to warn
+      }
+      // Always clear session and redirect silently (this is expected behavior)
+      if (authStore.clearSession) {
+        authStore.clearSession();
+      }
+      return next('/login');
+    }
+  }
+  
+  // Get role from multiple sources and validate it
+  const role = authStore.roleName || authStore.user?.role_name || authStore.user?.role?.name;
+  
+  // Validate role - only allow valid roles
+  const validRoles = ['admin', 'super_admin', 'instructor', 'student'];
+  const isValidRole = role && validRoles.includes(role);
+  
+  // Routes that are always accessible
+  const alwaysAccessibleRoutes = ['/login', '/register'];
+  const isAlwaysAccessible = alwaysAccessibleRoutes.some(route => to.path.startsWith(route));
+  
+  // Setup Wizard disabled - skip all setup checks
+  let setupActivated = true; // Always assume activated
   
   // If user is authenticated and trying to access /login or /register, redirect based on role
   if (isAuth && (to.path === '/login' || to.path === '/register')) {
-    if (role === 'student') {
-      return next('/');
-    } else if (role === 'instructor') {
-      return next('/dashboard/instructor');
-    } else if (role === 'admin' || role === 'super_admin') {
-      return next('/dashboard/admin');
+    if (isValidRole) {
+      if (role === 'student') {
+        return next('/');
+      } else if (role === 'instructor') {
+        return next('/dashboard/instructor');
+      } else if (role === 'admin' || role === 'super_admin') {
+        return next('/dashboard/admin');
+      }
     }
-    // Default fallback
-    return next('/dashboard/admin');
+    // If role is invalid or missing, check if we have user data
+    // If no user data, token is likely invalid - clear session and allow login
+    if (!authStore.user) {
+      // Token exists but no user data - token is invalid
+      if (authStore.clearSession) {
+        authStore.clearSession();
+      }
+      // Allow access to login page
+      return next();
+    }
+    // If user data exists but role is missing/invalid, clear session and allow login
+    // This shouldn't happen normally, but handle it gracefully
+    if (authStore.clearSession) {
+      authStore.clearSession();
+    }
+    // Allow access to login page
+    return next();
   }
   
   // Handle /dashboard root path - redirect based on role
   if (isAuth && to.path === '/dashboard' && to.name === undefined) {
-    if (role === 'instructor') {
-      return next('/dashboard/instructor');
-    } else if (role === 'admin' || role === 'super_admin') {
-      return next('/dashboard/admin');
+    if (isValidRole) {
+      if (role === 'instructor') {
+        return next('/dashboard/instructor');
+      } else if (role === 'admin' || role === 'super_admin') {
+        return next('/dashboard/admin');
+      } else if (role === 'student') {
+        // For students, redirect to home
+        return next('/');
+      }
     }
-    // For students, redirect to home
-    return next('/');
-  }
-  
-  // Check if route requires authentication
-  // Forbidden routes: /dashboard, /dashboard/*, /instructor-dashboard
-  if (!isAuth && (to.path.startsWith('/dashboard') || to.path === '/instructor-dashboard')) {
+    // If role is invalid or missing, check if we have user data
+    // If no user data, token is likely invalid - clear session and redirect to login
+    if (!authStore.user) {
+      if (authStore.clearSession) {
+        authStore.clearSession();
+      }
+      return next('/login');
+    }
+    // If user data exists but role is missing/invalid, clear session and redirect to login
+    // This shouldn't happen normally, but handle it gracefully
+    if (authStore.clearSession) {
+      authStore.clearSession();
+    }
     return next('/login');
   }
   
   // Check if route requires authentication
-  if (to.meta.requiresAuth && !isAuth) {
-    return next('/login');
+  // Setup check disabled - proceed with auth checks
+  if (true) {
+    // Forbidden routes: /dashboard, /dashboard/*, /instructor-dashboard
+    if (!isAuth && (to.path.startsWith('/dashboard') || to.path === '/instructor-dashboard')) {
+      return next('/login');
+    }
+    
+    // Check if route requires authentication
+    if (to.meta.requiresAuth && !isAuth) {
+      return next('/login');
+    }
+  } else {
+    // Setup check disabled - proceed normally
+    // Just allow access to public routes
   }
   
-  // Run setup check first
-  await setupCheckMiddleware(to, from, (result) => {
-    if (result === false || typeof result === 'object') {
-      return next(result);
-    }
-    // Setup check passed, continue to route-specific middleware
-    continueToRouteMiddleware();
-  });
+  // Continue to route middleware
+  // Setup Wizard disabled - no setup check needed
+  continueToRouteMiddleware();
 
   // Self-healing: Check for 404 routes (only in development, not in tests)
-  if (to.matched.length === 0 && to.path !== '/' && !to.path.startsWith('/setup') && !window.Cypress) {
+  if (to.matched.length === 0 && to.path !== '/' && !window.Cypress) {
     // Route not found - trigger self-healing (non-blocking)
     try {
       import('../utils/selfHealBrowser').then(({ handle404Route }) => {

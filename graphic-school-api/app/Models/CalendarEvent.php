@@ -38,8 +38,6 @@ class CalendarEvent extends Model
         switch ($this->event_type) {
             case 'session':
                 return \Modules\LMS\Sessions\Models\Session::find($this->reference_id);
-            case 'assignment':
-                return Assignment::find($this->reference_id);
             default:
                 return null;
         }

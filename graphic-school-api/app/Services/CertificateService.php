@@ -6,7 +6,7 @@ use App\Models\CertificateTemplate;
 use Modules\LMS\Certificates\Models\Certificate;
 use Modules\LMS\Enrollments\Models\Enrollment;
 use Modules\ACL\Users\Models\User;
-use App\Models\Program;
+use Modules\LMS\Courses\Models\Course;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 class CertificateService
@@ -17,10 +17,10 @@ class CertificateService
      */
     public function issueCertificate(int $enrollmentId, ?int $templateId = null): Certificate
     {
-        $enrollment = Enrollment::with(['student', 'program', 'batch'])->findOrFail($enrollmentId);
+        $enrollment = Enrollment::with(['student', 'course'])->findOrFail($enrollmentId);
 
-        if (!$enrollment->program_id) {
-            throw new \Exception('Enrollment must be for a program to issue certificate');
+        if (!$enrollment->course_id) {
+            throw new \Exception('Enrollment must be for a course to issue certificate');
         }
 
         $template = $templateId 
@@ -36,7 +36,7 @@ class CertificateService
 
         $certificate = Certificate::create([
             'student_id' => $enrollment->student_id,
-            'program_id' => $enrollment->program_id,
+            'course_id' => $enrollment->course_id,
             'certificate_template_id' => $template->id,
             'verification_code' => $verificationCode,
             'issued_at' => now(),
@@ -66,7 +66,7 @@ class CertificateService
     public function verifyCertificate(string $verificationCode): ?Certificate
     {
         return Certificate::where('verification_code', $verificationCode)
-            ->with(['student', 'program'])
+            ->with(['student', 'course'])
             ->first();
     }
 
@@ -77,7 +77,7 @@ class CertificateService
     {
         // TODO: Implement PDF generation using DomPDF or Browsershot
         // This will use the template layout, branding, and fonts
-        // Placeholders: {student_name}, {program_name}, {batch_name}, {issue_date}, {academy_name}, {academy_logo}
+        // Placeholders: {student_name}, {course_name}, {issue_date}, {academy_name}, {academy_logo}
     }
 }
 

@@ -25,12 +25,12 @@ class EnrollmentRepository extends BaseRepository implements EnrollmentRepositor
             $query->where('status', $filters['status']);
         }
 
-        if (! empty($filters['payment_status'])) {
-            $query->where('payment_status', $filters['payment_status']);
-        }
-
         if (! empty($filters['course_id'])) {
             $query->where('course_id', (int) $filters['course_id']);
+        }
+
+        if (! empty($filters['group_id'])) {
+            $query->where('group_id', (int) $filters['group_id']);
         }
 
         if (! empty($filters['student_id'])) {

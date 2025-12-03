@@ -4,7 +4,7 @@
       <div>
         <h2 class="text-2xl font-bold text-slate-900 dark:text-white">{{ $t('admin.groups.title') || 'Groups' }}</h2>
         <p class="text-sm text-slate-500 dark:text-slate-400">
-          {{ $t('admin.groups.subtitle') || 'Batch' }}: {{ batch?.code || batchId }}
+          {{ $t('admin.groups.subtitle') || 'Manage groups for courses' }}
         </p>
       </div>
       <button
@@ -17,6 +17,41 @@
         </svg>
         {{ $t('admin.groups.create') || 'Create Group' }}
       </button>
+    </div>
+
+    <div v-if="loading" class="text-center py-20">
+      <div class="spinner-lg mx-auto mb-4"></div>
+      <p class="text-slate-500 dark:text-slate-400">{{ $t('common.loading') || 'Loading...' }}</p>
+    </div>
+
+    <div v-else-if="groups.length === 0" class="text-center py-20">
+      <p class="text-slate-500 dark:text-slate-400 text-lg">{{ $t('admin.groups.noGroups') || 'No groups found' }}</p>
+    </div>
+
+    <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow p-3 mb-6">
+      <div class="flex flex-wrap gap-2 items-center">
+        <input
+          v-model="filters.search"
+          class="text-xs px-3 py-1.5 border border-slate-200 rounded-lg w-40"
+          :placeholder="$t('common.search') || 'Search...'"
+          @input="handleSearch"
+        />
+        <FilterDropdown
+          v-model="filters.course_id"
+          :options="courses"
+          :placeholder="$t('admin.groups.filterByCourse') || 'Filter by Course'"
+          @update:modelValue="handleFilterChange"
+        />
+        <FilterDropdown
+          v-model="filters.is_active"
+          :options="[
+            { id: '1', name: $t('common.active') || 'Active' },
+            { id: '0', name: $t('common.inactive') || 'Inactive' }
+          ]"
+          :placeholder="$t('admin.groups.filterByStatus') || 'Filter by Status'"
+          @update:modelValue="handleFilterChange"
+        />
+      </div>
     </div>
 
     <div v-if="loading" class="text-center py-20">
@@ -57,6 +92,12 @@
             </svg>
             <span>{{ group.room }}</span>
           </div>
+          <div v-if="group.course" class="flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+            <span>{{ group.course?.title || $t('admin.groups.course') || 'Course' }}</span>
+          </div>
           <div v-if="group.students_count !== undefined" class="flex items-center gap-2">
             <span>{{ $t('admin.groups.students') || 'Students' }}: {{ group.students_count }}</span>
           </div>
@@ -81,52 +122,91 @@
       </div>
     </div>
 
+    <PaginationControls
+      v-if="!loading && groups.length > 0 && pagination"
+      :meta="{
+        current_page: pagination?.current_page || 1,
+        last_page: pagination?.last_page || 1,
+        per_page: pagination?.per_page || 12,
+        total: pagination?.total || 0,
+      }"
+      @change-page="changePage"
+      @change-per-page="changePerPage"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { ref, onMounted, computed } from 'vue';
+import { RouterLink } from 'vue-router';
+import { useListPage } from '../../../composables/useListPage';
 import { useApi } from '../../../composables/useApi';
-import { useToast } from '../../../composables/useToast';
+import { useI18n } from '../../../composables/useI18n';
+import FilterDropdown from '../../../components/common/FilterDropdown.vue';
+import PaginationControls from '../../../components/common/PaginationControls.vue';
 
-const route = useRoute();
+const { t } = useI18n();
 const { get } = useApi();
-const toast = useToast();
+const courses = ref([]);
 
-const batchId = route.params.batchId || route.query.batch_id;
-const loading = ref(false);
-const batch = ref(null);
-const groups = ref([]);
-
-onMounted(async () => {
-  await loadBatch();
-  await loadGroups();
+// Use unified list page composable
+const {
+  items: groups,
+  loading,
+  error,
+  filters,
+  pagination,
+  changePage,
+  changePerPage,
+  loadItems,
+  loadItemsDebounced,
+  applyFilters,
+  deleteItem,
+} = useListPage({
+  endpoint: '/admin/groups',
+  initialFilters: {
+    course_id: '',
+    search: '',
+    is_active: '',
+  },
+  perPage: 12,
+  debounceMs: 500,
+  autoApplyFilters: false,
 });
 
-async function loadBatch() {
-  if (!batchId) return;
+async function loadCourses() {
   try {
-    const response = await get(`/admin/batches/${batchId}`);
-    batch.value = response?.data || response;
-  } catch (error) {
-    console.error('Error loading batch:', error);
+    const response = await get('/admin/courses');
+    const data = Array.isArray(response) ? response : (response?.data || []);
+    courses.value = data.map(c => ({ id: c.id, name: c.title }));
+  } catch (err) {
+    console.error('Error loading courses:', err);
+    courses.value = [];
   }
 }
 
+function handleFilterChange() {
+  applyFilters();
+}
 
-async function loadGroups() {
+function handleSearch() {
+  loadItemsDebounced();
+}
+
+async function remove(id) {
+  const confirmMessage = t('common.confirmDelete') || 'Are you sure you want to delete this item?';
+  if (!confirm(confirmMessage)) return;
   try {
-    loading.value = true;
-    const response = await get(`/admin/groups?batch_id=${batchId}`);
-    groups.value = response?.data || response || [];
-  } catch (error) {
-    toast.error('Failed to load groups');
-    console.error(error);
-  } finally {
-    loading.value = false;
+    await deleteItem(id);
+  } catch (err) {
+    alert(error.value || t('errors.deleteError'));
   }
 }
 
+onMounted(async () => {
+  await loadCourses();
+  await loadItems();
+});
 </script>
+
 

@@ -1,0 +1,22 @@
+{
+  "testCourse": {
+    "id": 1,
+    "title": "Graphic Design Fundamentals",
+    "slug": "graphic-design-fundamentals",
+    "code": "GD101",
+    "description": "Learn the fundamentals of graphic design",
+    "price": "5000.00",
+    "currency": "EGP",
+    "image_path": "/storage/courses/gd101.jpg",
+    "category_id": 1,
+    "status": "published",
+    "instructors": [
+      {
+        "id": 1,
+        "name": "John Instructor",
+        "email": "instructor1@graphicschool.com"
+      }
+    ]
+  }
+}
+

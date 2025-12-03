@@ -15,6 +15,15 @@ export const cmsService = {
     return response.data;
   },
 
+  /**
+   * Get public page by slug (no auth required)
+   */
+  async getPublicPage(slug, locale = null) {
+    const params = locale ? { locale } : {};
+    const response = await api.get(`/public/pages/${slug}`, { params });
+    return response.data;
+  },
+
   async createPage(data) {
     const response = await api.post('/admin/pages', data);
     return response.data;

@@ -3,10 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Services\CertificateService;
-use App\Models\CertificateTemplate;
-use Modules\LMS\Certificates\Models\Certificate;
 use App\Http\Responses\ApiResponse;
+use Modules\LMS\Certificates\Services\CertificateService;
+use Modules\LMS\Certificates\Models\Certificate;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -18,41 +17,67 @@ class CertificateController extends Controller
     }
 
     /**
-     * List certificates
+     * List all certificates
      */
     public function index(Request $request): JsonResponse
     {
-        $query = Certificate::with(['student', 'program', 'template']);
-
-        if ($request->has('student_id')) {
-            $query->where('student_id', $request->student_id);
-        }
-
-        if ($request->has('program_id')) {
-            $query->where('program_id', $request->program_id);
-        }
-
-        $certificates = $query->orderByDesc('issued_at')->paginate($request->get('per_page', 15));
+        $filters = $request->only(['course_id', 'student_id', 'group_id', 'per_page']);
+        $certificates = $this->certificateService->getAllCertificates($filters);
 
         return ApiResponse::success($certificates, 'Certificates retrieved successfully');
     }
 
     /**
-     * Issue certificate
+     * Issue a new certificate
      */
-    public function issue(Request $request): JsonResponse
+    public function store(Request $request): JsonResponse
     {
         $request->validate([
-            'enrollment_id' => 'required|exists:enrollments,id',
-            'template_id' => 'nullable|exists:certificate_templates,id',
+            'student_id' => 'required|exists:users,id',
+            'course_id' => 'required|exists:courses,id',
+            'group_id' => 'nullable|exists:groups,id',
+            'instructor_id' => 'nullable|exists:users,id',
         ]);
 
-        $certificate = $this->certificateService->issueCertificate(
-            $request->input('enrollment_id'),
-            $request->input('template_id')
-        );
+        try {
+            $certificate = $this->certificateService->issueCertificate(
+                $request->student_id,
+                $request->course_id,
+                $request->group_id,
+                $request->instructor_id
+            );
 
-        return ApiResponse::success($certificate->load(['student', 'program', 'template']), 'Certificate issued successfully');
+            return ApiResponse::success(
+                $certificate->load(['course', 'group', 'student', 'instructor']),
+                'Certificate issued successfully',
+                201
+            );
+        } catch (\Exception $e) {
+            return ApiResponse::error($e->getMessage(), [], 400);
+        }
+    }
+
+    /**
+     * Get certificate details
+     */
+    public function show(int $id): JsonResponse
+    {
+        $certificate = Certificate::with(['course', 'group', 'student', 'instructor'])
+            ->findOrFail($id);
+
+        return ApiResponse::success($certificate, 'Certificate retrieved successfully');
+    }
+
+    /**
+     * Delete certificate
+     */
+    public function destroy(int $id): JsonResponse
+    {
+        $certificate = Certificate::findOrFail($id);
+        $certificate->delete();
+
+        return ApiResponse::success(null, 'Certificate deleted successfully');
     }
 }
+
 

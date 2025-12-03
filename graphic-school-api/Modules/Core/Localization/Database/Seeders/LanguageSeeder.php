@@ -14,19 +14,23 @@ class LanguageSeeder extends Seeder
     {
         $languages = [
             [
-                'code' => 'ar',
-                'name' => 'Arabic',
-                'native_name' => 'العربية',
-                'image_path' => null, // You can add image path here
-                'is_active' => true,
-                'sort_order' => 1,
-            ],
-            [
                 'code' => 'en',
                 'name' => 'English',
                 'native_name' => 'English',
-                'image_path' => null, // You can add image path here
+                'image_path' => null,
                 'is_active' => true,
+                'is_default' => true,
+                'is_rtl' => false,
+                'sort_order' => 1,
+            ],
+            [
+                'code' => 'ar',
+                'name' => 'Arabic',
+                'native_name' => 'العربية',
+                'image_path' => null,
+                'is_active' => true,
+                'is_default' => false,
+                'is_rtl' => true,
                 'sort_order' => 2,
             ],
         ];

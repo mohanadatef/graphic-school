@@ -15,11 +15,15 @@ class Language extends Model
         'native_name',
         'image_path',
         'is_active',
+        'is_default',
+        'is_rtl',
         'sort_order',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'is_default' => 'boolean',
+        'is_rtl' => 'boolean',
         'sort_order' => 'integer',
     ];
 
@@ -55,6 +59,31 @@ class Language extends Model
     public function scopeOrdered($query)
     {
         return $query->orderBy('sort_order')->orderBy('name');
+    }
+
+    /**
+     * Scope to get default language
+     */
+    public function scopeDefault($query)
+    {
+        return $query->where('is_default', true);
+    }
+
+    /**
+     * Scope to get RTL languages
+     */
+    public function scopeRtl($query)
+    {
+        return $query->where('is_rtl', true);
+    }
+
+    /**
+     * Get default language
+     */
+    public static function getDefault(): ?self
+    {
+        return static::where('is_default', true)->first() 
+            ?? static::where('code', 'en')->first();
     }
 }
 

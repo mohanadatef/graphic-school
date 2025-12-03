@@ -2,51 +2,47 @@
 
 namespace Database\Seeders;
 
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
     /**
      * Seed the application's database.
+     * Seeders run in this EXACT order to respect dependencies
      */
     public function run(): void
     {
-        $this->call(BrandingSeeder::class);
         $this->call([
-            PermissionSeeder::class,
+            // Step 1: Core roles (MUST run first)
             RoleSeeder::class,
-            UserSeeder::class,
+            
+            // Step 2: Localization & Settings
+            LanguageSeeder::class,
+            CurrencySeeder::class,
+            CountrySeeder::class,
+            WebsiteSettingSeeder::class,
+            
+            // Step 3: CMS Pages
+            PagesSeeder::class,
+            
+            // Step 4: Categories
             CategorySeeder::class,
+            
+            // Step 5: Users (admin, instructor & student)
+            AdminSeeder::class,
+            InstructorSeeder::class,
+            StudentSeeder::class,
+            
+            // Step 6: Courses (depends on categories & instructors)
             CourseSeeder::class,
-            EnrollmentSeeder::class,
+            
+            // Step 7: Groups (depends on courses)
+            GroupSeeder::class,
+            
+            // Step 8: Sessions (depends on groups)
             SessionSeeder::class,
-            SettingsSeeder::class,
-            SystemSettingsSeeder::class, // Language & Currency settings
-            TranslationSeeder::class,
-            \Modules\Core\Localization\Database\Seeders\LanguageSeeder::class,
-            // CMS Pages
-            PageSeeder::class,
-            // Curriculum data (Modules, Lessons, Resources)
-            \Modules\LMS\Curriculum\Database\Seeders\CourseModuleSeeder::class,
-            // Comprehensive data (Attendance, Reviews, Quizzes, Projects, Progress, Certificates, etc.)
-            ComprehensiveDataSeeder::class,
-            // Translation data (adds EN/AR translations to existing entities)
-            TranslationDataSeeder::class,
-            // Phase 2: Dynamic Learning Structure
-            DynamicLearningSeeder::class,
-            // Phase 3: Enrollment + Payments + Attendance + Certificates
-            Phase3DataSeeder::class,
-            // Phase 4: QR Attendance + Assignments + Calendar + Gradebook
-            Phase4DataSeeder::class,
-            // Phase 5.1: Gamification Core System
-            GamificationSeeder::class,
-            // Phase 5.2: Community System
-            CommunitySeeder::class,
-            // Phase 5.3: Subscriptions & Plans
-            SubscriptionSeeder::class,
-            // Phase 6: Advanced Page Builder
-            PageBuilderSeeder::class,
         ]);
+
+        $this->command->info('✔ All seeders completed successfully!');
     }
 }

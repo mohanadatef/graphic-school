@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('calendar_events', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete(); // null = system event
-            $table->enum('event_type', ['session', 'assignment', 'deadline', 'custom'])->default('custom');
-            $table->unsignedBigInteger('reference_id')->nullable(); // session_id, assignment_id, etc.
+            $table->unsignedBigInteger('user_id')->nullable(); // null = system event
+            $table->enum('event_type', ['session', 'deadline', 'custom'])->default('custom');
+            $table->unsignedBigInteger('reference_id')->nullable(); // session_id, etc.
             $table->string('title');
             $table->text('description')->nullable();
             $table->timestamp('start_datetime');
@@ -27,6 +27,14 @@ return new class extends Migration
             $table->index('user_id');
             $table->index('event_type');
             $table->index('start_datetime');
+        });
+        
+        // Add foreign key
+        Schema::table('calendar_events', function (Blueprint $table) {
+            $table->foreign('user_id')
+                ->references('id')
+                ->on('users')
+                ->onDelete('set null');
         });
     }
 

@@ -205,6 +205,78 @@ export default defineConfig({
             return null;
           }
         },
+        // Report 404 errors
+        async report404({ url, method, spec }) {
+          try {
+            ensureDirs();
+            const ERRORS_LOG = path.join(LOGS_DIR, '404-errors.log');
+            const logEntry = {
+              type: '404',
+              url,
+              method,
+              spec,
+              timestamp: new Date().toISOString(),
+            };
+            const line = JSON.stringify(logEntry) + '\n';
+            await appendFile(ERRORS_LOG, line, 'utf-8');
+            return null;
+          } catch (error) {
+            console.warn('[E2E Logger] Failed to log 404:', error.message);
+            return null;
+          }
+        },
+        // Report 500 errors
+        async report500({ url, method, spec }) {
+          try {
+            ensureDirs();
+            const ERRORS_LOG = path.join(LOGS_DIR, '500-errors.log');
+            const logEntry = {
+              type: '500',
+              url,
+              method,
+              spec,
+              timestamp: new Date().toISOString(),
+            };
+            const line = JSON.stringify(logEntry) + '\n';
+            await appendFile(ERRORS_LOG, line, 'utf-8');
+            return null;
+          } catch (error) {
+            console.warn('[E2E Logger] Failed to log 500:', error.message);
+            return null;
+          }
+        },
+        // Report general errors
+        async reportError(errorInfo) {
+          try {
+            ensureDirs();
+            const ERRORS_LOG = path.join(LOGS_DIR, 'errors.log');
+            const line = JSON.stringify(errorInfo) + '\n';
+            await appendFile(ERRORS_LOG, line, 'utf-8');
+            return null;
+          } catch (error) {
+            console.warn('[E2E Logger] Failed to log error:', error.message);
+            return null;
+          }
+        },
+        // Report 404 pages
+        async report404Page({ url, spec }) {
+          try {
+            ensureDirs();
+            const ERRORS_LOG = path.join(LOGS_DIR, '404-pages.log');
+            const logEntry = {
+              type: '404-page',
+              url,
+              spec,
+              timestamp: new Date().toISOString(),
+            };
+            const line = JSON.stringify(logEntry) + '\n';
+            await appendFile(ERRORS_LOG, line, 'utf-8');
+            return null;
+          } catch (error) {
+            console.warn('[E2E Logger] Failed to log 404 page:', error.message);
+            return null;
+          }
+        },
       });
     },
     specPattern: 'cypress/e2e/**/*.cy.{js,jsx,ts,tsx}',
