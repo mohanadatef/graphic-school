@@ -1,0 +1,15 @@
+{
+  "startedAt": "2025-11-23T19:49:32.576Z",
+  "specs": [
+    "cypress\\e2e\\admin_spec.cy.js",
+    "cypress\\e2e\\full_flow.cy.js",
+    "cypress\\e2e\\health_check.cy.js",
+    "cypress\\e2e\\instructor_spec.cy.js",
+    "cypress\\e2e\\login_debug.cy.js",
+    "cypress\\e2e\\student_spec.cy.js"
+  ],
+  "totalSpecs": 6,
+  "passedSpecs": 0,
+  "failedSpecs": 6,
+  "endedAt": "2025-11-23T19:50:01.024Z"
+}

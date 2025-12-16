@@ -1,0 +1,71 @@
+{
+  "specFile": "cypress\\e2e\\instructor_spec.cy.js",
+  "startedAt": "2025-11-23T19:49:52.348Z",
+  "endedAt": "2025-11-23T19:49:52.961Z",
+  "status": "failed",
+  "tests": [
+    {
+      "title": "Instructor E2E Tests > 1. Instructor login",
+      "fullTitle": "",
+      "state": "failed",
+      "duration": 263,
+      "error": null,
+      "screenshots": [],
+      "video": "C:\\Users\\Lenovo\\test\\graphic-school\\graphic-school-frontend\\cypress\\videos\\instructor_spec.cy.js.mp4"
+    },
+    {
+      "title": "Instructor E2E Tests > 2. Instructor → Groups → View assigned groups",
+      "fullTitle": "",
+      "state": "skipped",
+      "duration": 0,
+      "error": null,
+      "screenshots": [],
+      "video": "C:\\Users\\Lenovo\\test\\graphic-school\\graphic-school-frontend\\cypress\\videos\\instructor_spec.cy.js.mp4"
+    },
+    {
+      "title": "Instructor E2E Tests > 3. Instructor → Sessions → Mark attendance",
+      "fullTitle": "",
+      "state": "skipped",
+      "duration": 0,
+      "error": null,
+      "screenshots": [],
+      "video": "C:\\Users\\Lenovo\\test\\graphic-school\\graphic-school-frontend\\cypress\\videos\\instructor_spec.cy.js.mp4"
+    },
+    {
+      "title": "Instructor E2E Tests > 4. Instructor → Assignments → View submissions",
+      "fullTitle": "",
+      "state": "skipped",
+      "duration": 0,
+      "error": null,
+      "screenshots": [],
+      "video": "C:\\Users\\Lenovo\\test\\graphic-school\\graphic-school-frontend\\cypress\\videos\\instructor_spec.cy.js.mp4"
+    },
+    {
+      "title": "Instructor E2E Tests > 5. Instructor → Calendar → View schedule",
+      "fullTitle": "",
+      "state": "skipped",
+      "duration": 0,
+      "error": null,
+      "screenshots": [],
+      "video": "C:\\Users\\Lenovo\\test\\graphic-school\\graphic-school-frontend\\cypress\\videos\\instructor_spec.cy.js.mp4"
+    },
+    {
+      "title": "Instructor E2E Tests > 6. Instructor → Community → Post + comment",
+      "fullTitle": "",
+      "state": "skipped",
+      "duration": 0,
+      "error": null,
+      "screenshots": [],
+      "video": "C:\\Users\\Lenovo\\test\\graphic-school\\graphic-school-frontend\\cypress\\videos\\instructor_spec.cy.js.mp4"
+    },
+    {
+      "title": "Instructor E2E Tests > 7. Instructor logout",
+      "fullTitle": "",
+      "state": "failed",
+      "duration": 0,
+      "error": null,
+      "screenshots": [],
+      "video": "C:\\Users\\Lenovo\\test\\graphic-school\\graphic-school-frontend\\cypress\\videos\\instructor_spec.cy.js.mp4"
+    }
+  ]
+}

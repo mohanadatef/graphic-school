@@ -1,0 +1,98 @@
+{
+  "specFile": "cypress\\e2e\\student_spec.cy.js",
+  "startedAt": "2025-11-23T19:49:59.271Z",
+  "endedAt": "2025-11-23T19:49:59.804Z",
+  "status": "failed",
+  "tests": [
+    {
+      "title": "Student E2E Tests > 1. Student login",
+      "fullTitle": "",
+      "state": "failed",
+      "duration": 229,
+      "error": null,
+      "screenshots": [],
+      "video": "C:\\Users\\Lenovo\\test\\graphic-school\\graphic-school-frontend\\cypress\\videos\\student_spec.cy.js.mp4"
+    },
+    {
+      "title": "Student E2E Tests > 2. Student → Program listing",
+      "fullTitle": "",
+      "state": "skipped",
+      "duration": 0,
+      "error": null,
+      "screenshots": [],
+      "video": "C:\\Users\\Lenovo\\test\\graphic-school\\graphic-school-frontend\\cypress\\videos\\student_spec.cy.js.mp4"
+    },
+    {
+      "title": "Student E2E Tests > 3. Student → Enroll in program",
+      "fullTitle": "",
+      "state": "skipped",
+      "duration": 0,
+      "error": null,
+      "screenshots": [],
+      "video": "C:\\Users\\Lenovo\\test\\graphic-school\\graphic-school-frontend\\cypress\\videos\\student_spec.cy.js.mp4"
+    },
+    {
+      "title": "Student E2E Tests > 4. Student → Session view",
+      "fullTitle": "",
+      "state": "skipped",
+      "duration": 0,
+      "error": null,
+      "screenshots": [],
+      "video": "C:\\Users\\Lenovo\\test\\graphic-school\\graphic-school-frontend\\cypress\\videos\\student_spec.cy.js.mp4"
+    },
+    {
+      "title": "Student E2E Tests > 5. Student → Submit assignment",
+      "fullTitle": "",
+      "state": "skipped",
+      "duration": 0,
+      "error": null,
+      "screenshots": [],
+      "video": "C:\\Users\\Lenovo\\test\\graphic-school\\graphic-school-frontend\\cypress\\videos\\student_spec.cy.js.mp4"
+    },
+    {
+      "title": "Student E2E Tests > 6. Student → View gradebook",
+      "fullTitle": "",
+      "state": "skipped",
+      "duration": 0,
+      "error": null,
+      "screenshots": [],
+      "video": "C:\\Users\\Lenovo\\test\\graphic-school\\graphic-school-frontend\\cypress\\videos\\student_spec.cy.js.mp4"
+    },
+    {
+      "title": "Student E2E Tests > 7. Student → View certificates",
+      "fullTitle": "",
+      "state": "skipped",
+      "duration": 0,
+      "error": null,
+      "screenshots": [],
+      "video": "C:\\Users\\Lenovo\\test\\graphic-school\\graphic-school-frontend\\cypress\\videos\\student_spec.cy.js.mp4"
+    },
+    {
+      "title": "Student E2E Tests > 8. Student → Community → Create post + like + reply",
+      "fullTitle": "",
+      "state": "skipped",
+      "duration": 0,
+      "error": null,
+      "screenshots": [],
+      "video": "C:\\Users\\Lenovo\\test\\graphic-school\\graphic-school-frontend\\cypress\\videos\\student_spec.cy.js.mp4"
+    },
+    {
+      "title": "Student E2E Tests > 9. Student → Gamification → Check XP + leaderboard",
+      "fullTitle": "",
+      "state": "skipped",
+      "duration": 0,
+      "error": null,
+      "screenshots": [],
+      "video": "C:\\Users\\Lenovo\\test\\graphic-school\\graphic-school-frontend\\cypress\\videos\\student_spec.cy.js.mp4"
+    },
+    {
+      "title": "Student E2E Tests > 10. Student logout",
+      "fullTitle": "",
+      "state": "failed",
+      "duration": 0,
+      "error": null,
+      "screenshots": [],
+      "video": "C:\\Users\\Lenovo\\test\\graphic-school\\graphic-school-frontend\\cypress\\videos\\student_spec.cy.js.mp4"
+    }
+  ]
+}

@@ -1,0 +1,98 @@
+{
+  "specFile": "cypress\\e2e\\admin_spec.cy.js",
+  "startedAt": "2025-11-23T19:49:41.222Z",
+  "endedAt": "2025-11-23T19:49:41.927Z",
+  "status": "failed",
+  "tests": [
+    {
+      "title": "Admin E2E Tests > 1. Admin login flow",
+      "fullTitle": "",
+      "state": "failed",
+      "duration": 321,
+      "error": null,
+      "screenshots": [],
+      "video": "C:\\Users\\Lenovo\\test\\graphic-school\\graphic-school-frontend\\cypress\\videos\\admin_spec.cy.js.mp4"
+    },
+    {
+      "title": "Admin E2E Tests > 2. Admin → Programs → Create program",
+      "fullTitle": "",
+      "state": "skipped",
+      "duration": 0,
+      "error": null,
+      "screenshots": [],
+      "video": "C:\\Users\\Lenovo\\test\\graphic-school\\graphic-school-frontend\\cypress\\videos\\admin_spec.cy.js.mp4"
+    },
+    {
+      "title": "Admin E2E Tests > 3. Admin → Programs → Edit + Delete",
+      "fullTitle": "",
+      "state": "skipped",
+      "duration": 0,
+      "error": null,
+      "screenshots": [],
+      "video": "C:\\Users\\Lenovo\\test\\graphic-school\\graphic-school-frontend\\cypress\\videos\\admin_spec.cy.js.mp4"
+    },
+    {
+      "title": "Admin E2E Tests > 4. Admin → Batches → Create + Assign instructor",
+      "fullTitle": "",
+      "state": "skipped",
+      "duration": 0,
+      "error": null,
+      "screenshots": [],
+      "video": "C:\\Users\\Lenovo\\test\\graphic-school\\graphic-school-frontend\\cypress\\videos\\admin_spec.cy.js.mp4"
+    },
+    {
+      "title": "Admin E2E Tests > 5. Admin → Groups → Create group",
+      "fullTitle": "",
+      "state": "skipped",
+      "duration": 0,
+      "error": null,
+      "screenshots": [],
+      "video": "C:\\Users\\Lenovo\\test\\graphic-school\\graphic-school-frontend\\cypress\\videos\\admin_spec.cy.js.mp4"
+    },
+    {
+      "title": "Admin E2E Tests > 6. Admin → Page Builder → Create page + Add blocks + Publish",
+      "fullTitle": "",
+      "state": "skipped",
+      "duration": 0,
+      "error": null,
+      "screenshots": [],
+      "video": "C:\\Users\\Lenovo\\test\\graphic-school\\graphic-school-frontend\\cypress\\videos\\admin_spec.cy.js.mp4"
+    },
+    {
+      "title": "Admin E2E Tests > 7. Admin → Subscriptions → View plan + Check usage",
+      "fullTitle": "",
+      "state": "skipped",
+      "duration": 0,
+      "error": null,
+      "screenshots": [],
+      "video": "C:\\Users\\Lenovo\\test\\graphic-school\\graphic-school-frontend\\cypress\\videos\\admin_spec.cy.js.mp4"
+    },
+    {
+      "title": "Admin E2E Tests > 8. Admin → Community moderation → View posts + Pin + Lock",
+      "fullTitle": "",
+      "state": "skipped",
+      "duration": 0,
+      "error": null,
+      "screenshots": [],
+      "video": "C:\\Users\\Lenovo\\test\\graphic-school\\graphic-school-frontend\\cypress\\videos\\admin_spec.cy.js.mp4"
+    },
+    {
+      "title": "Admin E2E Tests > 9. Admin → Notifications",
+      "fullTitle": "",
+      "state": "skipped",
+      "duration": 0,
+      "error": null,
+      "screenshots": [],
+      "video": "C:\\Users\\Lenovo\\test\\graphic-school\\graphic-school-frontend\\cypress\\videos\\admin_spec.cy.js.mp4"
+    },
+    {
+      "title": "Admin E2E Tests > 10. Admin logout",
+      "fullTitle": "",
+      "state": "failed",
+      "duration": 0,
+      "error": null,
+      "screenshots": [],
+      "video": "C:\\Users\\Lenovo\\test\\graphic-school\\graphic-school-frontend\\cypress\\videos\\admin_spec.cy.js.mp4"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "specFile": "cypress\\e2e\\health_check.cy.js",
+  "startedAt": "2025-11-23T19:49:48.791Z",
+  "endedAt": "2025-11-23T19:49:49.271Z",
+  "status": "failed",
+  "tests": [
+    {
+      "title": "Frontend Health Check > Should load the frontend application",
+      "fullTitle": "",
+      "state": "failed",
+      "duration": 216,
+      "error": null,
+      "screenshots": [],
+      "video": "C:\\Users\\Lenovo\\test\\graphic-school\\graphic-school-frontend\\cypress\\videos\\health_check.cy.js.mp4"
+    },
+    {
+      "title": "Frontend Health Check > Should access login page",
+      "fullTitle": "",
+      "state": "skipped",
+      "duration": 0,
+      "error": null,
+      "screenshots": [],
+      "video": "C:\\Users\\Lenovo\\test\\graphic-school\\graphic-school-frontend\\cypress\\videos\\health_check.cy.js.mp4"
+    },
+    {
+      "title": "Frontend Health Check > Should check API connectivity",
+      "fullTitle": "",
+      "state": "failed",
+      "duration": 0,
+      "error": null,
+      "screenshots": [],
+      "video": "C:\\Users\\Lenovo\\test\\graphic-school\\graphic-school-frontend\\cypress\\videos\\health_check.cy.js.mp4"
+    }
+  ]
+}
