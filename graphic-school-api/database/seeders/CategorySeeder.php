@@ -10,20 +10,23 @@ class CategorySeeder extends Seeder
     public function run(): void
     {
         $categories = [
-            'Branding & Identity',
-            'Illustration',
-            'UI / UX',
-            'Typography',
-            'Web Design',
-            'Motion Graphics',
-            'Packaging Design',
+            ['translations'=>["en"=>'Branding & Identity']],
+            ['translations'=>["en"=>'Branding']],
+            ['translations'=>["en"=>'Branding1']],
         ];
 
-        foreach ($categories as $name) {
-            Category::updateOrCreate(
-                ['name' => $name],
-                ['name' => $name, 'is_active' => true]
+        foreach ($categories as $category) {
+            $categor=  Category::create([ 'is_active' => true]
             );
+
+            foreach ($category['translations'] as $locale => $name) {
+                    if (!empty($name)) {
+                        $categor->translations()->create([
+                            'locale' => $locale,
+                            'name' => $name,
+                        ]);
+                    }
+                }
         }
     }
 }
